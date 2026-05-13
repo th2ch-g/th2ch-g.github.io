@@ -108,9 +108,18 @@ async function downloadRemoteHero(url: string): Promise<string> {
     // not cached yet
   }
   mkdirSync(HERO_CACHE_DIR, { recursive: true });
+  // Some CDNs (notably avatars.githubusercontent.com when called from
+  // GitHub Actions runners) drop requests that omit a User-Agent — the
+  // request silently aborts with "fetch failed" before any HTTP status
+  // is returned. An explicit, generic UA + Accept makes the call look
+  // like a normal browser fetch and unblocks remote heroImage download.
   const res = await fetch(url, {
     redirect: 'follow',
     signal: AbortSignal.timeout(15_000),
+    headers: {
+      'user-agent': 'Mozilla/5.0 (compatible; AstroOgBuilder/1.0)',
+      accept: 'image/*,*/*;q=0.5',
+    },
   });
   if (!res.ok) throw new Error(`hero fetch ${url}: HTTP ${res.status}`);
   await fsp.writeFile(cachePath, Buffer.from(await res.arrayBuffer()));
