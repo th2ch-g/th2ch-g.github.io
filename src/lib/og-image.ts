@@ -113,17 +113,31 @@ async function downloadRemoteHero(url: string): Promise<string> {
   // request silently aborts with "fetch failed" before any HTTP status
   // is returned. An explicit, generic UA + Accept makes the call look
   // like a normal browser fetch and unblocks remote heroImage download.
-  const res = await fetch(url, {
-    redirect: 'follow',
-    signal: AbortSignal.timeout(15_000),
-    headers: {
-      'user-agent': 'Mozilla/5.0 (compatible; AstroOgBuilder/1.0)',
-      accept: 'image/*,*/*;q=0.5',
-    },
-  });
-  if (!res.ok) throw new Error(`hero fetch ${url}: HTTP ${res.status}`);
-  await fsp.writeFile(cachePath, Buffer.from(await res.arrayBuffer()));
-  return cachePath;
+  const headers = {
+    'user-agent': 'Mozilla/5.0 (compatible; AstroOgBuilder/1.0)',
+    accept: 'image/*,*/*;q=0.5',
+  };
+  // Retry transient network errors. CI runners occasionally see TLS /
+  // socket failures on cold connections to external CDNs; a short
+  // exponential backoff between attempts recovers from those without
+  // turning a build flake into a permanently broken OG card.
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url, {
+        redirect: 'follow',
+        signal: AbortSignal.timeout(30_000),
+        headers,
+      });
+      if (!res.ok) throw new Error(`hero fetch ${url}: HTTP ${res.status}`);
+      await fsp.writeFile(cachePath, Buffer.from(await res.arrayBuffer()));
+      return cachePath;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 export async function prepareHeroBackdrop(source: HeroImageSource): Promise<string> {

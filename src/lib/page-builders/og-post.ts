@@ -37,14 +37,10 @@ export async function buildPostOgRoute(lang: Lang) {
           // Fail soft: a remote hero that 404s, times out, or returns a
           // non-image body shouldn't break the rest of the OG pipeline.
           // The card falls back to the gradient-only design for this post.
-          // Surface `err.cause` too — native fetch reports only "fetch
-          // failed" on its top-level message, with the real reason (DNS,
-          // TLS, abort, etc.) tucked under `.cause`.
-          const cause = (err as Error & { cause?: Error }).cause;
-          const causeMsg = cause?.message ? ` (cause: ${cause.message})` : '';
-          console.warn(
-            `[og-post] failed to prepare hero for ${p.id}: ${(err as Error).message ?? err}${causeMsg}`,
-          );
+          // Pass `err` as a separate argument (rather than interpolating
+          // `.message`) so Node prints `err.cause` and stack — native
+          // fetch errors put DNS / TLS / abort reasons only there.
+          console.warn(`[og-post] failed to prepare hero for ${p.id}:`, err);
         }
       }
       return [
