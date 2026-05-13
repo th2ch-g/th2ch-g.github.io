@@ -1,0 +1,32 @@
+---
+import Base from '@/layouts/Base.astro';
+import { type Lang } from '@/i18n/ui';
+import { getLegal, formatDate } from '@/lib/content';
+import { render } from 'astro:content';
+
+interface Props {
+  lang: Lang;
+  // Slug under src/content/legal/<lang>/<slug>.md (e.g. 'privacy').
+  slug: string;
+}
+const { lang, slug } = Astro.props;
+
+const doc = await getLegal(slug, lang);
+if (!doc) {
+  throw new Error(`Legal doc (${lang}/${slug}) is missing. Add src/content/legal/${lang}/${slug}.md`);
+}
+const { Content } = await render(doc);
+---
+<Base lang={lang} title={doc.data.title} description={doc.data.description}>
+  <h1>{doc.data.title}</h1>
+  <p class="muted updated">
+    {lang === 'ja' ? '最終更新日' : 'Last updated'}: {formatDate(doc.data.updatedDate, lang)}
+  </p>
+  <div class="prose"><Content /></div>
+</Base>
+
+<style>
+  .updated {
+    margin: 0 0 1.5rem;
+  }
+</style>

@@ -1,0 +1,62 @@
+{
+  "name": "portfolio",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build-icon": "node scripts/build-icon.mjs",
+    "build-fonts": "node scripts/build-fonts.mjs",
+    "build-qr": "node scripts/build-qr.mjs",
+    "build-assets": "npm run build-icon && npm run build-fonts && npm run build-qr",
+    "predev": "npm run build-assets",
+    "prebuild": "npm run build-assets && npm run sync-citations && npm run sync-bibtex",
+    "prestart": "npm run build-assets",
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build && node scripts/inject-sitemap-xsl.mjs && pagefind --site dist && node scripts/build-cv-pdf.mjs",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check",
+    "check:css": "node scripts/check-css.mjs",
+    "sync-citations": "node scripts/sync-citation-counts.mjs",
+    "sync-bibtex": "node scripts/sync-bibtex.mjs"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.18",
+    "@astrojs/sitemap": "^3.7.2",
+    "@types/markdown-it": "^14.1.2",
+    "@types/sanitize-html": "^2.16.1",
+    "astro": "^6.3.1",
+    "katex": "^0.16.45",
+    "markdown-it": "^14.1.1",
+    "mermaid": "^11.15.0",
+    "reading-time": "^1.5.0",
+    "rehype-autolink-headings": "7.1.0",
+    "rehype-external-links": "^3.0.0",
+    "rehype-katex": "^7.0.1",
+    "rehype-slug": "6.0.0",
+    "remark-math": "^6.0.0",
+    "sanitize-html": "^2.17.3",
+    "simple-icons": "^16.19.0",
+    "unist-util-visit": "^5.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "@axe-core/playwright": "^4.10.0",
+    "@lhci/cli": "^0.15.1",
+    "astro-og-canvas": "^0.11.1",
+    "jimp": "^1.6.1",
+    "pagefind": "^1.5.2",
+    "playwright": "^1.60.0",
+    "qrcode": "^1.5.4",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "yaml": "^2.9.0",
+    "tmp": "^0.2.5"
+  },
+  "_overridesNote": "yaml >=2.8.3 cuts GHSA-48c2-rrv3-qjmp (stack overflow) which volar-service-yaml@0.0.70 still pins via yaml-language-server (dev-only, astro check). tmp >=0.2.4 cuts GHSA-52f5-9888-hmc6 (symlink) which @lhci/cli still pins via inquirer->external-editor (dev-only, Lighthouse CI). Remove each override once the corresponding upstream ships a fixed dep tree."
+}

@@ -1,0 +1,29 @@
+# Weekly dependency update PRs. npm covers the site's runtime/build deps;
+# the github-actions ecosystem keeps the workflow files (deploy, lighthouse,
+# a11y, links) on supported action versions.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # Group minor + patch bumps into one PR per ecosystem to keep the
+    # review queue manageable; major bumps still get individual PRs so
+    # breaking changes are reviewed in isolation.
+    groups:
+      npm-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]

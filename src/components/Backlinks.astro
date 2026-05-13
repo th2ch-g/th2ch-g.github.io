@@ -1,0 +1,42 @@
+---
+import { t, type Lang } from '@/i18n/ui';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Citer {
+  slug: string;
+  title: string;
+}
+
+interface Props {
+  lang: Lang;
+  citers: Citer[];
+}
+const { lang, citers } = Astro.props;
+---
+{citers.length > 0 && (
+  <section class="backlinks">
+    <h3>{t(lang, 'posts.backlinks')}</h3>
+    <ul class="bare">
+      {citers.map((c) => (
+        <li>
+          <a href={getRelativeLocaleUrl(lang, `/posts/${c.slug}`)}>{c.title}</a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .backlinks {
+    margin: 2rem 0 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+  }
+  .backlinks h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+  }
+  .backlinks li { margin: 0.2rem 0; }
+</style>

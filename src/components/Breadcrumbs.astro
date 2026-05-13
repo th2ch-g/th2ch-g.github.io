@@ -1,0 +1,65 @@
+---
+import { t, type Lang } from '@/i18n/ui';
+
+// Renders a Schema.org `BreadcrumbList` using Microdata so search engines
+// can show breadcrumb-style URLs in result snippets without needing a
+// separate JSON-LD block. The last item is rendered as plain text — by
+// convention, the current page is not a clickable link.
+interface Crumb {
+  label: string;
+  href?: string;
+}
+interface Props {
+  items: Crumb[];
+  lang: Lang;
+}
+const { items, lang } = Astro.props;
+---
+<nav class="breadcrumbs" aria-label={t(lang, 'breadcrumb.label')}>
+  <ol itemscope itemtype="https://schema.org/BreadcrumbList">
+    {items.map((it, i) => (
+      <li
+        itemprop="itemListElement"
+        itemscope
+        itemtype="https://schema.org/ListItem"
+        class:list={[{ 'is-current': !it.href || i === items.length - 1 }]}
+      >
+        {it.href && i < items.length - 1 ? (
+          <a href={it.href} itemprop="item">
+            <span itemprop="name">{it.label}</span>
+          </a>
+        ) : (
+          <span itemprop="name" aria-current="page">{it.label}</span>
+        )}
+        <meta itemprop="position" content={String(i + 1)} />
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .breadcrumbs {
+    margin: 0 0 1rem;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+  .breadcrumbs ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .breadcrumbs li + li::before {
+    content: '/';
+    margin-right: 0.35rem;
+    color: var(--color-border);
+  }
+  .breadcrumbs a {
+    color: var(--color-muted);
+    text-decoration: none;
+  }
+  .breadcrumbs a:hover { color: var(--color-accent); }
+  .breadcrumbs .is-current span { color: var(--color-fg); font-weight: 500; }
+</style>

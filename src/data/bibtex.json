@@ -1,0 +1,18 @@
+{
+  "10.1021/acs.jctc.6c00199": {
+    "bibtex": "@article{hori2026distance,\n  title={Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways},\n  author={Hori, Tatsuki and Moriwaki, Yoshitaka and Ishitani, Ryuichiro},\n  journal={Journal of Chemical Theory and Computation},\n  year={2026},\n  publisher={ACS Publications},\n  doi={10.1021/acs.jctc.6c00199}\n}",
+    "fetchedAt": "2026-05-13T13:56:04.005Z"
+  },
+  "10.1021/acs.jpcb.4c01271": {
+    "bibtex": "@article{ikizawa2024pacs,\n  title={PaCS-Toolkit: Optimized Software Utilities for Parallel Cascade Selection Molecular Dynamics (PaCS-MD) Simulations and Subsequent Analyses},\n  author={Ikizawa, Shinji and Hori, Tatsuki and Wijaya, Tegar Nurwahyu and Kono, Hiroshi and Bai, Zhen and Kimizono, Tatsuhiro and Lu, Wenbo and Tran, Duy Phuoc and Kitao, Akio},\n  journal={The Journal of Physical Chemistry B},\n  year={2024},\n  publisher={ACS Publications},\n  doi={10.1021/acs.jpcb.4c01271}\n}",
+    "fetchedAt": "2026-05-13T13:56:04.005Z"
+  },
+  "10.1038/s41597-023-02356-z": {
+    "bibtex": "@article{tanaka2023haplotype,\n  title={Haplotype-resolved chromosomal-level assembly of wasabi (Eutrema japonicum) genome},\n  author={Tanaka, Hiroyuki and Hori, Tatsuki and Yamamoto, Shohei and Toyoda, Atsushi and Yano, Kentaro and Yamane, Kyoko and Itoh, Takehiko},\n  journal={Scientific Data},\n  year={2023},\n  publisher={Springer Nature},\n  doi={10.1038/s41597-023-02356-z}\n}",
+    "fetchedAt": "2026-05-13T13:56:04.005Z"
+  },
+  "10.64898/2026.01.30.702714": {
+    "bibtex": "@article{hori2026distance,\n  title={Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways},\n  author={Hori, Tatsuki and Moriwaki, Yoshitaka and Ishitani, Ryuichiro},\n  year={2026},\n  publisher={bioRxiv},\n  doi={10.64898/2026.01.30.702714}\n}",
+    "fetchedAt": "2026-05-13T13:56:04.005Z"
+  }
+}

@@ -1,0 +1,43 @@
+---
+import { getProfileMeta } from '@/lib/content';
+import { t, type Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const giscus = (await getProfileMeta(lang)).integrations.giscus;
+---
+{giscus && (
+  <section class="comments">
+    <h2>{t(lang, 'comments.title')}</h2>
+    {/* Giscus widget. Theme is bound to the site's `data-theme` via
+        `preferred_color_scheme` so light/dark switches stay coherent.
+        The script loads asynchronously and injects an iframe. */}
+    <script
+      is:inline
+      src="https://giscus.app/client.js"
+      data-repo={giscus.repo}
+      data-repo-id={giscus.repoId}
+      data-category={giscus.category}
+      data-category-id={giscus.categoryId}
+      data-mapping={giscus.mapping}
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="bottom"
+      data-theme="preferred_color_scheme"
+      data-lang={lang === 'ja' ? 'ja' : 'en'}
+      data-loading="lazy"
+      crossorigin="anonymous"
+      async
+    />
+  </section>
+)}
+
+<style>
+  .comments {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+</style>

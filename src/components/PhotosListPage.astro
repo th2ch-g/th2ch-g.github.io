@@ -1,0 +1,121 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Base from '@/layouts/Base.astro';
+import PhotoSlideshow from './PhotoSlideshow.astro';
+import { t, tEn, type Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+// Photos are loose image files under `src/content/gallery/`. There is no
+// per-photo .md any more — adding a picture means dropping a file in
+// that directory. ja/en share the same set. `eager: true` resolves
+// every glob match at build time so we can sort and render synchronously.
+// Order is randomised at build time (Fisher–Yates) so the gallery, the
+// slideshow start frame, and the Home thumbnail rotation all refresh on
+// each deploy — matches the Home page picker (HomePage.astro).
+const modules = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/content/gallery/*.{jpg,jpeg,png,webp,avif,svg}',
+  { eager: true },
+);
+const photos = Object.entries(modules).map(([path, mod]) => ({
+  path,
+  src: mod.default,
+}));
+for (let i = photos.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [photos[i], photos[j]] = [photos[j], photos[i]];
+}
+const slideshowImages = photos.map((p) => p.src);
+---
+<Base lang={lang} title={tEn('nav.photos')} image={lang === 'en' ? '/en/og/gallery.png' : '/og/gallery.png'}>
+  <h1>{t(lang, 'nav.photos')}</h1>
+  {photos.length === 0 && <p class="muted">{t(lang, 'list.empty')}</p>}
+  {photos.length > 0 && <PhotoSlideshow images={slideshowImages} />}
+  {photos.length > 0 && (
+    <div class="masonry">
+      {photos.map((photo, i) => (
+        <button
+          type="button"
+          class="photo-btn"
+          aria-label={`${t(lang, 'nav.photos')} ${i + 1}`}
+        >
+          <Image src={photo.src} alt="" loading="lazy" class="photo" />
+        </button>
+      ))}
+    </div>
+  )}
+</Base>
+
+<script>
+  import { wirePhotoLightbox } from '@/lib/lightbox';
+  wirePhotoLightbox('.photo-btn');
+</script>
+
+<style>
+  /* CSS multi-columns gives a true masonry without JS: the browser flows
+     children top-to-bottom in each column, packing tightly regardless of
+     each photo's aspect ratio. `break-inside: avoid` keeps each photo
+     whole. Image height is driven by its natural aspect ratio. */
+  .masonry {
+    column-count: 3;
+    column-gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  @media (max-width: 900px) { .masonry { column-count: 2; } }
+  @media (max-width: 540px) { .masonry { column-count: 1; } }
+  /* Wrapper button: click target for the Lightbox overlay (semi-opaque
+     in-page modal, NOT browser fullscreen). Uses `<button>` rather than
+     `<a>` because nothing actually navigates — click dispatches a
+     `lightbox:open` event that Lightbox.astro listens for.
+     `break-inside: avoid` lives here so the button + its image stay in
+     the same column.
+     Hover effect: wrapper lifts & casts a shadow (same as Posts `.card`),
+     but does NOT scale — `.photo-btn` is both the card and the image
+     frame, so wrapper-scale + inner-img-scale stacks visually and looks
+     like the whole tile is ballooning. Only the inner <img> zooms
+     inside the rounded clip mask, mirroring how Posts `.thumb` clips its
+     img zoom. */
+  .photo-btn {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    margin-bottom: 0.75rem;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: zoom-in;
+    display: block;
+    break-inside: avoid;
+    transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 260ms ease;
+  }
+  .photo-btn:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+  }
+  .photo-btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+  .photo {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--color-border);
+    /* Inner image scale on hover. Wrapper's overflow:hidden clips the
+       grown image to the rounded corner so it never spills into
+       neighbouring masonry items. */
+    transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* Inner-img zoom on hover lives in src/styles/global.css per project
+     contract (see CLAUDE.md "CSS gotchas"). The card lift below and the
+     reduced-motion transition resets stay scoped because they target
+     element-local transforms / transitions only. */
+  @media (prefers-reduced-motion: reduce) {
+    .photo-btn,
+    .photo { transition: none; }
+    .photo-btn:hover { transform: none; }
+  }
+</style>

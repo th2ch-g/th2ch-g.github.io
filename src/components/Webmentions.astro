@@ -1,0 +1,125 @@
+---
+import { getProfileMeta } from '@/lib/content';
+import { t, type Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const webmention = (await getProfileMeta(lang)).integrations.webmention;
+---
+{webmention && (
+  <section class="webmentions" data-webmentions data-api-target={webmention.apiTarget}>
+    <h2>{t(lang, 'webmention.title')}</h2>
+    <p class="muted empty" data-empty>{t(lang, 'webmention.empty')}</p>
+    <ul class="bare list" data-list></ul>
+    {webmention.endpoint && (
+      <p class="muted send">
+        <a href={webmention.endpoint}>{t(lang, 'webmention.send')} →</a>
+      </p>
+    )}
+
+    <script is:inline data-astro-rerun>
+      // Fetch received webmentions from webmention.io and render them.
+      // Webmention payloads are user-supplied (anyone can webmention
+      // anything), so we build DOM nodes with `textContent` rather than
+      // `innerHTML` to neutralise any embedded HTML/script attempts.
+      const root = document.querySelector('[data-webmentions]');
+      if (root) {
+        const apiTarget = root.dataset.apiTarget;
+        const list = root.querySelector('[data-list]');
+        const empty = root.querySelector('[data-empty]');
+        if (apiTarget && list) {
+          const here = new URL(location.pathname, location.origin).toString();
+          const url = `https://webmention.io/api/mentions.jf2?target=${encodeURIComponent(here)}&per-page=20`;
+          const safeHttpUrl = (s) => {
+            try {
+              const u = new URL(String(s));
+              return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : '';
+            } catch {
+              return '';
+            }
+          };
+          fetch(url)
+            .then((r) => r.json())
+            .then((data) => {
+              const items = Array.isArray(data?.children) ? data.children : [];
+              if (items.length === 0) return;
+              empty?.setAttribute('hidden', '');
+              list.replaceChildren();
+              items.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'row';
+
+                const photoSrc = safeHttpUrl(item?.author?.photo);
+                if (photoSrc) {
+                  const img = document.createElement('img');
+                  img.className = 'avatar';
+                  // `referrerPolicy` keeps the current article URL out of the
+                  // outbound Referer header — webmention payloads are
+                  // attacker-influenced (anyone can publish a mention) and
+                  // the avatar host is therefore untrusted. `loading=lazy`
+                  // defers the fetch until the row scrolls into view, so an
+                  // unreachable host can't stall first paint.
+                  img.referrerPolicy = 'no-referrer';
+                  img.loading = 'lazy';
+                  img.decoding = 'async';
+                  img.src = photoSrc;
+                  img.alt = '';
+                  img.width = 24;
+                  img.height = 24;
+                  li.appendChild(img);
+                }
+
+                const link = document.createElement('a');
+                const href = safeHttpUrl(item?.url) || '#';
+                link.href = href;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = String(item?.author?.name ?? 'Anonymous');
+                li.appendChild(link);
+
+                const kind = document.createElement('span');
+                kind.className = 'kind muted';
+                kind.textContent = String(item?.['wm-property'] ?? 'mention');
+                li.appendChild(kind);
+
+                list.appendChild(li);
+              });
+            })
+            .catch(() => {
+              // Network error — leave the empty state visible.
+            });
+        }
+      }
+    </script>
+  </section>
+)}
+
+<style>
+  .webmentions {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+  .list .row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.3rem 0;
+    font-size: 0.9rem;
+  }
+  .list .avatar {
+    border-radius: 50%;
+    background: var(--color-border);
+  }
+  .list .kind {
+    font-size: 0.75rem;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+  }
+  .send {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+  }
+</style>

@@ -1,0 +1,43 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { languages, t, type Lang } from '@/i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+// Strip the current locale prefix from the path so we can append the target one.
+// Preserve `?tag=...&sort=...` (and any other query) so list-page filter state
+// survives a language switch.
+const currentPath = Astro.url.pathname.replace(/^\/(en|ja)(?=\/|$)/, '') || '/';
+const search = Astro.url.search;
+---
+<div class="lang-switch" aria-label={t(lang, 'lang.switch')}>
+  {(Object.keys(languages) as Lang[]).map((code) => (
+    <a
+      href={`${getRelativeLocaleUrl(code, currentPath)}${search}`}
+      class:list={['pill', { active: code === lang }]}
+      hreflang={code}
+      lang={code}
+    >{languages[code]}</a>
+  ))}
+</div>
+
+<style>
+  .lang-switch {
+    display: inline-flex;
+    gap: 0.25rem;
+  }
+  .pill {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    color: var(--color-muted);
+  }
+  .pill.active {
+    color: var(--color-fg);
+    border-color: var(--color-accent);
+  }
+</style>

@@ -1,0 +1,176 @@
+---
+import { t, type Lang } from '@/i18n/ui';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+// Pre-compute locale-aware destinations so the runtime script doesn't
+// need to read i18n state.
+const homeUrl = getRelativeLocaleUrl(lang, '/');
+const postsUrl = getRelativeLocaleUrl(lang, '/posts');
+const photosUrl = getRelativeLocaleUrl(lang, '/photos');
+const cvUrl = getRelativeLocaleUrl(lang, '/cv');
+---
+<dialog class="shortcuts-dialog" data-shortcuts-dialog aria-label={t(lang, 'shortcuts.title')}>
+  <div class="shortcuts-shell">
+    <h2>{t(lang, 'shortcuts.title')}</h2>
+    <dl class="shortcuts-list">
+      <dt><kbd>/</kbd></dt><dd>{t(lang, 'shortcuts.search')}</dd>
+      <dt><kbd>⌘</kbd> + <kbd>K</kbd></dt><dd>{t(lang, 'shortcuts.search')}</dd>
+      <dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>{t(lang, 'shortcuts.go.home')}</dd>
+      <dt><kbd>g</kbd> <kbd>b</kbd></dt><dd>{t(lang, 'shortcuts.go.posts')}</dd>
+      <dt><kbd>g</kbd> <kbd>p</kbd></dt><dd>{t(lang, 'shortcuts.go.photos')}</dd>
+      <dt><kbd>g</kbd> <kbd>c</kbd></dt><dd>{t(lang, 'shortcuts.go.cv')}</dd>
+      <dt><kbd>?</kbd></dt><dd>{t(lang, 'shortcuts.help')}</dd>
+      <dt><kbd>Esc</kbd></dt><dd>{t(lang, 'shortcuts.close')}</dd>
+    </dl>
+    <button type="button" class="shortcuts-close" data-shortcuts-close>{t(lang, 'shortcuts.close')}</button>
+  </div>
+</dialog>
+
+<script is:inline define:vars={{ homeUrl, postsUrl, photosUrl, cvUrl }}>
+  // Single-key + chord shortcut driver. Bound once per page load via a
+  // window-level guard so re-execution (no ClientRouter on this site,
+  // but defensive anyway) doesn't pile up listeners.
+  //
+  // CRITICAL: wrapped in IIFE because `is:inline` injects raw code; a
+  // top-level `let` would collide on hypothetical re-exec.
+  (() => {
+    if (window.__th2chShortcutsBound) return;
+    window.__th2chShortcutsBound = true;
+
+    const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+    let pendingG = false;
+    let pendingTimer = null;
+
+    function isTyping(target) {
+      if (!target) return false;
+      if (TYPING_TAGS.has(target.tagName)) return true;
+      if (target.isContentEditable) return true;
+      return false;
+    }
+
+    function clearG() {
+      pendingG = false;
+      if (pendingTimer) { window.clearTimeout(pendingTimer); pendingTimer = null; }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      // Modifier-bearing keys are reserved for other shortcuts (Cmd+K) or
+      // browser actions; only act on plain key presses.
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isTyping(e.target)) return;
+      // Don't fight an open dialog (search / shortcuts) — Esc handling
+      // for those lives in their own scripts.
+      const inDialog = document.querySelector('dialog[open]');
+      if (inDialog) return;
+
+      // First key of a chord: `g`. Latches a 1.2s window to receive the
+      // second character. ESC or any non-mapped key clears the latch.
+      if (pendingG) {
+        const map = { h: homeUrl, b: postsUrl, p: photosUrl, c: cvUrl };
+        const dest = map[e.key.toLowerCase()];
+        clearG();
+        if (dest) {
+          e.preventDefault();
+          location.href = dest;
+        }
+        return;
+      }
+
+      if (e.key === 'g') {
+        pendingG = true;
+        pendingTimer = window.setTimeout(clearG, 1200);
+        return;
+      }
+
+      if (e.key === '/') {
+        const trigger = document.querySelector('[data-search-open]');
+        if (trigger) {
+          e.preventDefault();
+          trigger.click();
+        }
+        return;
+      }
+
+      if (e.key === '?') {
+        const dlg = document.querySelector('[data-shortcuts-dialog]');
+        if (dlg && typeof dlg.showModal === 'function') {
+          e.preventDefault();
+          dlg.showModal();
+        }
+      }
+    });
+
+    // Close button + click-outside for the help dialog.
+    document.querySelector('[data-shortcuts-close]')?.addEventListener('click', () => {
+      const dlg = document.querySelector('[data-shortcuts-dialog]');
+      if (dlg) dlg.close();
+    });
+    const dlg = document.querySelector('[data-shortcuts-dialog]');
+    dlg?.addEventListener('click', (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+  })();
+</script>
+
+<style>
+  .shortcuts-dialog {
+    border: none;
+    padding: 0;
+    background: transparent;
+    max-width: min(440px, 100vw - 2rem);
+    width: 100%;
+  }
+  .shortcuts-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+  }
+  .shortcuts-shell {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem 1rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  }
+  .shortcuts-shell h2 { margin-top: 0; font-size: 1.1rem; }
+  .shortcuts-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.4rem 1rem;
+    margin: 0.5rem 0 1rem;
+    font-size: 0.9rem;
+  }
+  .shortcuts-list dt {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    color: var(--color-muted);
+  }
+  .shortcuts-list dt kbd {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.05rem 0.4rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-fg);
+  }
+  .shortcuts-list dd { margin: 0; }
+  .shortcuts-close {
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .shortcuts-close:hover,
+  .shortcuts-close:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+</style>

@@ -1,0 +1,38 @@
+# Run:
+#   docker compose up dev      # http://localhost:4321 with live Markdown reload
+#   docker compose up prod     # http://localhost:8080 production-built nginx
+#
+# Editing files under ./src or ./public on the host triggers Astro HMR
+# inside the `dev` container — no image rebuild required.
+
+services:
+  dev:
+    build:
+      context: .
+      target: dev
+    init: true
+    ports:
+      - "4321:4321"
+    environment:
+      ASTRO_TELEMETRY_DISABLED: "1"
+    volumes:
+      # Live-mount only the things that legitimately change at edit time.
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./astro.config.mjs:/app/astro.config.mjs:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      # Named volumes keep heavy directories OUT of the slow macOS bind mount.
+      - node_modules:/app/node_modules
+      - astro_cache:/app/.astro
+
+  prod:
+    build:
+      context: .
+      target: runtime
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  node_modules:
+  astro_cache:

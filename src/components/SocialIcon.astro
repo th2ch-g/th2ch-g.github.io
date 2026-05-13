@@ -1,0 +1,42 @@
+---
+import { siGithub, siOrcid, siKaggle, siHuggingface } from 'simple-icons';
+
+// Map normalized profile-link labels to simple-icons brand SVGs.
+// `key` matches `label.toLowerCase().replace(/\s+/g, '')` so profile.yaml can
+// write either "Hugging Face" or "Huggingface" interchangeably.
+const icons: Record<string, { title: string; path: string; hex: string }> = {
+  github: siGithub,
+  orcid: siOrcid,
+  kaggle: siKaggle,
+  huggingface: siHuggingface,
+};
+
+interface Props {
+  label: string;
+  size?: number;
+}
+const { label, size = 28 } = Astro.props;
+const key = label.toLowerCase().replace(/\s+/g, '');
+const icon = icons[key];
+---
+{icon ? (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d={icon.path} fill={`#${icon.hex}`} />
+  </svg>
+) : (
+  <span class="fallback">{label}</span>
+)}
+
+<style>
+  .fallback {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+</style>

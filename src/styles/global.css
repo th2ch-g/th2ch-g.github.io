@@ -1,0 +1,7 @@
+/* Global stylesheet aggregator. Each section lives in its own file for
+   readability; the import order matters because layout/prose/print all
+   consume CSS variables defined in tokens.css. */
+@import './tokens.css';
+@import './layout.css';
+@import './prose.css';
+@import './print.css';

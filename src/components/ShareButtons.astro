@@ -1,0 +1,262 @@
+---
+import { siX, siBluesky, siHatenabookmark, siFacebook } from 'simple-icons';
+import { t, type Lang } from '@/i18n/ui';
+
+interface Props {
+  lang: Lang;
+  title: string;
+}
+const { lang, title } = Astro.props;
+
+// Build the share URL against Astro.site (production host) so links shared
+// from a dev preview still resolve to the public page, not localhost.
+const shareUrl = new URL(Astro.url.pathname, Astro.site).toString();
+
+const u = encodeURIComponent(shareUrl);
+const tt = encodeURIComponent(title);
+
+const targets = [
+  {
+    key: 'x',
+    label: t(lang, 'share.x'),
+    href: `https://twitter.com/intent/tweet?text=${tt}&url=${u}`,
+    icon: siX,
+  },
+  {
+    key: 'bluesky',
+    label: t(lang, 'share.bluesky'),
+    href: `https://bsky.app/intent/compose?text=${tt}%20${u}`,
+    icon: siBluesky,
+  },
+  {
+    key: 'hatena',
+    label: t(lang, 'share.hatena'),
+    href: `https://b.hatena.ne.jp/entry?url=${u}`,
+    icon: siHatenabookmark,
+  },
+  {
+    key: 'facebook',
+    label: t(lang, 'share.facebook'),
+    href: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+    icon: siFacebook,
+  },
+] as const;
+
+const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
+---
+<div class="share" aria-label={t(lang, 'share.title')}>
+  <span class="share-label">{t(lang, 'share.title')}</span>
+  <ul class="share-list">
+    {targets.map((target) => (
+      <li>
+        <a
+          class={`share-btn share-btn--${target.key}`}
+          href={target.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={target.label}
+          title={target.label}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d={target.icon.path} fill="currentColor" />
+          </svg>
+        </a>
+      </li>
+    ))}
+    <li>
+      <a
+        class="share-btn share-btn--linkedin"
+        href={linkedinHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={t(lang, 'share.linkedin')}
+        title={t(lang, 'share.linkedin')}
+      >
+        {/* LinkedIn glyph from Bootstrap Icons (MIT) — simple-icons no longer
+            ships LinkedIn due to trademark constraints. */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 16 16"
+          width="20"
+          height="20"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            fill="currentColor"
+            d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"
+          />
+        </svg>
+      </a>
+    </li>
+    <li class="share-copy-wrap">
+      {/* The toast is positioned above the button via CSS. `aria-live="polite"`
+          announces the message to screen readers without interrupting other
+          speech. `pointer-events: none` keeps it from blocking re-clicks. */}
+      <span class="share-toast" data-share-toast aria-live="polite" hidden></span>
+      <button
+        type="button"
+        class="share-btn share-copy"
+        data-share-url={shareUrl}
+        data-label-copy={t(lang, 'share.copy')}
+        data-label-copied={t(lang, 'share.copied')}
+        data-label-failed={t(lang, 'share.copy.failed')}
+        aria-label={t(lang, 'share.copy')}
+        title={t(lang, 'share.copy')}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07l-1.5 1.5" />
+          <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07l1.5-1.5" />
+        </svg>
+      </button>
+    </li>
+  </ul>
+</div>
+
+<script>
+  import { wireShareCopyButtons } from '@/lib/share-copy';
+  wireShareCopyButtons();
+</script>
+
+<style>
+  .share {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 5rem 0 1.5rem;
+  }
+  .share-label {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+  .share-list {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: border-color 160ms ease, transform 160ms ease, filter 160ms ease;
+  }
+  /* Brand colors per icon. simple-icons hex values:
+     X #000, Bluesky #0285FF, Hatena #00A4DE, Facebook #0866FF.
+     LinkedIn #0A66C2 is the official 2024 brand value (not in simple-icons). */
+  .share-btn--x { color: #000; }
+  /* X uses inverted (white) logo on dark surfaces — official guideline. */
+  :global([data-theme="dark"]) .share-btn--x { color: #fff; }
+  .share-btn--bluesky { color: #0285FF; }
+  .share-btn--hatena { color: #00A4DE; }
+  .share-btn--facebook { color: #0866FF; }
+  .share-btn--linkedin { color: #0A66C2; }
+  .share-btn:hover,
+  .share-btn:focus-visible {
+    border-color: currentColor;
+    text-decoration: none;
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+  }
+  .share-copy:hover,
+  .share-copy:focus-visible {
+    color: var(--color-accent);
+  }
+  .share-btn.is-copied {
+    color: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+  }
+  /* Warning amber matches the draft-badge color so failure states read
+     consistently with the rest of the site. */
+  .share-btn.is-failed {
+    color: var(--color-warn);
+    border-color: var(--color-warn);
+  }
+
+  /* Anchor the toast to the copy button's column so it floats directly
+     above. `position: relative` on the wrapper provides the containing
+     block; `z-index: 1` keeps it above adjacent buttons during fade. */
+  .share-copy-wrap {
+    position: relative;
+  }
+  .share-toast {
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 50%;
+    transform: translate(-50%, 4px);
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius);
+    background: var(--color-accent);
+    color: var(--color-bg);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    transition: opacity 180ms ease, transform 180ms ease;
+    z-index: 1;
+  }
+  /* Triangle pointer: a small filled square rotated 45° and clipped by
+     the toast's overflow boundary at the bottom edge. Color matches the
+     toast background so it reads as one shape. */
+  .share-toast::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    margin-top: -4px;
+    background: inherit;
+    transform: translateX(-50%) rotate(45deg);
+  }
+  .share-toast.is-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  .share-toast.is-error {
+    background: var(--color-warn);
+    color: #fff;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .share-btn { transition: none; }
+    .share-btn:hover,
+    .share-btn:focus-visible { transform: none; }
+    /* Skip the slide-up; opacity-only transition is enough feedback
+       without violating the user's motion preference. */
+    .share-toast { transition: opacity 180ms ease; transform: translate(-50%, 0); }
+    .share-toast.is-visible { transform: translate(-50%, 0); }
+  }
+</style>

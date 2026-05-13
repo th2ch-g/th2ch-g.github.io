@@ -1,0 +1,69 @@
+---
+import Base from '@/layouts/Base.astro';
+import { t, tEn, type Lang } from '@/i18n/ui';
+import { getPublishedByLang, localeSlug, sortByDateDesc, formatDate } from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const posts = sortByDateDesc(
+  await getPublishedByLang('posts', lang, { includeDevDrafts: true }),
+  'pubDate',
+);
+
+// Group posts by `pubDate` year. The map iteration order matches insertion
+// order, and since `posts` is already in descending chronological order
+// the grouped output naturally walks newest year → oldest.
+const byYear = new Map<number, typeof posts>();
+posts.forEach((p) => {
+  const y = p.data.pubDate.getFullYear();
+  const list = byYear.get(y) ?? [];
+  list.push(p);
+  byYear.set(y, list);
+});
+---
+<Base lang={lang} title={tEn('archive.title')}>
+  <h1>
+    {t(lang, 'archive.title')}
+    {posts.length > 0 && <span class="count-badge">{posts.length}</span>}
+  </h1>
+  {posts.length === 0 ? (
+    <p class="muted">{t(lang, 'list.empty')}</p>
+  ) : (
+    Array.from(byYear.entries()).map(([year, items]) => (
+      <section class="year">
+        <h2>{year} <span class="count-inline muted">({items.length})</span></h2>
+        <ul class="bare">
+          {items.map((post) => (
+            <li class="row">
+              <span class="date muted">{formatDate(post.data.pubDate, lang)}</span>
+              <a href={getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}`)}>
+                {post.data.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  )}
+</Base>
+
+<style>
+  .year { margin-top: 1.5rem; }
+  .row {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: 0.5rem 1rem;
+    padding: 0.25rem 0;
+    align-items: baseline;
+  }
+  .row .date {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+  }
+  @media (max-width: 540px) {
+    .row { grid-template-columns: 1fr; gap: 0.1rem; }
+    .row .date { font-size: 0.75rem; }
+  }
+</style>

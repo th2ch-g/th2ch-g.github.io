@@ -1,0 +1,83 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { t, type Lang } from '@/i18n/ui';
+import { localeSlug, formatDate } from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props {
+  posts: CollectionEntry<'posts'>[];
+  lang: Lang;
+}
+const { posts, lang } = Astro.props;
+---
+{posts.length > 0 && (
+  <section class="related-posts" aria-label={t(lang, 'posts.related')}>
+    <h2 class="related-heading">{t(lang, 'posts.related')}</h2>
+    <ul class="related-list">
+      {posts.map((post) => {
+        const slug = localeSlug(post.id);
+        const href = getRelativeLocaleUrl(lang, `/posts/${slug}`);
+        return (
+          <li>
+            <a class="related-card" href={href}>
+              <span class="related-title">{post.data.title}</span>
+              <span class="related-date muted">{formatDate(post.data.pubDate, lang)}</span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+)}
+
+<style>
+  .related-posts {
+    margin: 3rem 0 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+  .related-heading {
+    /* Match h2 elsewhere but drop the body-text margin so the section header
+       hugs the top border. The list below provides its own spacing. */
+    margin: 0 0 1rem;
+    border-bottom: none;
+    padding-bottom: 0;
+    font-size: 1.2rem;
+  }
+  .related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .related-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+    color: var(--color-fg);
+    transition: border-color 160ms ease, transform 160ms ease;
+  }
+  .related-card:hover,
+  .related-card:focus-visible {
+    border-color: var(--color-accent);
+    text-decoration: none;
+    transform: translateY(-2px);
+  }
+  .related-title {
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .related-date {
+    font-size: 0.8rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .related-card { transition: none; }
+    .related-card:hover,
+    .related-card:focus-visible { transform: none; }
+  }
+</style>

@@ -1,0 +1,289 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { t, type Lang } from '@/i18n/ui';
+import { getProfileMeta } from '@/lib/content';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import Search from './Search.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const meta = await getProfileMeta(lang);
+// Brand text in the navbar: prefer the human display name (e.g. "th"),
+// not the site handle. The site handle still surfaces in the footer
+// copyright line and RSS feed titles.
+const brand = meta.name;
+
+// Navigation labels are intentionally English in both locales (per user preference).
+// Per-section page H1s still use the localized `t(lang, 'nav.xxx')` keys.
+// `match: 'exact'` for Home (otherwise its `/` prefix would match every path);
+// other entries use prefix matching so that detail routes like /posts/foo
+// keep the parent section highlighted. `external: true` items live off-site
+// (none currently); these open in a new tab and never receive an active state
+// since their href is on a different origin.
+type NavItem =
+  | { href: string; label: string; match: 'exact' | 'prefix'; external?: false }
+  | { href: string; label: string; external: true };
+
+const items: NavItem[] = [
+  { href: getRelativeLocaleUrl(lang, '/'), label: 'Home', match: 'exact' },
+  { href: getRelativeLocaleUrl(lang, '/cv'), label: 'CV', match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/posts'), label: 'Posts', match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/photos'), label: 'Gallery', match: 'prefix' },
+];
+
+const withSlash = (p: string) => (p.endsWith('/') ? p : p + '/');
+const current = withSlash(Astro.url.pathname);
+
+function isActive(href: string, match: 'exact' | 'prefix'): boolean {
+  const target = withSlash(href);
+  return match === 'exact' ? current === target : current === target || current.startsWith(target);
+}
+---
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href={getRelativeLocaleUrl(lang, '/')}>
+      {meta.icon && (
+        <img
+          class="brand-icon"
+          src={meta.icon}
+          alt=""
+          width="28"
+          height="28"
+          loading="eager"
+          decoding="async"
+          aria-hidden="true"
+        />
+      )}
+      <span>{brand}</span>
+    </a>
+    <nav id="primary-nav" data-nav data-open="false" aria-label="Primary">
+      <ul class="bare nav-list">
+        {items.map((item) => {
+          const external = item.external === true;
+          const active = !external && isActive(item.href, item.match);
+          return (
+            <li>
+              <a
+                href={item.href}
+                class:list={{ active }}
+                data-label={item.label}
+                aria-current={active ? 'page' : undefined}
+                target={external ? '_blank' : undefined}
+                rel={external ? 'noopener noreferrer' : undefined}
+              >{item.label}</a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+    <Search lang={lang} />
+    <ThemeToggle lang={lang} />
+    <LanguageSwitcher lang={lang} />
+    <button
+      type="button"
+      class="nav-toggle"
+      aria-controls="primary-nav"
+      aria-expanded="false"
+      aria-label={t(lang, 'nav.menu')}
+      data-nav-toggle
+    >
+      <span class="bar" aria-hidden="true"></span>
+      <span class="bar" aria-hidden="true"></span>
+      <span class="bar" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+
+<script>
+  import { wireNavToggles } from '@/lib/nav-toggle';
+  wireNavToggles();
+</script>
+
+<style>
+  .site-header {
+    /* Stay anchored to the viewport top while the page scrolls. The
+       z-index sits below the lightbox (1000) and search dialog so
+       modal overlays still cover the navbar. */
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-card-translucent);
+    /* `backdrop-filter` blurs whatever scrolls under the header so text
+       behind the bar stays subtly visible. WebKit still requires the
+       prefixed form on older Safari. */
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    backdrop-filter: blur(10px) saturate(160%);
+  }
+  /* Older browsers without `backdrop-filter` support fall back to a
+     solid (slightly less transparent) surface so text underneath isn't
+     unreadable. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header { background: var(--color-card); }
+  }
+  .inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+  .brand-icon {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    /* Prevent flex squashing if the brand row is tight on mobile. */
+    flex: 0 0 auto;
+  }
+  nav {
+    flex: 1;
+  }
+  .nav-list {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .nav-list a {
+    /* `inline-block` is required so the `::after` width-reservation
+       pseudo can lay out as a block child of the link. */
+    display: inline-block;
+    color: var(--color-fg);
+    font-size: 0.95rem;
+    padding: 0.25rem 0;
+    border-bottom: 2px solid transparent;
+  }
+  /* Reserve the bold-state width up front so toggling `.active` (which
+     bumps font-weight to 600) never reflows neighbouring links. The
+     pseudo carries the same label string at weight 600 with zero height
+     so it claims max(normal, bold) width without affecting line height. */
+  .nav-list a::after {
+    content: attr(data-label);
+    display: block;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    font-weight: 600;
+    pointer-events: none;
+  }
+  .nav-list a:hover {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+  .nav-list a.active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  /* Hamburger button — hidden on desktop, shown below the breakpoint. */
+  .nav-toggle {
+    display: none;
+    position: relative;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-fg);
+    cursor: pointer;
+  }
+  .nav-toggle:hover {
+    border-color: var(--color-accent);
+  }
+  .nav-toggle .bar {
+    position: absolute;
+    left: 0.45rem;
+    right: 0.45rem;
+    height: 2px;
+    background: currentColor;
+    border-radius: 2px;
+    transition: transform 200ms ease, opacity 200ms ease;
+  }
+  .nav-toggle .bar:nth-child(1) { top: 0.55rem; }
+  .nav-toggle .bar:nth-child(2) { top: 0.95rem; }
+  .nav-toggle .bar:nth-child(3) { top: 1.35rem; }
+  .nav-toggle[aria-expanded="true"] .bar:nth-child(1) {
+    transform: translateY(0.4rem) rotate(45deg);
+  }
+  .nav-toggle[aria-expanded="true"] .bar:nth-child(2) {
+    opacity: 0;
+  }
+  .nav-toggle[aria-expanded="true"] .bar:nth-child(3) {
+    transform: translateY(-0.4rem) rotate(-45deg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-toggle .bar { transition: none; }
+  }
+
+  /* Mobile layout: collapse the nav into a hamburger drop-down.
+     The breakpoint roughly matches when the desktop row would otherwise
+     wrap onto two lines anyway.
+
+     The dropdown is rendered as an absolute-positioned overlay anchored
+     to the bottom of the header — opening it MUST NOT push the page
+     content downward, only float on top of it. `position: absolute`
+     against `.inner` (made `position: relative` for the mobile branch)
+     drops the nav out of the flex flow. The translucent background +
+     backdrop-filter mirrors `.site-header` so the overlay reads as a
+     continuation of the navbar. */
+  @media (max-width: 720px) {
+    .inner {
+      position: relative;
+    }
+    .brand {
+      flex: 1;
+    }
+    .nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    nav {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-card-translucent);
+      -webkit-backdrop-filter: blur(10px) saturate(160%);
+      backdrop-filter: blur(10px) saturate(160%);
+    }
+    /* Solid fallback for browsers without backdrop-filter so the overlay
+       text doesn't read against unblurred content. */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      nav { background: var(--color-card); }
+    }
+    nav[data-open="false"] {
+      display: none;
+    }
+    .nav-list {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .nav-list a {
+      /* inline-block so the active border-bottom hugs the text width,
+         not the full row width, while keeping vertical padding for taps. */
+      display: inline-block;
+      padding: 0.4rem 0;
+    }
+  }
+</style>

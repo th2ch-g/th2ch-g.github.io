@@ -1,0 +1,16 @@
+---
+import LegalPage from '@/components/LegalPage.astro';
+import { getLegalByLang } from '@/lib/content';
+
+// Catch-all route for every ja legal document. Drop a new
+// src/content/legal/ja/<slug>.md and the corresponding /<slug>/ page
+// appears automatically. Slug must not collide with existing concrete
+// routes (cv, sitemap, ...) — Astro errors loudly if it does.
+export async function getStaticPaths() {
+  const docs = await getLegalByLang('ja');
+  return docs.map((d) => ({ params: { legal: d.slug } }));
+}
+
+const { legal = '' } = Astro.params;
+---
+<LegalPage lang="ja" slug={legal} />

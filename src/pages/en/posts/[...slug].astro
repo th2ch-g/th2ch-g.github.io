@@ -1,0 +1,11 @@
+---
+import PostDetailPage from '@/components/PostDetailPage.astro';
+import { buildPostsDetailPaths } from '@/lib/static-paths';
+
+export async function getStaticPaths() {
+  return buildPostsDetailPaths('en');
+}
+
+const { post } = Astro.props;
+---
+<PostDetailPage post={post} lang="en" />

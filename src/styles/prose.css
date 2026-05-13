@@ -1,0 +1,608 @@
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+
+/* Single-image paragraph (bare image URL promoted by remark-link-card, or
+   an `![](url)` literal with empty alt that remark-figure-caption skips).
+   `<figure>`-wrapped variants are styled separately as `.md-figure`. */
+.prose p:has(> img:only-child) {
+  margin: 1.5rem auto;
+  text-align: center;
+}
+
+/* Implicit figures produced by `src/plugins/remark-figure-caption.mjs`.
+   A standalone `![alt](url)` line becomes `<figure class="md-figure">`
+   with the alt duplicated as a `<figcaption class="md-figcaption">`
+   underneath — matches the Zenn / Pandoc convention. The `<img>` keeps
+   its own `alt` attribute for screen readers; figcaption is the visible
+   caption, so the two play different a11y roles and don't duplicate. */
+.prose .md-figure {
+  margin: 1.5rem auto;
+  padding: 0;
+  text-align: center;
+}
+.prose .md-figure img {
+  display: block;
+  margin: 0 auto;
+}
+.prose .md-figcaption {
+  margin: 0.6rem 0 0;
+  color: var(--color-muted);
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+/* Blockquote — left rule plus a soft card surface so the band reads as a
+   distinct quotation block, matching GitHub-flavored rendering. The
+   `:first-child` / `:last-child` resets keep the inner paragraphs from
+   stacking double-margins against the band's own padding. */
+.prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding: 0.55rem 1rem;
+  margin: 1rem 0;
+  color: var(--color-muted);
+  background: var(--color-card);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.prose blockquote > :first-child { margin-top: 0; }
+.prose blockquote > :last-child { margin-bottom: 0; }
+
+/* Twitter / X embeds rendered by the remark-twitter-embed plugin.
+   widgets.js injects inline styles on <twitter-widget>, so we need
+   !important on the centering margin to win specificity. */
+.tweet-embed {
+  width: 100%;
+  margin: 1.25rem 0;
+  text-align: center;
+}
+.tweet-embed .twitter-tweet,
+.tweet-embed twitter-widget,
+.tweet-embed iframe {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  border-left: none;
+  padding-left: 0;
+}
+
+/* GitHub repo cards produced by `src/plugins/remark-github-card.mjs`.
+   A standalone `https://github.com/<owner>/<repo>` URL is upgraded to a
+   small clickable card showing description / star count / primary
+   language. The whole card is one <a> so the entire surface is the click
+   target — owner/repo spans inside are styled like links but inherit the
+   anchor (no nested anchors, which would be invalid HTML). */
+.gh-card {
+  display: block;
+  max-width: 36rem;
+  margin: 1.25rem auto;
+  padding: 0.9rem 1.05rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-card);
+  color: var(--color-fg);
+  text-decoration: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.gh-card:hover {
+  border-color: var(--color-accent);
+  text-decoration: none;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+}
+.gh-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+.gh-card-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-fg);
+}
+.gh-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.gh-card-owner,
+.gh-card-repo {
+  color: var(--color-accent);
+}
+.gh-card:hover .gh-card-owner,
+.gh-card:hover .gh-card-repo {
+  text-decoration: underline;
+}
+.gh-card-sep {
+  color: var(--color-muted);
+  font-weight: 400;
+}
+.gh-card-desc {
+  margin: 0.5rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.gh-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.6rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+.gh-card-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.gh-card-stat svg {
+  display: block;
+}
+
+/* Twitter-style link preview cards produced by
+   `src/plugins/remark-link-card.mjs`. A standalone external URL is
+   upgraded into a horizontal card showing title / description /
+   site-name on the left and an OG thumbnail on the right. When the
+   target page has no og:image, the card collapses to a text-only
+   variant via `.link-card--no-image`. */
+.link-card {
+  display: flex;
+  align-items: stretch;
+  max-width: 36rem;
+  margin: 1.25rem auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-card);
+  color: var(--color-fg);
+  text-decoration: none;
+  overflow: hidden;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.link-card:hover {
+  border-color: var(--color-accent);
+  text-decoration: none;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+}
+.link-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+}
+.link-card-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--color-fg);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.link-card-desc {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.link-card-site {
+  margin: auto 0 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.link-card-favicon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+.link-card-thumb {
+  flex: 0 0 auto;
+  width: 9rem;
+  background: var(--color-border);
+  overflow: hidden;
+}
+.link-card-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.link-card--no-image .link-card-body {
+  /* Without a thumbnail the body owns the whole card width; nudge the
+     padding up slightly so the card doesn't look bottom-heavy. */
+  padding: 0.95rem 1.05rem;
+}
+@media (max-width: 540px) {
+  .link-card-thumb {
+    width: 6.5rem;
+  }
+  .link-card-title {
+    font-size: 0.95rem;
+  }
+  .link-card-desc {
+    -webkit-line-clamp: 1;
+  }
+}
+
+/* Heading anchor links injected by rehype-autolink-headings. The `#` glyph
+   sits in the left gutter and only fades in on heading hover/focus, so it
+   doesn't visually compete with the prose layout. Clicking copies the
+   heading URL (with hash) to the clipboard — wired up in PostDetailPage. */
+.prose :is(h2, h3, h4) {
+  position: relative;
+}
+.prose .heading-anchor {
+  position: absolute;
+  /* Small negative left offset so the `#` sits just outside the text column.
+     On narrow viewports it falls back into the column to stay reachable. */
+  left: -1.25rem;
+  top: 0;
+  width: 1.25rem;
+  text-align: center;
+  color: var(--color-muted);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 160ms ease, color 160ms ease;
+  cursor: pointer;
+}
+.prose :is(h2, h3, h4):hover .heading-anchor,
+.prose :is(h2, h3, h4):focus-within .heading-anchor,
+.prose .heading-anchor:focus-visible {
+  opacity: 1;
+}
+.prose .heading-anchor:hover {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.prose .heading-anchor.is-copied {
+  color: var(--color-accent-hover);
+}
+@media (max-width: 720px) {
+  /* On narrow viewports there is no left gutter to host the `#`, and
+     touch screens have no hover state to gate it on. Hiding it entirely
+     beats the previous inline rendering, which read as a stray glyph at
+     the start of every heading. URL-copy on mobile is a rare workflow;
+     users can long-press the page URL instead. */
+  .prose .heading-anchor {
+    display: none;
+  }
+}
+
+/* Code block language label. Astro / Shiki emits `<pre data-language="ts">`
+   on every fenced code block. Authors can additionally write
+   `​```ts title="src/foo.ts"` to surface a filename — the Shiki transformer
+   in `astro.config.mjs` extracts that into `data-filename`. We project the
+   combination as a small pill in the upper-right corner. The `pre` is set
+   to `position: relative` only inside `.prose` so non-content code (e.g.
+   inside the Search dialog) is unaffected. */
+.prose pre {
+  position: relative;
+}
+.prose pre:is([data-language], [data-filename])::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0.4rem;
+  /* Sit to the LEFT of the copy button (which lives at `right: 0.4rem`).
+     Padding accounts for the copy button's ~3.5rem width plus a gap. */
+  right: 4rem;
+  padding: 0.05rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--color-muted);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  pointer-events: none;
+  max-width: calc(100% - 5rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prose pre[data-filename]::before {
+  content: attr(data-filename);
+  /* Filenames are case-sensitive and may include uppercase characters
+     (e.g. `README.md`). Drop the lowercase forcing for filename mode. */
+  text-transform: none;
+}
+.prose pre[data-filename][data-language]::before {
+  content: attr(data-filename) " · " attr(data-language);
+}
+.prose pre.mermaid::before {
+  content: none;
+}
+
+/* Count badge — used by Archive / Series / Tag pages to display the number
+   of items inline with the heading. Sized down so it reads as metadata
+   alongside the title rather than competing with it. */
+.count-badge {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.55rem;
+  font-size: 0.65em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  background: var(--color-card);
+}
+
+/* GitHub-style callouts produced by `src/plugins/remark-callouts.mjs`.
+   The plugin promotes `> [!NOTE]` blockquotes to `<aside class="callout
+   callout-note">` etc. Color tokens use the muted scale rather than
+   theme-saturated hues so callouts read as gentle annotations, not alarms. */
+.prose .callout {
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--color-card);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+.prose .callout > :first-child { margin-top: 0; }
+.prose .callout > :last-child { margin-bottom: 0; }
+.prose .callout-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+  color: var(--color-fg);
+}
+.prose .callout-note { border-left-color: var(--color-accent); }
+.prose .callout-note .callout-header { color: var(--color-accent); }
+.prose .callout-tip { border-left-color: #2f9e6d; }
+.prose .callout-tip .callout-header { color: #2f9e6d; }
+.prose .callout-important { border-left-color: #8a4baf; }
+.prose .callout-important .callout-header { color: #8a4baf; }
+.prose .callout-warning { border-left-color: #d6932a; }
+.prose .callout-warning .callout-header { color: #d6932a; }
+.prose .callout-caution { border-left-color: #c14545; }
+.prose .callout-caution .callout-header { color: #c14545; }
+
+/* --- GitHub-flavored Markdown surface ------------------------------------
+   Astro's default `gfm: true` already parses tables, task lists, autolinks,
+   and strikethrough via remark-gfm, but the resulting HTML carried no
+   styling. The block below mirrors github.com's prose look: ruled tables
+   with a header band and zebra rows, GFM task-list checkboxes, kbd pills,
+   collapsible <details> cards, mark/del/ins inline marks, and a subtler
+   inline `code` chip than the global `code { ... }` default. Only takes
+   effect under `.prose` so non-content code in the Search dialog stays
+   untouched.
+   --------------------------------------------------------------------- */
+
+/* Tables — `display: block` + `overflow-x: auto` lets a wide table scroll
+   horizontally on narrow viewports rather than overflowing the column. */
+.prose table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 0.95rem;
+  overflow-x: auto;
+}
+.prose table th,
+.prose table td {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+.prose table thead {
+  background: var(--color-card);
+}
+.prose table th {
+  font-weight: 600;
+}
+/* Zebra rows on the body only — header band keeps its own bg above. */
+.prose table tbody tr:nth-child(2n) {
+  background: var(--color-card);
+}
+
+/* Horizontal rule — thin, slightly muted band; GitHub uses the border
+   token as a single-pixel divider rather than a full <hr> shadow. */
+.prose hr {
+  height: 1px;
+  border: 0;
+  background: var(--color-border);
+  margin: 1.75rem 0;
+}
+
+/* Lists — match GFM tight intra-list spacing (0.25rem between siblings)
+   while keeping prose-default block margins around the whole list. */
+.prose ul,
+.prose ol {
+  padding-left: 1.6rem;
+  margin: 0.85rem 0;
+}
+.prose li + li {
+  margin-top: 0.25rem;
+}
+.prose li > p {
+  margin: 0.4rem 0;
+}
+
+/* Task lists — remark-gfm emits `<ul class="contains-task-list">` with
+   `<li class="task-list-item">` children. Strip the bullet on the parent
+   and align the checkbox in the gutter instead. */
+.prose ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.5rem;
+}
+.prose .task-list-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.prose .task-list-item > input[type="checkbox"] {
+  margin: 0;
+  flex: none;
+  transform: translateY(0.1rem);
+}
+
+/* Inline code — softer pill than the page-global `code { background:
+   var(--color-border) }` so it reads as a code chip rather than a
+   highlight. `:not(pre) > code` excludes shiki-rendered blocks. */
+.prose :not(pre) > code {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.08em 0.35em;
+  font-size: 0.88em;
+}
+
+/* Strikethrough (GFM `~~foo~~` -> `<del>`) and inserted text via raw HTML. */
+.prose del {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+.prose ins {
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+}
+
+/* <mark> — GitHub paints highlights with a warm yellow on light theme and
+   an amber on dark theme so the band stays visible against either bg. */
+.prose mark {
+  background: rgba(255, 224, 102, 0.55);
+  color: inherit;
+  padding: 0 0.2em;
+  border-radius: 2px;
+}
+[data-theme="dark"] .prose mark {
+  background: rgba(187, 128, 9, 0.45);
+}
+
+/* <kbd> — small pill with a 2px bottom border for a subtle key bevel. */
+.prose kbd {
+  display: inline-block;
+  padding: 0.05em 0.45em;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: var(--color-fg);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  vertical-align: 0.05em;
+}
+
+/* Collapsible <details> blocks (raw HTML in markdown is allowed). The
+   default summary triangle is replaced with a CSS chevron so it animates
+   when the block opens. */
+.prose details {
+  margin: 1rem 0;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-card);
+}
+.prose details[open] {
+  padding-bottom: 0.85rem;
+}
+.prose summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+.prose summary::-webkit-details-marker {
+  display: none;
+}
+.prose summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 0.45rem;
+  color: var(--color-muted);
+  transition: transform 160ms ease;
+}
+.prose details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+/* Base chip styles (filter pills used by Posts/Works/Photos list pages).
+   Lives in global CSS because:
+   1. The runtime-injected ".chip.chip-toggle" element (see chip-collapse.ts)
+      is created via document.createElement and therefore never carries the
+      component's data-astro-cid attribute — scoped selectors miss it.
+   2. Putting base styles here keeps a single source of truth across the
+      three list pages instead of duplicating identical declarations. */
+.chip {
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-card);
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+.chip:hover,
+.chip:focus-visible {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.chip.is-active {
+  color: var(--color-bg);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+/* Dashed border distinguishes the runtime-created "+N / less" toggle from
+   real tag chips at a glance. `background: transparent` overrides the base
+   card surface so the toggle reads as secondary action. */
+.chip.chip-toggle {
+  border-style: dashed;
+  background: transparent;
+  line-height: inherit;
+}
+/* Expand-only animation for chip-collapse "+N / less" groups.
+   Asymmetric by design: opening fades + scales chips in with a stagger,
+   closing snaps them out instantly so the "+N" toggle warps to its
+   collapsed position rather than sliding along with the staggered
+   layout collapse.
+   - CSS animation (not transition) is used so only the entering
+     direction (chip-hidden removed) plays; the leaving direction has
+     no animation hook and thus no transition.
+   - Selector gates on inline `--reveal-i` so only the hidden-tail chips
+     animate; the always-visible head and the runtime-injected toggle
+     button (no `--reveal-i` set) are excluded.
+   - `data-collapse-wired="1"` gating prevents the animation from firing
+     during the initial JS-driven hide. */
+[data-collapsible][data-collapse-wired="1"] .chip[style*="--reveal-i"]:not(.chip-hidden) {
+  animation: chip-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1)
+    calc(var(--reveal-i, 0) * 35ms) both;
+}
+@keyframes chip-reveal {
+  from { opacity: 0; transform: scale(0.92) translateY(-2px); }
+  to   { opacity: 1; transform: none; }
+}
+.chip-hidden { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  [data-collapsible][data-collapse-wired="1"] .chip[style*="--reveal-i"]:not(.chip-hidden) {
+    animation: none;
+  }
+}

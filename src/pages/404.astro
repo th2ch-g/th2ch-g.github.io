@@ -1,0 +1,39 @@
+---
+import Base from '@/layouts/Base.astro';
+import { t } from '@/i18n/ui';
+
+// GitHub Pages serves a single `/404.html` regardless of the requested
+// locale, so this page intentionally renders bilingual content stacked
+// rather than picking a side. Anchors point to `/` (ja) and `/en/`
+// respectively so the visitor can land in either home.
+---
+<Base lang="ja" title="404 — Not Found">
+  <h1 class="big-404">404</h1>
+  <section>
+    <h2>{t('ja', '404.title')}</h2>
+    <p>{t('ja', '404.message')}</p>
+    <p><a href="/">{t('ja', '404.home')} →</a></p>
+  </section>
+  <hr />
+  <section>
+    <h2>{t('en', '404.title')}</h2>
+    <p>{t('en', '404.message')}</p>
+    <p><a href="/en/">{t('en', '404.home')} →</a></p>
+  </section>
+</Base>
+
+<style>
+  .big-404 {
+    font-size: clamp(4rem, 18vw, 8rem);
+    font-weight: 800;
+    margin: 0.5rem 0 0.25rem;
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    line-height: 1;
+  }
+  hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+  }
+</style>

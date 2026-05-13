@@ -1,0 +1,130 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import { t, type Lang } from '@/i18n/ui';
+import { localeSlug, formatDate, getProfileMeta } from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  lang: Lang;
+}
+const { post, lang } = Astro.props;
+const slug = localeSlug(post.id);
+const href = getRelativeLocaleUrl(lang, `/posts/${slug}`);
+// Profile icon controls the thumb fallback. If profile.yaml has no
+// `icon.url`, /icon.png never gets built — fall back to a CSS-only
+// placeholder instead of pointing at a guaranteed 404.
+const meta = await getProfileMeta(lang);
+// `heroImage` is `ImageMetadata | string | undefined` — strings are remote
+// URLs that bypass Astro's asset pipeline (rendered through a plain <img>
+// with no width/height; the CSS aspect-ratio on `.thumb` reserves the box
+// so CLS stays bounded). Inline `typeof === 'string'` in the JSX lets TS
+// narrow the union for each branch — a captured boolean const wouldn't.
+const heroImage = post.data.heroImage;
+---
+<article
+  class="card post-card"
+  data-tags={JSON.stringify(post.data.tags ?? [])}
+  data-pubdate={post.data.pubDate.toISOString()}
+>
+  <a href={href} class="post-link" aria-label={post.data.title}>
+    <div class="thumb">
+      {typeof heroImage === 'string' ? (
+        <img
+          src={heroImage}
+          alt={post.data.heroImageAlt ?? ''}
+          loading="lazy"
+        />
+      ) : heroImage ? (
+        <Image
+          src={heroImage}
+          alt={post.data.heroImageAlt ?? ''}
+          loading="lazy"
+        />
+      ) : meta.icon ? (
+        <img
+          src="/icon.png"
+          alt=""
+          loading="lazy"
+          width="512"
+          height="512"
+          class="thumb-fallback"
+        />
+      ) : (
+        <div class="thumb-fallback thumb-fallback-empty" aria-hidden="true" />
+      )}
+    </div>
+    <div class="body">
+      <h3 class="title">
+        {post.data.title}
+        {post.data.draft && <span class="draft-badge">{t(lang, 'posts.draft')}</span>}
+      </h3>
+      <p class="muted">{formatDate(post.data.pubDate, lang)}</p>
+      {post.data.description && <p>{post.data.description}</p>}
+      {post.data.tags && (
+        <div class="tags">
+          {post.data.tags.map((tag) => <span class="tag">#{tag}</span>)}
+        </div>
+      )}
+    </div>
+  </a>
+</article>
+
+<style>
+  /* Wrap-the-whole-card-in-<a> pattern (mirrors PhotoEntry). Replaces the
+     older stretched-link `::after` overlay, which sat on top of `.thumb`
+     and intercepted pointer events on the image — that broke the
+     image-zoom-on-hover UX, since the cursor never visually "landed" on
+     the image. With a single wrapping <a>, hover reaches `.thumb img`
+     directly. */
+  .post-link {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 1rem;
+    align-items: start;
+    color: inherit;
+    text-decoration: none;
+  }
+  .post-link:hover { color: inherit; text-decoration: none; }
+  .post-card .body { padding-top: 0.25rem; }
+  /* Mirrors PhotoEntry's `.img-wrap` pattern: a fixed-aspect-ratio frame
+     with overflow:hidden, so the inner image scale on hover is clipped to
+     the rounded corners (clean cinematic zoom rather than spilling out). */
+  .thumb {
+    display: block;
+    line-height: 0;
+    aspect-ratio: 1200 / 630;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--color-border);
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* The transition + hover scale rules live in `src/styles/global.css`
+     under `.post-card:hover :is(.thumb, .img-wrap) img`. They were moved
+     out of this scoped block on purpose — see the comment above that
+     selector for why (ClientRouter SPA-navigation hover-zoom regression). */
+  .title { margin: 0 0 0.25rem; font-size: 1.15rem; }
+  /* Draft badge — orange pill matching the PostDetailPage `.draft` color so
+     the same status reads consistently across list and detail views. */
+  .draft-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.5rem;
+    border: 1px solid var(--color-warn);
+    border-radius: 999px;
+    color: var(--color-warn);
+    font-size: 0.7rem;
+    font-weight: 600;
+    vertical-align: middle;
+    line-height: 1.4;
+  }
+  @media (max-width: 600px) {
+    .post-link { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,0 +1,57 @@
+name: Lighthouse CI
+
+# Run Lighthouse against the built static site for representative pages
+# and upload the report as a workflow artifact.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      # treosh/lighthouse-ci-action spins up a static server against
+      # `dist/` (via the `staticDistDir` config) so we don't manage
+      # one ourselves. Threshold-based assertions live in lighthouserc.json.
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18  # 12.6.2
+        with:
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          # Reports stay on the workflow run as artifacts only. Disabling
+          # the Treosh-hosted public storage so build paths / URLs are
+          # not exposed through an indexable third-party viewer.
+          temporaryPublicStorage: false

@@ -1,0 +1,47 @@
+---
+import Base from '@/layouts/Base.astro';
+import PostEntry from './PostEntry.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import { t, tEn, type Lang } from '@/i18n/ui';
+import type { CollectionEntry } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props {
+  lang: Lang;
+  name: string;
+  posts: CollectionEntry<'posts'>[];
+}
+const { lang, name, posts } = Astro.props;
+const heading = `${tEn('series.heading')}: ${name}`;
+---
+<Base lang={lang} title={heading}>
+  <Breadcrumbs
+    lang={lang}
+    items={[
+      { label: t(lang, 'nav.home'), href: getRelativeLocaleUrl(lang, '/') },
+      { label: t(lang, 'nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
+      { label: `${t(lang, 'series.heading')}: ${name}` },
+    ]}
+  />
+  <h1>
+    <span class="muted">{t(lang, 'series.heading')}:</span> {name}
+    {posts.length > 0 && <span class="count-badge">{posts.length}</span>}
+  </h1>
+  {posts.length === 0 ? (
+    <p class="muted">{t(lang, 'list.empty')}</p>
+  ) : (
+    <div class="post-list">
+      {posts.map((post) => <PostEntry post={post} lang={lang} />)}
+    </div>
+  )}
+</Base>
+
+<style>
+  h1 .muted {
+    font-weight: 400;
+    color: var(--color-muted);
+    font-size: 0.7em;
+    margin-right: 0.4rem;
+  }
+  .post-list { display: flex; flex-direction: column; }
+</style>

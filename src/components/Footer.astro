@@ -1,0 +1,69 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { t, type Lang } from '@/i18n/ui';
+import { getLegalByLang, getProfileMeta } from '@/lib/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const meta = await getProfileMeta(lang);
+const year = new Date().getFullYear();
+// repoUrl is only defined when profile.yaml supplies a `repo:` slug.
+// Without it the GH source / license link block is hidden entirely
+// rather than rendering broken `https://github.com/` links.
+const repoUrl = meta.repo ? `https://github.com/${meta.repo}` : undefined;
+// Legal docs auto-discovered from src/content/legal/<lang>/. Drop a new
+// markdown file there and it appears in the footer + sitemap with no
+// further code change. Labels come from each doc's frontmatter `title`,
+// so editing the markdown is sufficient to rename the link.
+const legalDocs = await getLegalByLang(lang);
+const sitemapUrl = getRelativeLocaleUrl(lang, '/sitemap');
+const sitemapLabel = t(lang, 'sitemap.title');
+---
+<footer class="site-footer">
+  <div class="inner">
+    <p class="muted">© {year} {meta.siteHandle}</p>
+    <p class="muted">
+      {legalDocs.map((d) => (
+        <>
+          <a href={getRelativeLocaleUrl(lang, `/${d.slug}`)}>{d.title}</a>
+          <span class="sep">·</span>
+        </>
+      ))}
+      <a href={sitemapUrl}>{sitemapLabel}</a>
+      {repoUrl && (
+        <>
+          <span class="sep">·</span>
+          <a href={`${repoUrl}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">Code license: MIT</a>
+          <span class="sep">·</span>
+          <a href={`${repoUrl}/blob/main/LICENSE-content`} target="_blank" rel="noopener noreferrer">Content license: CC BY 4.0 (excluding AI-generated images)</a>
+          <span class="sep">·</span>
+          <a href={repoUrl} target="_blank" rel="noopener noreferrer">Source</a>
+        </>
+      )}
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    margin-top: 4rem;
+    padding: 1.25rem;
+  }
+  .inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+  }
+  .sep {
+    margin: 0 0.4rem;
+    color: var(--color-muted);
+  }
+</style>

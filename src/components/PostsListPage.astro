@@ -1,0 +1,143 @@
+---
+import Base from '@/layouts/Base.astro';
+import PostEntry from './PostEntry.astro';
+import { t, tEn, type Lang } from '@/i18n/ui';
+import { collectTags, getPublishedByLang, sortByDateDesc } from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const posts = sortByDateDesc(
+  await getPublishedByLang('posts', lang, { includeDevDrafts: true }),
+  'pubDate',
+);
+
+const allTags = collectTags(posts);
+---
+<Base lang={lang} title={tEn('nav.posts')} image={lang === 'en' ? '/en/og/posts.png' : '/og/posts.png'}>
+  <div class="page-head">
+    <h1>{t(lang, 'nav.posts')}</h1>
+    <a class="archive-link muted" href={getRelativeLocaleUrl(lang, '/posts/archive')}>
+      {t(lang, 'archive.title')} →
+    </a>
+  </div>
+  {posts.length === 0 ? (
+    <p class="muted">{t(lang, 'list.empty')}</p>
+  ) : (
+    <>
+      <div class="filter-bar" data-posts-filter>
+        {allTags.length > 0 && (
+          <div
+            class="tag-chips"
+            role="group"
+            aria-label={t(lang, 'filter.label')}
+            data-collapsible
+            data-more-label={t(lang, 'filter.more')}
+            data-less-label={t(lang, 'filter.less')}
+          >
+            <button type="button" class="chip is-active" data-facet="tag" data-value="">
+              {t(lang, 'filter.all')}
+            </button>
+            {allTags.map((tag) => (
+              <button type="button" class="chip" data-facet="tag" data-value={tag}>
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          class="sort-toggle"
+          data-sort-toggle
+          data-label-newest={t(lang, 'sort.newest')}
+          data-label-oldest={t(lang, 'sort.oldest')}
+          aria-label={t(lang, 'sort.newest')}
+        >
+          <span class="sort-label">{t(lang, 'sort.newest')}</span>
+          <span class="sort-arrow" aria-hidden="true">↓</span>
+        </button>
+      </div>
+      <div class="post-list" data-post-list data-sort="desc">
+        {posts.map((post) => <PostEntry post={post} lang={lang} />)}
+      </div>
+      <p class="muted empty-msg" hidden data-empty-msg>{t(lang, 'list.empty.filter')}</p>
+    </>
+  )}
+</Base>
+
+<script>
+  import { setupListFilter } from '@/lib/list-filter';
+  import { onReady } from '@/lib/dom-ready';
+
+  onReady(() => {
+    const labels = document.querySelector<HTMLButtonElement>('[data-sort-toggle]');
+    setupListFilter({
+      rootSelector: '[data-posts-filter]',
+      listSelector: '[data-post-list]',
+      emptyMsgSelector: '[data-empty-msg]',
+      facets: [{ key: 'tag', match: 'json-array' }],
+      sort: {
+        defaultDir: 'desc',
+        labelDesc: labels?.dataset.labelNewest ?? 'Newest first',
+        labelAsc: labels?.dataset.labelOldest ?? 'Oldest first',
+      },
+      collapsible: true,
+    });
+  });
+</script>
+
+<style>
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin: 0.5rem 0 1.5rem;
+  }
+  .tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .sort-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+    color: var(--color-fg);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+  .sort-toggle:hover,
+  .sort-toggle:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .sort-arrow {
+    font-weight: 700;
+    line-height: 1;
+  }
+  .page-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .archive-link {
+    font-size: 0.9rem;
+    color: var(--color-muted);
+  }
+  .archive-link:hover { color: var(--color-accent); }
+  /* Sort flip via flex-direction — no JS DOM reordering needed.
+     The post list is server-rendered in `desc` (newest first) order. */
+  .post-list { display: flex; flex-direction: column; }
+  .post-list[data-sort="asc"] { flex-direction: column-reverse; }
+  .empty-msg { margin-top: 1rem; }
+</style>

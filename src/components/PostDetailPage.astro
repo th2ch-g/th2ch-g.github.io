@@ -1,0 +1,249 @@
+---
+import Base from '@/layouts/Base.astro';
+import { Image } from 'astro:assets';
+import { t, type Lang } from '@/i18n/ui';
+import { formatDate, getReadingMinutes, getWordCount } from '@/lib/content';
+import type { CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
+import ShareButtons from '@/components/ShareButtons.astro';
+import Toc from '@/components/Toc.astro';
+import Giscus from '@/components/Giscus.astro';
+import Webmentions from '@/components/Webmentions.astro';
+import RelatedPosts from '@/components/RelatedPosts.astro';
+import PostNav from '@/components/PostNav.astro';
+import SeriesNav from '@/components/SeriesNav.astro';
+import Backlinks from '@/components/Backlinks.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import { getRelatedPosts, getAdjacentPosts, getSeriesPosts } from '@/lib/content';
+import { getBacklinks } from '@/lib/backlinks';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { localeSlug } from '@/lib/content';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  lang: Lang;
+}
+const { post, lang } = Astro.props;
+const { Content, headings } = await render(post);
+const readingMinutes = getReadingMinutes(post.body ?? '', lang);
+const wordCount = getWordCount(post.body ?? '', lang);
+const related = await getRelatedPosts(post, lang, 3);
+const { prev, next } = await getAdjacentPosts(post, lang);
+const seriesPosts = post.data.series ? await getSeriesPosts(post.data.series, lang) : [];
+const backlinks = await getBacklinks(post, lang);
+// Always use the build-time-generated OG card. When the post has a
+// heroImage the OG endpoint paints it as the card background and overlays
+// the title/description; without a hero it falls back to the gradient
+// design. Either way the SNS link preview keeps a consistent 1200x630
+// frame, accent border, and avatar — just with the hero artwork mixed in
+// when available. See `src/pages/og/[...slug].ts`.
+const slug = localeSlug(post.id);
+const ogImageUrl = lang === 'en' ? `/en/og/${slug}.png` : `/og/${slug}.png`;
+// Twitter widgets.js is ~50KB and ships a privacy-relevant cookie. Inject it
+// only when the post body actually contains an X / Twitter status URL that
+// `remark-twitter-embed` would promote into a `<blockquote class="twitter-tweet">`.
+// Pattern mirrors src/plugins/remark-twitter-embed.mjs so both files agree on
+// the set of URLs that need the embed library.
+const TWEET_URL_PATTERN = /^https?:\/\/(?:twitter\.com|x\.com|mobile\.twitter\.com)\/[A-Za-z0-9_]{1,15}\/status\/\d+(?:\?[^\s]*)?\/?$/m;
+const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
+// `heroImage` accepts a co-located asset or a remote URL. Remote URLs skip
+// the `<Image>` pipeline because Astro's asset system only optimises files
+// on disk; the CSS `.hero { aspect-ratio: 1200 / 630 }` rule keeps the
+// layout box stable regardless of the source's intrinsic dimensions.
+// `typeof === 'string'` is inlined at the JSX branch so TS narrows the
+// union — extracting it into a boolean const would lose the type guard.
+const heroImage = post.data.heroImage;
+---
+<Base
+  lang={lang}
+  title={post.data.title}
+  description={post.data.description}
+  image={ogImageUrl}
+  article={{
+    title: post.data.title,
+    description: post.data.description,
+    pubDate: post.data.pubDate,
+    updatedDate: post.data.updatedDate,
+    tags: post.data.tags,
+    wordCount,
+  }}
+  breadcrumbs={[
+    { name: t(lang, 'nav.home'), url: getRelativeLocaleUrl(lang, '/') },
+    { name: t(lang, 'nav.posts'), url: getRelativeLocaleUrl(lang, '/posts') },
+    { name: post.data.title },
+  ]}
+>
+  <Breadcrumbs
+    lang={lang}
+    items={[
+      { label: t(lang, 'nav.home'), href: getRelativeLocaleUrl(lang, '/') },
+      { label: t(lang, 'nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
+      { label: post.data.title },
+    ]}
+  />
+  <article>
+    {/* Pagefind index hints. `data-pagefind-filter="tag:foo"` adds the post
+        to the "tag" filter group with value "foo"; multiple tags need
+        separate elements. The `style="display:none"` keeps them out of the
+        rendered article without removing them from the indexed HTML — Pagefind
+        scrapes the static markup, not the live DOM.
+        `year` lets readers narrow by publication year; Pagefind already
+        splits the index per `<html lang>` so an explicit `lang` filter
+        would just duplicate that boundary. */}
+    {post.data.tags?.map((tag) => (
+      <span data-pagefind-filter={`tag:${tag}`} style="display:none"></span>
+    ))}
+    <span data-pagefind-filter={`year:${post.data.pubDate.getFullYear()}`} style="display:none"></span>
+    {post.data.draft && <p class="draft">[{t(lang, 'posts.draft')}]</p>}
+    {typeof heroImage === 'string' ? (
+      <img
+        src={heroImage}
+        alt={post.data.heroImageAlt ?? ''}
+        class="hero"
+        loading="eager"
+      />
+    ) : heroImage ? (
+      <Image
+        src={heroImage}
+        alt={post.data.heroImageAlt ?? ''}
+        class="hero"
+        loading="eager"
+      />
+    ) : null}
+    <h1>{post.data.title}</h1>
+    {post.data.description && (
+      <p class="lede">{post.data.description}</p>
+    )}
+    <p class="muted">
+      {t(lang, 'posts.published')}: {formatDate(post.data.pubDate, lang)}
+      {post.data.updatedDate && (
+        <> · {t(lang, 'posts.updated')}: {formatDate(post.data.updatedDate, lang)}</>
+      )}
+      <> · {readingMinutes} {t(lang, 'posts.readingTime')}</>
+    </p>
+    {post.data.tags && (
+      <div class="tags">
+        {post.data.tags.map((tag) => (
+          <a class="tag tag-link" href={getRelativeLocaleUrl(lang, `/tags/${tag}`)}>#{tag}</a>
+        ))}
+      </div>
+    )}
+    <Toc headings={headings} lang={lang} />
+    {post.data.series && seriesPosts.length > 1 && (
+      <SeriesNav
+        series={post.data.series}
+        posts={seriesPosts}
+        currentId={post.id}
+        lang={lang}
+      />
+    )}
+    <div class="prose"><Content /></div>
+    <Backlinks lang={lang} citers={backlinks} />
+    <RelatedPosts posts={related} lang={lang} />
+    <Webmentions lang={lang} />
+    <Giscus lang={lang} />
+    <ShareButtons lang={lang} title={post.data.title} />
+    <PostNav prev={prev} next={next} lang={lang} />
+    <hr />
+    <p class="muted license">
+      {t(lang, 'posts.license.text')}
+      <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
+    </p>
+  </article>
+  {hasTweet && (
+    <script
+      is:inline
+      async
+      src="https://platform.twitter.com/widgets.js"
+      charset="utf-8"
+    ></script>
+  )}
+
+  <script>
+    import { wireHeadingAnchorCopy } from '@/lib/heading-anchor';
+    wireHeadingAnchorCopy();
+  </script>
+
+  <script>
+    // Lazy-load Mermaid only on posts that actually contain a diagram.
+    // The dynamic import is split into its own chunk by Vite, so posts
+    // without `pre.mermaid` never pay the ~600KB JS cost.
+    //
+    // No `data-astro-rerun`: ClientRouter is intentionally not used on
+    // this site (see CLAUDE.md "Critical gotcha #1"), and any attribute
+    // here would make Astro treat the script as `is:inline` — which
+    // would then emit the `await import('mermaid')` line verbatim
+    // (bare specifier, unresolvable by the browser) and break every
+    // post that contains a Mermaid block. Keep the script attribute-
+    // free so Vite processes it and bundles Mermaid into its own chunk.
+    //
+    // The diagrams must re-render whenever the theme changes, otherwise
+    // a dark-theme post would show light-theme SVGs and vice versa. We
+    // capture each block's original source on first load (mermaid.run
+    // replaces <pre.mermaid> with rendered SVG) and replay it on theme flips.
+    if (document.querySelector('pre.mermaid')) {
+      const sources = new Map<string, string>();
+      document.querySelectorAll<HTMLElement>('pre.mermaid').forEach((el, i) => {
+        const id = `mermaid-${Date.now()}-${i}`;
+        el.dataset.mermaidId = id;
+        sources.set(id, el.textContent ?? '');
+      });
+
+      const themeFor = () =>
+        document.documentElement.dataset.theme === 'dark' ? 'dark' : 'default';
+      const { default: mermaid } = await import('mermaid');
+
+      async function renderAll() {
+        mermaid.initialize({ startOnLoad: false, theme: themeFor() });
+        // Reset every tracked diagram back to its original mermaid source so
+        // mermaid.run can re-render. `replaceChildren()` clears the element
+        // safely without using innerHTML, then we reattach the source as a
+        // text node — never as parsed HTML, so the source is treated as
+        // literal text only. The "data-processed" attribute is what mermaid
+        // uses to skip already-rendered diagrams.
+        document.querySelectorAll<HTMLElement>('[data-mermaid-id]').forEach((el) => {
+          const id = el.dataset.mermaidId;
+          const src = id ? sources.get(id) : null;
+          if (!src) return;
+          el.removeAttribute('data-processed');
+          el.replaceChildren(document.createTextNode(src));
+          el.classList.add('mermaid');
+        });
+        await mermaid.run({ querySelector: '[data-mermaid-id]' });
+      }
+
+      await renderAll();
+
+      // Observe theme flips on <html data-theme="..."> and re-render.
+      const observer = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.type === 'attributes' && m.attributeName === 'data-theme') {
+            renderAll();
+            return;
+          }
+        }
+      });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    }
+  </script>
+</Base>
+
+<style>
+  .draft { color: var(--color-warn); font-weight: 600; }
+  .license { font-size: 0.85rem; }
+  .hero {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1200 / 630;
+    object-fit: cover;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+  }
+  .lede {
+    border-left: 3px solid var(--color-border);
+    padding: 0.25rem 0 0.25rem 0.85rem;
+    font-size: 1.05rem;
+    color: var(--color-fg);
+    margin: 0.5rem 0 1rem;
+  }
+</style>

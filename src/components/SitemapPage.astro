@@ -1,0 +1,224 @@
+---
+import Base from '@/layouts/Base.astro';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import {
+  collectTags,
+  formatDate,
+  getLegalByLang,
+  getPublishedByLang,
+  localeSlug,
+  sortByDateDesc,
+} from '@/lib/content';
+import { readProfileShallow } from '@/lib/profile-yaml.mjs';
+import { t, type Lang } from '@/i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const posts = sortByDateDesc(await getPublishedByLang('posts', lang), 'pubDate');
+const tags = collectTags(posts);
+// Legal docs are appended to the static-page list dynamically so a new
+// src/content/legal/<lang>/<slug>.md file shows up here without any
+// code edit. Order: fixed nav pages first, then alphabetised legal docs.
+const legalDocs = await getLegalByLang(lang);
+
+const pages = [
+  { href: getRelativeLocaleUrl(lang, '/'), label: t(lang, 'nav.home') },
+  { href: getRelativeLocaleUrl(lang, '/cv'), label: t(lang, 'nav.cv') },
+  { href: getRelativeLocaleUrl(lang, '/photos'), label: t(lang, 'nav.photos') },
+  { href: getRelativeLocaleUrl(lang, '/posts'), label: t(lang, 'nav.posts') },
+  { href: getRelativeLocaleUrl(lang, '/posts/archive'), label: t(lang, 'nav.archive') },
+  ...legalDocs.map((d) => ({
+    href: getRelativeLocaleUrl(lang, `/${d.slug}`),
+    label: d.title,
+  })),
+];
+
+const title = t(lang, 'sitemap.title');
+const description = t(lang, 'sitemap.description');
+const xmlNote = t(lang, 'sitemap.xmlNote');
+// Read `site:` directly from profile.yaml — the same source `build-qr.mjs`
+// consumes. This keeps the displayed URL / alt text and the PNG existence
+// in lock-step: if `site:` is null, the PNG is never generated AND the
+// section here is suppressed, so we never render a broken <img>.
+const site = (await readProfileShallow()).site?.trim() ?? '';
+---
+<Base lang={lang} title={title} description={description}>
+  <h1>{title}</h1>
+  <p class="muted lead">{description}</p>
+
+  <section>
+    <h2>{t(lang, 'sitemap.pages')}</h2>
+    <ul class="list">
+      {pages.map((p) => (
+        <li><a href={p.href}>{p.label}</a></li>
+      ))}
+    </ul>
+  </section>
+
+  {posts.length > 0 && (
+    <section>
+      <h2>
+        {t(lang, 'sitemap.posts')} <span class="count">({posts.length})</span>
+      </h2>
+      <ul class="list">
+        {posts.map((post) => {
+          const slug = localeSlug(post.id);
+          const href = getRelativeLocaleUrl(lang, `/posts/${slug}/`);
+          return (
+            <li>
+              <a href={href}>{post.data.title}</a>
+              <time class="date" datetime={post.data.pubDate.toISOString()}>
+                {formatDate(post.data.pubDate, lang)}
+              </time>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  )}
+
+  {tags.length > 0 && (
+    <section>
+      <h2>
+        {t(lang, 'sitemap.tags')} <span class="count">({tags.length})</span>
+      </h2>
+      <ul class="tag-list">
+        {tags.map((tag) => (
+          <li>
+            <a href={getRelativeLocaleUrl(lang, `/tags/${tag}/`)}>{tag}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {site && (
+    <section>
+      <h2>{t(lang, 'sitemap.qr')}</h2>
+      <p class="muted qr-note">{t(lang, 'sitemap.qrNote')}</p>
+      <figure class="qr-figure">
+        <img
+          src="/qr.png"
+          alt={site}
+          width="240"
+          height="240"
+          loading="lazy"
+          decoding="async"
+        />
+        <figcaption>
+          <a href={site} target="_blank" rel="noopener noreferrer">{site}</a>
+        </figcaption>
+      </figure>
+    </section>
+  )}
+
+  <p class="muted xml-note">
+    {xmlNote}{' '}
+    <a href="/sitemap-index.xml" target="_blank" rel="noopener noreferrer">/sitemap-index.xml</a>
+  </p>
+</Base>
+
+<style>
+  .lead {
+    margin: 0 0 2rem;
+  }
+  section {
+    margin-top: 2.5rem;
+  }
+  h2 {
+    font-size: 1.1rem;
+    margin: 0 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .count {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    font-weight: 400;
+    font-family: var(--font-mono);
+  }
+  ul.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  ul.list li {
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  ul.list li:last-child {
+    border-bottom: none;
+  }
+  ul.tag-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  ul.tag-list li {
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+  }
+  ul.tag-list a {
+    color: var(--color-fg);
+  }
+  ul.tag-list a:hover {
+    color: var(--color-accent);
+  }
+  .date {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--color-muted);
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .xml-note {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.85rem;
+  }
+  .xml-note a {
+    font-family: var(--font-mono);
+  }
+  .qr-note {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+  }
+  /* White background + small padding gives the QR the "quiet zone" needed
+     for reliable camera scanning in both light and dark themes — without
+     it, dark-mode background can blend into the QR's outer margin and
+     reduce scan success rate. */
+  .qr-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .qr-figure img {
+    background: #fff;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    display: block;
+  }
+  .qr-figure figcaption a {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+</style>

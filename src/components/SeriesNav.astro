@@ -1,0 +1,84 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { t, type Lang } from '@/i18n/ui';
+import { localeSlug } from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props {
+  series: string;
+  posts: CollectionEntry<'posts'>[];
+  currentId: string;
+  lang: Lang;
+}
+const { series, posts, currentId, lang } = Astro.props;
+---
+{posts.length > 1 && (
+  <aside class="series-nav" aria-label={t(lang, 'posts.series')}>
+    <p class="series-label">
+      <span class="muted">{t(lang, 'posts.series')}:</span>
+      <a
+        class="series-name"
+        href={getRelativeLocaleUrl(lang, `/posts/series/${encodeURIComponent(series)}`)}
+      >{series}</a>
+    </p>
+    <ol class="series-list">
+      {posts.map((post, idx) => {
+        const slug = localeSlug(post.id);
+        const href = getRelativeLocaleUrl(lang, `/posts/${slug}`);
+        const isCurrent = post.id === currentId;
+        return (
+          <li class:list={['series-item', { 'is-current': isCurrent }]}>
+            <span class="series-index">{idx + 1}.</span>
+            {isCurrent ? (
+              <span class="series-current" aria-current="page">{post.data.title}</span>
+            ) : (
+              <a href={href}>{post.data.title}</a>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  </aside>
+)}
+
+<style>
+  .series-nav {
+    margin: 2rem 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+  }
+  .series-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+  }
+  .series-name {
+    font-weight: 700;
+    color: var(--color-fg);
+    margin-left: 0.4rem;
+    text-decoration: none;
+  }
+  .series-name:hover { color: var(--color-accent); text-decoration: underline; }
+  .series-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .series-item {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    line-height: 1.5;
+  }
+  .series-index {
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .series-item.is-current {
+    font-weight: 600;
+  }
+  .series-current {
+    color: var(--color-fg);
+  }
+</style>

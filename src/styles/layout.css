@@ -1,0 +1,247 @@
+
+/* Root font scales every rem-based size proportionally. 106.25% bumps
+   1rem from the browser default 16px to 17px while preserving the
+   user's accessibility setting (so a user with 20px default ends up at
+   ~21.25px rather than being overridden to 17px). */
+html {
+  font-size: 106.25%;
+  /* Reserve scrollbar gutter on every page so short pages (no overflow)
+     and tall pages (overflowing) share the same usable viewport width.
+     Without this the sticky header's center line and right edge shift
+     ~15px between full-reload navigations. */
+  scrollbar-gutter: stable;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
+main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+/* `tabindex="-1"` on <main> + this rule lets the skip link's anchor
+   programmatically receive focus without leaving a persistent outline. */
+main:focus { outline: none; }
+
+/* Skip-to-content link for keyboard / screen-reader users. Hidden off-
+   screen by default, slides into view when focused via Tab. `fixed` so
+   it sits above the sticky header instead of scrolling away with the
+   document, and a z-index higher than the header (50) but below modals
+   (1000). */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: var(--radius);
+  font-weight: 600;
+  transition: top 160ms ease;
+}
+.skip-link:hover,
+.skip-link:focus { color: #fff; text-decoration: none; }
+.skip-link:focus { top: 0.75rem; outline: 2px solid var(--color-accent-hover); outline-offset: 2px; }
+
+/* Strengthen :focus-visible globally so keyboard users get a clearly
+   visible focus ring even on elements without explicit focus styles. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+  margin: 1.5em 0 0.5em;
+}
+h1 {
+  font-size: 2rem;
+}
+h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.25rem;
+}
+h3 {
+  font-size: 1.2rem;
+}
+
+code {
+  font-family: var(--font-mono);
+  background: var(--color-border);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+pre {
+  padding: 1rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-size: 0.9rem;
+}
+pre code {
+  background: transparent;
+  padding: 0;
+}
+
+ul.bare {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  transition:
+    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 200ms ease,
+    box-shadow 260ms ease;
+}
+.card:hover {
+  transform: translateY(-6px) scale(1.015);
+  border-color: var(--color-accent);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+}
+/* Page-navigation animation, deliberately implemented WITHOUT browser-
+   native cross-document View Transitions. We previously opted in via
+   `@view-transition { navigation: auto }` but every Chromium-side
+   variation produced a brief white flash mid-swap (additive blending in
+   regions where old/new diverge, snapshot/compositor handoff exposing
+   the UA canvas). Instead we rely on the browser's existing paint-
+   holding behavior — the old page stays fully painted until the new
+   page is ready — and animate ONLY the new page's <main> content as it
+   appears. html/body keep `var(--color-bg)` from first paint, so no
+   transparent gap can ever expose UA white. Works the same in every
+   browser (no VT support required). */
+@keyframes ftt-page-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: none;              opacity: 1; }
+}
+main {
+  animation: ftt-page-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  main { animation: none; }
+}
+
+/* IMPORTANT: keep these as a single `:is()` selector — do NOT rewrite as
+   `.card .thumb img, .card .img-wrap img`. The Vite CSS minifier groups
+   the comma-separated selectors and drops the leading `.card ` prefix
+   from the first one ("Restore card hover zoom" has been the recurring
+   fix; this is the third time we've hit it). `:is()` is a single selector
+   so the minifier can't apply that flattening optimization. Specificity
+   is preserved: `:is(.thumb, .img-wrap)` reports the highest of its args.
+   Equally important: keep ALL card hover-zoom rules in global.css rather
+   than scoped per-component CSS. With <ClientRouter />, scoped style
+   blocks can be skipped on SPA transitions if their hash already exists
+   in the new head — making hover-zoom appear "broken until reload".
+   Putting the rules here, behind a permanent <link rel="stylesheet">,
+   makes the behavior immune to SPA navigation. */
+.card :is(.thumb, .img-wrap) img {
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card:hover :is(.thumb, .img-wrap) img {
+  transform: scale(1.08);
+}
+/* PostEntry-specific override: bigger zoom because its thumb column is
+   narrow (160px), where a small percentage barely registers. Declared
+   AFTER `.card:hover ... img` so equal specificity ties are won by source
+   order. */
+.post-card:hover :is(.thumb, .img-wrap) img {
+  transform: scale(1.18);
+}
+/* Honor `prefers-reduced-motion` by killing the transition (animation
+   between states) but keeping the end-state transform — the hover zoom
+   itself still happens, just instantly. WCAG 2.3.3 governs motion, not
+   final geometry, so this is consistent with the spec while keeping the
+   "hover gives feedback" UX intact. */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card :is(.thumb, .img-wrap) img { transition: none; }
+}
+
+/* Photo grid hover-zoom. `.photo-thumb` is HomePage's recent-photos rail;
+   `.photo-btn` is the gallery masonry tile. Each uses a different scale
+   factor for visual hierarchy, so they get separate single-selector rules
+   rather than `:is()` consolidation (the comma-flattening hazard above
+   doesn't apply here — there's no shared leading prefix to drop). Per
+   CLAUDE.md, all hover-zoom CSS lives in this file so scoped-CSS
+   specificity / SPA gotchas never bite. */
+.photo-thumb:hover img { transform: scale(1.08); }
+.photo-btn:hover .photo { transform: scale(1.18); }
+@media (prefers-reduced-motion: reduce) {
+  .photo-thumb:hover img,
+  .photo-btn:hover .photo { transform: none; }
+}
+
+.muted {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.tag {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+}
+/* Clickable variant — used on detail pages where the tag links to
+   `/tags/<tag>/`. Override the global `a:hover` underline to keep the
+   pill look. */
+a.tag-link {
+  color: var(--color-muted);
+  transition: color 160ms ease, border-color 160ms ease;
+}
+a.tag-link:hover,
+a.tag-link:focus-visible {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  text-decoration: none;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  font-size: 0.95rem;
+}
+.meta-grid dt {
+  color: var(--color-muted);
+}
+.meta-grid dd {
+  margin: 0;
+}

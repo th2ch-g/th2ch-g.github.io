@@ -1,0 +1,452 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Base from '@/layouts/Base.astro';
+import PostEntry from './PostEntry.astro';
+import SocialIcon from './SocialIcon.astro';
+import { t, tEn, type Lang } from '@/i18n/ui';
+import {
+  getProfileMeta,
+  getPublishedByLang,
+  sortByDateDesc,
+} from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const meta = await getProfileMeta(lang);
+const recentPosts = sortByDateDesc(
+  await getPublishedByLang('posts', lang),
+  'pubDate',
+).slice(0, 3);
+
+// Gallery images are loose files (no .md = no date) and we want a fresh
+// rotation on each deploy rather than a static "latest 3". Shuffle the
+// whole set with Fisher–Yates at build time, then take 4 — re-rolls per
+// build because Math.random() runs at build time, stays decisive within
+// a single deploy.
+const photoModules = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/content/gallery/*.{jpg,jpeg,png,webp,avif,svg}',
+  { eager: true },
+);
+const photoEntries = Object.entries(photoModules);
+for (let i = photoEntries.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [photoEntries[i], photoEntries[j]] = [photoEntries[j], photoEntries[i]];
+}
+const recentPhotos = photoEntries.slice(0, 4).map(([, mod]) => mod.default);
+const galleryHref = getRelativeLocaleUrl(lang, '/photos');
+---
+<Base lang={lang} title={tEn('nav.home')} description={meta.headline}>
+  <section class="hero">
+    {meta.icon && (
+      <div class="avatar-wrap">
+        <img class="avatar" src="/icon.png" alt={meta.name} width="128" height="128" loading="eager" />
+        {meta.iconComment && (
+          <span class="link-tip" role="tooltip">{meta.iconComment}</span>
+        )}
+      </div>
+    )}
+    <h1>{meta.name}</h1>
+    {meta.headline && <p class="headline">{meta.headline}</p>}
+    {(meta.affiliation || meta.location) && (
+      <p class="muted">
+        {[meta.affiliation, meta.location].filter(Boolean).join(' · ')}
+      </p>
+    )}
+    {meta.links.length > 0 && (
+      <ul class="bare links">
+        {meta.links.map((link) => (
+          <li class="link-item">
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={link.label}
+              title={link.label}
+            >
+              <SocialIcon label={link.label} size={56} />
+            </a>
+            {link.comment && (
+              <span class="link-tip" role="tooltip">{link.comment}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+
+  {recentPosts.length > 0 && (
+    <section>
+      <h2>{t(lang, 'home.recent.posts')}</h2>
+      {recentPosts.map((post) => <PostEntry post={post} lang={lang} />)}
+      <p class="see-all">
+        <a href={getRelativeLocaleUrl(lang, '/posts')}>
+          {t(lang, 'home.see.all')}
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+      </p>
+    </section>
+  )}
+
+  {recentPhotos.length > 0 && (
+    <section>
+      <h2>{t(lang, 'home.recent.photos')}</h2>
+      <div class="photo-grid">
+        {recentPhotos.map((photo, i) => (
+          <button
+            type="button"
+            class="photo-thumb"
+            aria-label={`${t(lang, 'nav.photos')} ${i + 1}`}
+          >
+            <Image src={photo} alt="" loading="lazy" />
+          </button>
+        ))}
+      </div>
+      <p class="see-all">
+        <a href={galleryHref}>
+          {t(lang, 'home.see.all')}
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+      </p>
+    </section>
+  )}
+</Base>
+
+<script>
+  import { wirePhotoLightbox } from '@/lib/lightbox';
+  wirePhotoLightbox('.photo-thumb');
+</script>
+
+<style>
+  .hero { margin-bottom: 2rem; }
+  /* Avatar wrapper: `width: max-content` makes the wrapper hug the 128px
+     image so the tooltip's `left: 50%` centres on the avatar, not on the
+     full hero column. Stays a block so the H1 still sits underneath. */
+  .avatar-wrap {
+    position: relative;
+    display: block;
+    width: max-content;
+  }
+  .avatar {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+    background: var(--color-card);
+    display: block;
+    transition:
+      transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 200ms ease,
+      box-shadow 260ms ease;
+  }
+  .avatar:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    animation: avatar-wiggle 0.13s linear infinite;
+  }
+  /* High-frequency jitter: 6 stops in 130ms with paired rotate + translate
+     so the centre of mass shakes instead of just spinning in place. Scale
+     is baked into every stop because animation overrides static transform. */
+  @keyframes avatar-wiggle {
+    0%   { transform: scale(1.08) translate(0, 0)     rotate(0deg); }
+    20%  { transform: scale(1.08) translate(-2px, 1px) rotate(-8deg); }
+    40%  { transform: scale(1.08) translate(2px, -1px) rotate(8deg); }
+    60%  { transform: scale(1.08) translate(-2px, -1px) rotate(-7deg); }
+    80%  { transform: scale(1.08) translate(2px, 1px)  rotate(7deg); }
+    100% { transform: scale(1.08) translate(0, 0)     rotate(0deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .avatar { transition: none; }
+    .avatar:hover { transform: none; animation: none; }
+  }
+  .headline { font-size: 1.1rem; color: var(--color-muted); margin: 0.25rem 0 0.5rem; }
+  .links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
+  /* Anchor for the absolutely-positioned tooltip. The wiggle lives on the
+     inner <a>, so positioning the bubble here keeps it perfectly still
+     while the icon shakes. */
+  .link-item { position: relative; }
+  .link-tip {
+    position: absolute;
+    top: calc(100% + 0.55rem);
+    left: 50%;
+    transform: translate(-50%, -4px);
+    background: var(--color-card);
+    color: var(--color-fg);
+    border: 1px solid var(--color-border);
+    border-radius: 0.55rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    max-width: 14rem;
+    width: max-content;
+    text-align: center;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease, transform 160ms ease;
+    z-index: 5;
+  }
+  /* Speech-bubble arrow. Border arrow sits one pixel above the fill arrow
+     so the 1px card border is preserved along the bubble's top edge. */
+  .link-tip::before,
+  .link-tip::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+  }
+  .link-tip::before {
+    bottom: 100%;
+    border-bottom-color: var(--color-border);
+  }
+  .link-tip::after {
+    bottom: calc(100% - 1px);
+    border-bottom-color: var(--color-card);
+  }
+  /* Keyboard Tab still surfaces the bubble via :has(:focus-visible) — but
+     not on mouse click. :focus-within would also match the focus the browser
+     leaves on an <a target="_blank"> after click, leaving the bubble stuck
+     visible until the user hovered something else. :focus-visible matches
+     keyboard-only focus, so Tab users keep the bubble while click users don't
+     get the residue. */
+  .link-item:hover .link-tip,
+  .link-item:has(:focus-visible) .link-tip,
+  .avatar-wrap:hover .link-tip,
+  .avatar-wrap:has(:focus-visible) .link-tip {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .link-tip { transition: opacity 0ms; }
+  }
+
+  /* Avatar always sits flush to main's left padding, so the default
+     `left: 50%` centring pushes the bubble ~48 px past the avatar's
+     left edge — visibly clipping whenever main fills the viewport.
+     Anchor left at every width; re-aim the arrow at the avatar centre. */
+  .avatar-wrap > .link-tip {
+    left: 0;
+    transform: translate(0, -4px);
+  }
+  .avatar-wrap:hover > .link-tip,
+  .avatar-wrap:has(:focus-visible) > .link-tip {
+    transform: translate(0, 0);
+  }
+  .avatar-wrap > .link-tip::before,
+  .avatar-wrap > .link-tip::after {
+    left: 64px; /* half of 128 px avatar */
+  }
+
+  /* PC only: re-anchor the leftmost / rightmost SNS link tooltips to
+     the icon edges so a 14 rem bubble centred on an 80 px icon can't
+     overhang main's left / right padding. Gated to min-width:721px
+     because mobile flex-wraps the icon row, after which :first-child
+     / :last-child no longer match the row-visual extremes. */
+  @media (min-width: 721px) {
+    .links .link-item:first-child > .link-tip {
+      left: 0;
+      transform: translate(0, -4px);
+    }
+    .links .link-item:first-child:hover > .link-tip,
+    .links .link-item:first-child:has(:focus-visible) > .link-tip {
+      transform: translate(0, 0);
+    }
+    .links .link-item:first-child > .link-tip::before,
+    .links .link-item:first-child > .link-tip::after {
+      left: 2.5rem; /* half of 5 rem icon */
+    }
+    .links .link-item:last-child > .link-tip {
+      left: auto;
+      right: 0;
+      transform: translate(0, -4px);
+    }
+    .links .link-item:last-child:hover > .link-tip,
+    .links .link-item:last-child:has(:focus-visible) > .link-tip {
+      transform: translate(0, 0);
+    }
+    .links .link-item:last-child > .link-tip::before,
+    .links .link-item:last-child > .link-tip::after {
+      left: auto;
+      right: 2.5rem; /* half of 5 rem icon */
+      transform: translateX(50%);
+    }
+  }
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    /* Always fill the pill so dark brand icons (e.g. GitHub `#181717`)
+       contrast against a known surface rather than the page background. */
+    background: var(--color-card);
+    transition:
+      transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 160ms ease,
+      box-shadow 200ms ease;
+  }
+  .links a:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+    animation: link-wiggle 0.11s linear infinite;
+  }
+  @keyframes link-wiggle {
+    0%   { transform: translate(0, -3px)    scale(1.06) rotate(0deg); }
+    20%  { transform: translate(-2px, -4px) scale(1.06) rotate(-10deg); }
+    40%  { transform: translate(2px, -2px)  scale(1.06) rotate(10deg); }
+    60%  { transform: translate(-2px, -4px) scale(1.06) rotate(-9deg); }
+    80%  { transform: translate(2px, -2px)  scale(1.06) rotate(9deg); }
+    100% { transform: translate(0, -3px)    scale(1.06) rotate(0deg); }
+  }
+  .links a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  /* `:global(svg)` escapes Astro CSS scoping. The svg lives inside the
+     SocialIcon child component, so it carries the child's scope hash, not
+     HomePage's — without :global the descendant selector silently fails. */
+  .links a :global(svg) {
+    display: block;
+    transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  /* Parent <a> already rotates via link-wiggle; keep svg to scale only so the
+     two transforms don't compound into a jittery double-rotation. */
+  .links a:hover :global(svg) { transform: scale(1.12); }
+  @media (prefers-reduced-motion: reduce) {
+    .links a,
+    .links a :global(svg) { transition: none; }
+    .links a:hover { animation: none; }
+    .links a:hover,
+    .links a:hover :global(svg) { transform: none; }
+  }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .photo-thumb {
+    /* `<button>` reset so it visually behaves like the previous `<a>`
+       wrapper. width:100% lets the grid track size drive the cell width;
+       padding/border/background reset clears the UA defaults. */
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: var(--color-border);
+    cursor: zoom-in;
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 14px;
+    transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 260ms ease;
+  }
+  .photo-thumb:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+  .photo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .photo-thumb:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+    text-decoration: none;
+  }
+  /* Inner-img zoom on hover lives in src/styles/global.css per project
+     contract (see CLAUDE.md "CSS gotchas"). The transition declaration
+     above stays scoped because it targets the element directly. */
+  @media (prefers-reduced-motion: reduce) {
+    .photo-thumb,
+    .photo-thumb img { transition: none; }
+  }
+
+  /* "See all" pill link at the bottom of each section. Pill-shaped to
+     echo the social-icon row in the hero; sliding arrow on hover gives
+     the affordance that this leads somewhere without yelling about it. */
+  .see-all {
+    margin-top: 0.85rem;
+    text-align: right;
+  }
+  .see-all a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-fg);
+    font-size: 0.9rem;
+    line-height: 1;
+    transition:
+      color 160ms ease,
+      border-color 160ms ease,
+      background 160ms ease,
+      box-shadow 200ms ease,
+      transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .see-all a:hover,
+  .see-all a:focus-visible {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: var(--color-card);
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+  }
+  .see-all a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  /* Split the arrow into its own span so only it slides on hover —
+     keeping the label still avoids the "whole pill jitters" feel. */
+  .see-all .arrow {
+    display: inline-block;
+    transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .see-all a:hover .arrow,
+  .see-all a:focus-visible .arrow {
+    transform: translateX(0.3rem);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .see-all a,
+    .see-all .arrow { transition: none; }
+    .see-all a:hover,
+    .see-all a:focus-visible,
+    .see-all a:hover .arrow,
+    .see-all a:focus-visible .arrow { transform: none; }
+  }
+
+  /* Mobile: the avatar's left-anchored bubble (set globally above) can
+     still exceed a narrow viewport when the comment string is long, so
+     cap its max-width to the visible viewport minus main's 1 rem side
+     padding. The SNS link row may flex-wrap on mobile, which would make
+     :first-child / :last-child aim the wrong way — so instead of edge-
+     anchoring, cap each bubble's max-width to a value that cannot
+     overhang even the leftmost icon. The leftmost icon's centre sits
+     at ~main-padding + 2.5rem icon-half ≈ 3.75 rem ≈ 64 px from the
+     viewport edge, so 7 rem (~119 px) of half-width must not be
+     reached; long comments wrap to multiple lines instead of clipping. */
+  @media (max-width: 720px) {
+    .avatar-wrap > .link-tip {
+      max-width: calc(100vw - 2rem);
+    }
+    .links .link-item > .link-tip {
+      max-width: 7rem;
+    }
+  }
+</style>

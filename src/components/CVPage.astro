@@ -1,0 +1,783 @@
+---
+import Base from '@/layouts/Base.astro';
+import { t, tEn, type Lang } from '@/i18n/ui';
+import { getCv } from '@/lib/content';
+import { allCitations } from '@/lib/citations';
+import { allBibtex } from '@/lib/bibtex';
+import { render } from 'astro:content';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const cv = await getCv(lang);
+if (!cv) {
+  throw new Error(`CV (${lang}) is missing. Add src/content/cv/${lang}.md`);
+}
+const { Content } = await render(cv);
+---
+<Base lang={lang} title={tEn('nav.cv')} image={lang === 'en' ? '/en/og/cv.png' : '/og/cv.png'}>
+  <div class="cv-header">
+    <h1>{t(lang, 'nav.cv')}</h1>
+    <div class="cv-header-actions">
+      <button
+        type="button"
+        class="cv-action cv-copy-all"
+        data-cv-copy-all
+        data-default-label={t(lang, 'cv.copy.all')}
+        data-copied-label={t(lang, 'code.copied')}
+        data-failed-label={t(lang, 'share.copy.failed')}
+      >{t(lang, 'cv.copy.all')}</button>
+      {/* The PDF is generated post-build by `scripts/build-cv-pdf.mjs`.
+          Opens in a new tab so the browser's built-in viewer can preview
+          it; users who want a local copy save from the viewer. Hidden in
+          the print stylesheet so the chip doesn't recurse into the PDF. */}
+      <a
+        class="cv-action cv-pdf"
+        href={lang === 'en' ? '/en/cv.pdf' : '/cv.pdf'}
+        target="_blank"
+        rel="noopener noreferrer"
+      >{t(lang, 'cv.open.pdf')}</a>
+      {/* `.bib` bundle copied to clipboard. The entry payload is already
+          embedded in `data-bibtex` on the prose container (see below),
+          so the click handler joins entries client-side — no HTTP fetch
+          and no forced download. */}
+      <button
+        type="button"
+        class="cv-action cv-bib"
+        data-cv-copy-bib
+        data-default-label={t(lang, 'cv.copy.bib')}
+        data-copied-label={t(lang, 'code.copied')}
+        data-failed-label={t(lang, 'share.copy.failed')}
+      >{t(lang, 'cv.copy.bib')}</button>
+    </div>
+  </div>
+  <div
+    class="prose cv-prose"
+    data-cv-lang={lang}
+    data-copy-label={t(lang, 'code.copy')}
+    data-copied-label={t(lang, 'code.copied')}
+    data-failed-label={t(lang, 'share.copy.failed')}
+    data-citations={JSON.stringify(allCitations)}
+    data-citation-label={t(lang, 'citation.label')}
+    data-citation-source={t(lang, 'citation.source')}
+    data-bibtex={JSON.stringify(allBibtex)}
+    data-bibtex-label={t(lang, 'cv.copy.bibtex')}
+    data-bibtex-aria={t(lang, 'cv.copy.bibtex.aria')}
+    data-section-bibtex-label={t(lang, 'cv.copy.bibtex.section')}
+    data-section-copy-label={t(lang, 'cv.copy.section')}
+  ><Content /></div>
+</Base>
+
+<script>
+  import { onReady } from '@/lib/dom-ready';
+  import type { CitationEntry } from '@/lib/citations';
+  import type { BibtexEntry } from '@/lib/bibtex';
+
+  // h2 sections whose <li>s are presentation-style entries that should be
+  // copied with MS Mincho instead of Times New Roman. Matched against
+  // <h2> textContent only; h3 sub-headings (口頭発表 / ポスター発表) are
+  // walked past until the section's h2 is found.
+  const PRESENTATION_H2 = /学会発表|シンポジウム発表|招待講演|口頭発表|ポスター発表/;
+
+  // h2 sections whose <li>s are publication entries (peer-reviewed papers
+  // and preprints). Only these get a "BibTeX" copy button — presentations,
+  // education, awards etc. don't have a canonical BibTeX form.
+  const PUBLICATION_H2 = /論文|Publication/i;
+
+  function findSectionH2(li: Element): Element | null {
+    const list = li.parentElement;
+    if (!list) return null;
+    let cur: Element | null = list.previousElementSibling;
+    while (cur) {
+      if (cur.tagName === 'H2') return cur;
+      cur = cur.previousElementSibling;
+    }
+    return null;
+  }
+
+  function fontFamilyFor(lang: 'ja' | 'en', isPresentation: boolean): string {
+    if (lang !== 'ja') return `'Times New Roman', serif`;
+    // Word picks the first family that has a glyph for each codepoint.
+    // For presentation entries (heavily Japanese), MS Mincho leads.
+    // For other ja entries (heavily English paper titles), Times New
+    // Roman leads but MS Mincho still covers any kana/kanji that appear.
+    return isPresentation
+      ? `'MS Mincho', '游明朝', 'Times New Roman', serif`
+      : `'Times New Roman', 'MS Mincho', '游明朝', serif`;
+  }
+
+  // Replace each <a> with its own children, then drop the <a> shell.
+  // Children may themselves carry formatting (<strong>, <u>, <em>) which
+  // must be preserved — that's why we don't just collapse to textContent.
+  function unwrapAnchors(root: HTMLElement): void {
+    root.querySelectorAll('a').forEach((a) => {
+      const parent = a.parentNode;
+      if (!parent) return;
+      while (a.firstChild) parent.insertBefore(a.firstChild, a);
+      parent.removeChild(a);
+    });
+  }
+
+  // Defense-in-depth before serialising to the clipboard's `text/html`
+  // payload: even though the CV body is produced by our trusted Markdown
+  // pipeline, a future plugin (or a fork of this site) could put active
+  // markup in the DOM. Strip executable elements + event handlers + any
+  // `javascript:` URL so paste into a downstream editor can't run code.
+  function stripUnsafeForClipboard(root: HTMLElement): void {
+    root.querySelectorAll('script, iframe, object, embed, form, style, link, meta, base').forEach((el) => el.remove());
+    root.querySelectorAll('*').forEach((el) => {
+      for (const attr of Array.from(el.attributes)) {
+        if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
+        else if (/^(href|src|xlink:href|action|formaction)$/i.test(attr.name) && /^\s*javascript:/i.test(attr.value)) {
+          el.removeAttribute(attr.name);
+        }
+      }
+    });
+  }
+
+  function buildHtml(li: Element, fontFamily: string): string {
+    const clone = li.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge, .heading-anchor').forEach((b) => b.remove());
+    unwrapAnchors(clone);
+    stripUnsafeForClipboard(clone);
+    // Force light foreground/background so Word/text editors don't inherit
+    // the page's dark-mode colors (which would paste as black-on-black).
+    // font-size in pt (not px/rem) so Word honours it as 10.5pt — the
+    // Japanese default body size — instead of converting through DPI.
+    return `<div style="font-family:${fontFamily};font-size:10.5pt;color:#000;background-color:#ffffff;line-height:1.6;">${clone.innerHTML}</div>`;
+  }
+
+  function buildPlainText(li: Element): string {
+    const clone = li.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge, .heading-anchor').forEach((b) => b.remove());
+    return (clone.textContent ?? '').replace(/\s+/g, ' ').trim();
+  }
+
+  // Extracts a normalized DOI (lowercased, trailing punctuation stripped)
+  // from the first doi.org anchor inside an <li>. Matches the same
+  // normalization rule used by sync-bibtex.mjs / sync-citation-counts.mjs
+  // so the lookup key is consistent across build and runtime.
+  function extractDoi(li: Element): string | null {
+    const a = li.querySelector<HTMLAnchorElement>('a[href*="doi.org/"]');
+    if (!a) return null;
+    const m = a.href.match(/doi\.org\/(10\.[0-9]{4,9}\/[^\s)>"']+)/i);
+    if (!m) return null;
+    return decodeURIComponent(m[1]).toLowerCase().replace(/[.,;]+$/, '');
+  }
+
+  async function writeClipboard(html: string, text: string): Promise<boolean> {
+    try {
+      if ('ClipboardItem' in window && navigator.clipboard?.write) {
+        const item = new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        });
+        await navigator.clipboard.write([item]);
+        return true;
+      }
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn('CV copy failed', err);
+      return false;
+    }
+  }
+
+  async function copyItem(li: Element, fontFamily: string): Promise<boolean> {
+    return writeClipboard(buildHtml(li, fontFamily), buildPlainText(li));
+  }
+
+  // BibTeX is plain-text only — no HTML payload, so consumers like Zotero
+  // / BibDesk / a .bib file editor get an unambiguous text/plain entry
+  // instead of inheriting a styled text/html alternative.
+  async function copyBibtex(bibtex: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(bibtex);
+      return true;
+    } catch (err) {
+      console.warn('BibTeX copy failed', err);
+      return false;
+    }
+  }
+
+  // Walk .prose top-level children, partition by <h2> boundaries, and
+  // wrap each partition with the appropriate font-family. This is the
+  // only way to mix MS Mincho (presentation sections) and Times New
+  // Roman (everything else) in a single clipboard payload while keeping
+  // a single document.
+  function buildFullHtml(prose: HTMLElement, lang: 'ja' | 'en'): string {
+    const clone = prose.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge, .heading-anchor').forEach((b) => b.remove());
+    unwrapAnchors(clone);
+    stripUnsafeForClipboard(clone);
+
+    if (lang !== 'ja') {
+      const ff = fontFamilyFor('en', false);
+      return wrapForClipboard(clone.innerHTML, ff);
+    }
+
+    const blocks: string[] = [];
+    let currentH2Text = '';
+    let buffer = '';
+    const flush = () => {
+      if (!buffer) return;
+      const isPres = PRESENTATION_H2.test(currentH2Text);
+      blocks.push(wrapForClipboard(buffer, fontFamilyFor('ja', isPres)));
+      buffer = '';
+    };
+    Array.from(clone.children).forEach((el) => {
+      if (el.tagName === 'H2') {
+        flush();
+        currentH2Text = el.textContent ?? '';
+      }
+      buffer += el.outerHTML;
+    });
+    flush();
+    return blocks.join('');
+  }
+
+  function wrapForClipboard(innerHtml: string, fontFamily: string): string {
+    return `<div style="font-family:${fontFamily};font-size:10.5pt;color:#000;background-color:#ffffff;line-height:1.6;">${innerHtml}</div>`;
+  }
+
+  const normWs = (s: string | null) => (s ?? '').replace(/\s+/g, ' ').trim();
+
+  // Walk a <ol>/<ul>, emitting one markdown-ish line per <li>. Handles
+  // nested lists by recursion + indentation, so annotations like the
+  // "*共同筆頭著者" sub-bullet under a paper survive into the plaintext.
+  // Shared by buildFullPlainText (whole CV) and buildSectionPlainText
+  // (a single H2's list).
+  function renderListLines(list: Element, depth: number, lines: string[]): void {
+    const ordered = list.tagName === 'OL';
+    let idx = 0;
+    Array.from(list.children).forEach((li) => {
+      if (li.tagName !== 'LI') return;
+      idx += 1;
+      const indent = '  '.repeat(depth);
+      const bullet = ordered ? `${idx}. ` : '- ';
+      // Pull this <li>'s own text without descending into nested lists.
+      const own = Array.from(li.childNodes)
+        .filter((n) => !(n instanceof Element && (n.tagName === 'OL' || n.tagName === 'UL')))
+        .map((n) => (n instanceof Element ? n.textContent : n.textContent))
+        .join('');
+      lines.push(indent + bullet + normWs(own));
+      li.querySelectorAll(':scope > ol, :scope > ul').forEach((nested) => {
+        renderListLines(nested, depth + 1, lines);
+      });
+    });
+  }
+
+  // Plain-text rendition of the whole CV. Keeps a markdown-ish shape so
+  // pasting into a .txt file remains readable.
+  function buildFullPlainText(prose: HTMLElement): string {
+    const clone = prose.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge, .heading-anchor').forEach((b) => b.remove());
+    const lines: string[] = [];
+    Array.from(clone.children).forEach((el) => {
+      const tag = el.tagName;
+      if (tag === 'H1' || tag === 'H2' || tag === 'H3') {
+        lines.push('', normWs(el.textContent), '');
+      } else if (tag === 'OL' || tag === 'UL') {
+        renderListLines(el, 0, lines);
+        lines.push('');
+      } else if (tag === 'P') {
+        lines.push(normWs(el.textContent), '');
+      }
+    });
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  async function copyAll(prose: HTMLElement, lang: 'ja' | 'en'): Promise<boolean> {
+    return writeClipboard(buildFullHtml(prose, lang), buildFullPlainText(prose));
+  }
+
+  // Find the first <ol> / <ul> following an <h2> within the same section
+  // (i.e. before the next <h2>). Returns null when the section has no list
+  // — that section then has no entries to bulk-copy.
+  function getSectionList(h2: Element): Element | null {
+    let cur = h2.nextElementSibling;
+    while (cur && cur.tagName !== 'H2') {
+      if (cur.tagName === 'OL' || cur.tagName === 'UL') return cur;
+      cur = cur.nextElementSibling;
+    }
+    return null;
+  }
+
+  // Section title with the runtime-appended action chips and the rehype
+  // anchor # stripped out, so it's safe to embed as a heading line in
+  // copied output without leaking UI affordances.
+  function getSectionTitle(h2: Element): string {
+    const clone = h2.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.cv-section-actions, .heading-anchor').forEach((b) => b.remove());
+    return normWs(clone.textContent);
+  }
+
+  // Concatenate every paper's BibTeX into a single .bib-file payload,
+  // prefixed with a `# Section Name` comment line so users pasting into a
+  // `.bib` file get a human-readable section marker. BibTeX/Biber ignore
+  // any text outside `@type{...}` entries, so the `#` line is harmless.
+  // Skips entries whose DOI isn't in the snapshot. Returns null if nothing
+  // was collected.
+  function collectSectionBibtex(h2: Element, list: Element, entries: Record<string, BibtexEntry>): string | null {
+    const out: string[] = [];
+    list.querySelectorAll<HTMLElement>(':scope > li').forEach((li) => {
+      const doi = extractDoi(li);
+      const bib = doi ? entries[doi]?.bibtex : null;
+      if (bib) out.push(bib);
+    });
+    if (out.length === 0) return null;
+    const title = getSectionTitle(h2);
+    return `# ${title}\n\n${out.join('\n\n')}`;
+  }
+
+  // Heading cloned from the actual <h2> rather than recreated, so any
+  // inline formatting (sub/sup, em, etc.) survives into the Word paste.
+  // The .cv-section-actions chip group and the heading-anchor `#` are
+  // stripped so they don't leak into the copied document.
+  function cloneH2ForClipboard(h2: Element): HTMLElement {
+    const clone = h2.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.cv-section-actions, .heading-anchor').forEach((b) => b.remove());
+    unwrapAnchors(clone);
+    return clone;
+  }
+
+  function buildSectionHtml(h2: Element, list: Element, fontFamily: string): string {
+    const h2Clone = cloneH2ForClipboard(h2);
+    const listClone = list.cloneNode(true) as HTMLElement;
+    listClone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge').forEach((b) => b.remove());
+    unwrapAnchors(listClone);
+    stripUnsafeForClipboard(h2Clone);
+    stripUnsafeForClipboard(listClone);
+    return wrapForClipboard(h2Clone.outerHTML + listClone.outerHTML, fontFamily);
+  }
+
+  function buildSectionPlainText(h2: Element, list: Element): string {
+    const clone = list.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge, .heading-anchor').forEach((b) => b.remove());
+    const lines: string[] = [getSectionTitle(h2), ''];
+    renderListLines(clone, 0, lines);
+    return lines.join('\n');
+  }
+
+  async function copySection(h2: Element, list: Element, fontFamily: string): Promise<boolean> {
+    return writeClipboard(buildSectionHtml(h2, list, fontFamily), buildSectionPlainText(h2, list));
+  }
+
+  onReady(() => {
+    const prose = document.querySelector<HTMLElement>('.cv-prose[data-cv-lang]');
+    if (!prose) return;
+
+    const lang: 'ja' | 'en' = prose.dataset.cvLang === 'en' ? 'en' : 'ja';
+    const copyLabel = prose.dataset.copyLabel ?? 'Copy';
+    const copiedLabel = prose.dataset.copiedLabel ?? 'Copied';
+    const failedLabel = prose.dataset.failedLabel ?? 'Copy failed';
+    const bibtexLabel = prose.dataset.bibtexLabel ?? 'BibTeX';
+    const bibtexAria = prose.dataset.bibtexAria ?? 'Copy BibTeX';
+    const sectionBibtexLabel = prose.dataset.sectionBibtexLabel ?? 'All as BibTeX';
+    const sectionCopyLabel = prose.dataset.sectionCopyLabel ?? 'Copy list';
+
+    // CrossRef cited-by badges. Render only when count > 0 — a "cited by 0"
+    // chip on a brand-new paper is noise.
+    let citations: Record<string, CitationEntry> = {};
+    try { citations = JSON.parse(prose.dataset.citations ?? '{}'); } catch {}
+    const citationLabel = prose.dataset.citationLabel ?? 'cited by {n}';
+    const citationSource = prose.dataset.citationSource ?? 'via CrossRef';
+    const doiPattern = /^https?:\/\/(?:dx\.)?doi\.org\/(.+)$/i;
+    prose.querySelectorAll<HTMLAnchorElement>('a[href*="doi.org/"]').forEach((a) => {
+      const m = a.href.match(doiPattern);
+      if (!m) return;
+      const doi = decodeURIComponent(m[1]).toLowerCase().replace(/[.,;]+$/, '');
+      const entry = citations[doi];
+      if (!entry || typeof entry.count !== 'number' || entry.count <= 0) return;
+      const badge = document.createElement('span');
+      badge.className = 'citation-badge';
+      badge.textContent = citationLabel.replace('{n}', String(entry.count));
+      badge.title = `${citationSource} · ${entry.fetchedAt.slice(0, 10)}`;
+      a.insertAdjacentElement('afterend', badge);
+    });
+
+    let bibtexEntries: Record<string, BibtexEntry> = {};
+    try { bibtexEntries = JSON.parse(prose.dataset.bibtex ?? '{}'); } catch {}
+
+    // Top-level list items only — nested annotations like "*共同筆頭著者"
+    // get carried inside their parent <li> via cloneNode, so they don't
+    // need their own button.
+    const items = prose.querySelectorAll<HTMLElement>(
+      ':scope > ol > li, :scope > ul > li',
+    );
+
+    items.forEach((li) => {
+      const sectionH2 = findSectionH2(li);
+      const sectionText = sectionH2?.textContent ?? '';
+      const isPres = lang === 'ja' && PRESENTATION_H2.test(sectionText);
+      const isPub = PUBLICATION_H2.test(sectionText);
+      const ff = fontFamilyFor(lang, isPres);
+
+      const actions = document.createElement('div');
+      actions.className = 'cv-copy-actions';
+
+      // BibTeX button: only for publication entries with a known BibTeX
+      // snapshot. Inserted first so it sits to the left of the generic
+      // "Copy" button — order matches reading direction in both locales.
+      const doi = isPub ? extractDoi(li) : null;
+      const bibtex = doi ? bibtexEntries[doi]?.bibtex : null;
+      if (bibtex) {
+        const bibBtn = document.createElement('button');
+        bibBtn.type = 'button';
+        bibBtn.className = 'cv-copy-btn cv-copy-bibtex';
+        bibBtn.textContent = bibtexLabel;
+        bibBtn.setAttribute('aria-label', bibtexAria);
+        bibBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const ok = await copyBibtex(bibtex);
+          bibBtn.textContent = ok ? copiedLabel : failedLabel;
+          bibBtn.classList.toggle('is-copied', ok);
+          bibBtn.classList.toggle('is-failed', !ok);
+          window.setTimeout(() => {
+            bibBtn.textContent = bibtexLabel;
+            bibBtn.classList.remove('is-copied', 'is-failed');
+          }, 1600);
+        });
+        actions.appendChild(bibBtn);
+      }
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cv-copy-btn';
+      btn.textContent = copyLabel;
+      btn.setAttribute('aria-label', copyLabel);
+
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const ok = await copyItem(li, ff);
+        btn.textContent = ok ? copiedLabel : failedLabel;
+        btn.classList.toggle('is-copied', ok);
+        btn.classList.toggle('is-failed', !ok);
+        window.setTimeout(() => {
+          btn.textContent = copyLabel;
+          btn.classList.remove('is-copied', 'is-failed');
+        }, 1600);
+      });
+      actions.appendChild(btn);
+
+      li.classList.add('cv-copyable');
+      if (bibtex) li.classList.add('cv-has-bibtex');
+      li.appendChild(actions);
+    });
+
+    // Section-level bulk-copy buttons on every <h2> whose section contains
+    // a list. The Copy-list button is universal (works off the DOM only);
+    // the BibTeX button is gated on (a) publication section heading + (b)
+    // at least one entry in the snapshot.
+    prose.querySelectorAll<HTMLHeadingElement>('h2').forEach((h2) => {
+      const text = h2.textContent ?? '';
+      const list = getSectionList(h2);
+      if (!list) return;
+      const isPub = PUBLICATION_H2.test(text);
+      const isPres = lang === 'ja' && PRESENTATION_H2.test(text);
+      const ff = fontFamilyFor(lang, isPres);
+
+      const actions = document.createElement('span');
+      actions.className = 'cv-section-actions';
+
+      if (isPub) {
+        const bulkBibtex = collectSectionBibtex(h2, list, bibtexEntries);
+        if (bulkBibtex) {
+          const bibBtn = document.createElement('button');
+          bibBtn.type = 'button';
+          bibBtn.className = 'cv-section-btn cv-section-bibtex';
+          bibBtn.textContent = sectionBibtexLabel;
+          bibBtn.setAttribute('aria-label', sectionBibtexLabel);
+          bibBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const ok = await copyBibtex(bulkBibtex);
+            bibBtn.textContent = ok ? copiedLabel : failedLabel;
+            bibBtn.classList.toggle('is-copied', ok);
+            bibBtn.classList.toggle('is-failed', !ok);
+            window.setTimeout(() => {
+              bibBtn.textContent = sectionBibtexLabel;
+              bibBtn.classList.remove('is-copied', 'is-failed');
+            }, 1800);
+          });
+          actions.appendChild(bibBtn);
+        }
+      }
+
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'cv-section-btn cv-section-copy';
+      copyBtn.textContent = sectionCopyLabel;
+      copyBtn.setAttribute('aria-label', sectionCopyLabel);
+      copyBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const ok = await copySection(h2, list, ff);
+        copyBtn.textContent = ok ? copiedLabel : failedLabel;
+        copyBtn.classList.toggle('is-copied', ok);
+        copyBtn.classList.toggle('is-failed', !ok);
+        window.setTimeout(() => {
+          copyBtn.textContent = sectionCopyLabel;
+          copyBtn.classList.remove('is-copied', 'is-failed');
+        }, 1800);
+      });
+      actions.appendChild(copyBtn);
+
+      h2.classList.add('cv-section-h2');
+      h2.appendChild(actions);
+    });
+
+    const allBtn = document.querySelector<HTMLButtonElement>('[data-cv-copy-all]');
+    if (allBtn) {
+      const defaultLabel = allBtn.dataset.defaultLabel ?? 'Copy all';
+      const allCopiedLabel = allBtn.dataset.copiedLabel ?? 'Copied';
+      const allFailedLabel = allBtn.dataset.failedLabel ?? 'Copy failed';
+      allBtn.addEventListener('click', async () => {
+        allBtn.disabled = true;
+        const ok = await copyAll(prose, lang);
+        allBtn.textContent = ok ? allCopiedLabel : allFailedLabel;
+        allBtn.classList.toggle('is-copied', ok);
+        allBtn.classList.toggle('is-failed', !ok);
+        window.setTimeout(() => {
+          allBtn.textContent = defaultLabel;
+          allBtn.classList.remove('is-copied', 'is-failed');
+          allBtn.disabled = false;
+        }, 1800);
+      });
+    }
+
+    // `.bib` whole-bundle clipboard copy. Joins every BibTeX entry the
+    // same way `src/pages/cv.bib.ts` does (sorted by DOI in the source
+    // JSON), so what gets pasted matches what was previously downloaded
+    // from `/cv.bib`.
+    const bibBtn = document.querySelector<HTMLButtonElement>('[data-cv-copy-bib]');
+    if (bibBtn) {
+      const defaultLabel = bibBtn.dataset.defaultLabel ?? 'Copy .bib';
+      const bibCopiedLabel = bibBtn.dataset.copiedLabel ?? 'Copied';
+      const bibFailedLabel = bibBtn.dataset.failedLabel ?? 'Copy failed';
+      const body = Object.values(bibtexEntries)
+        .map((e) => e.bibtex)
+        .filter(Boolean)
+        .join('\n\n') + '\n';
+      bibBtn.addEventListener('click', async () => {
+        bibBtn.disabled = true;
+        let ok = false;
+        try {
+          await navigator.clipboard.writeText(body);
+          ok = true;
+        } catch {
+          ok = false;
+        }
+        bibBtn.textContent = ok ? bibCopiedLabel : bibFailedLabel;
+        bibBtn.classList.toggle('is-copied', ok);
+        bibBtn.classList.toggle('is-failed', !ok);
+        window.setTimeout(() => {
+          bibBtn.textContent = defaultLabel;
+          bibBtn.classList.remove('is-copied', 'is-failed');
+          bibBtn.disabled = false;
+        }, 1800);
+      });
+    }
+  });
+</script>
+
+<style>
+  .cv-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+  .cv-header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  /* Shared chip-style affordance used by both the PDF link and the
+     "copy all" button so the header stays visually balanced. */
+  .cv-action {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-fg);
+    background: var(--color-bg);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+  .cv-action:hover,
+  .cv-action:focus-visible {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+  .cv-copy-all.is-copied,
+  .cv-bib.is-copied {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .cv-copy-all.is-failed,
+  .cv-bib.is-failed {
+    color: #c0392b;
+    border-color: #c0392b;
+  }
+  .cv-copy-all:disabled,
+  .cv-bib:disabled { cursor: default; }
+  /* Suppress action chips in the printed/PDF output so the rendered CV
+     doesn't carry interactive controls into the static document. */
+  @media print { .cv-action { display: none; } }
+
+  /* Per-item copy buttons. Markdown rendered by <Content /> doesn't carry
+     this component's scope hash, so the descendant selectors must be
+     :global(). The actions container is appended by the inline script. */
+  .cv-prose :global(li.cv-copyable) {
+    position: relative;
+    /* Reserve room on the right so the floating button(s) never overlap
+       wrapped text on narrow viewports. Publication entries also carry a
+       BibTeX button, which roughly doubles the required width. */
+    padding-right: 3.5rem;
+  }
+  /* WCAG 2.4.4 / axe `link-in-text-block`: publication entries embed DOI
+     links inside the citation prose, so color alone is not enough to
+     distinguish them. Underline the in-list anchors. */
+  .cv-prose :global(li.cv-copyable a) {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+  .cv-prose :global(li.cv-copyable.cv-has-bibtex) {
+    padding-right: 7rem;
+  }
+  .cv-prose :global(.cv-copy-actions) {
+    position: absolute;
+    top: 0.05rem;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .cv-prose :global(.cv-copy-btn) {
+    font-size: 0.7rem;
+    line-height: 1.2;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-fg);
+    background: var(--color-bg);
+    font-family: inherit;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease;
+  }
+  .cv-prose :global(li.cv-copyable:hover .cv-copy-btn),
+  .cv-prose :global(li.cv-copyable:focus-within .cv-copy-btn),
+  .cv-prose :global(.cv-copy-btn:focus-visible),
+  .cv-prose :global(.cv-copy-btn.is-copied),
+  .cv-prose :global(.cv-copy-btn.is-failed) {
+    opacity: 1;
+  }
+  .cv-prose :global(.cv-copy-btn:hover),
+  .cv-prose :global(.cv-copy-btn.is-copied) {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .cv-prose :global(.cv-copy-btn.is-failed) {
+    color: #c0392b;
+    border-color: #c0392b;
+  }
+  /* Touch devices have no hover — keep the buttons faintly visible. */
+  @media (hover: none) {
+    .cv-prose :global(.cv-copy-btn) { opacity: 0.55; }
+  }
+  /* Don't render the buttons in the PDF/print output. */
+  @media print {
+    .cv-prose :global(li.cv-copyable),
+    .cv-prose :global(li.cv-copyable.cv-has-bibtex) { padding-right: 0; }
+    .cv-prose :global(.cv-copy-actions) { display: none; }
+  }
+
+  /* Section-level bulk-copy buttons appended inside every <h2> that has a
+     following list. `.prose :is(h2,h3,h4)` is already `position: relative`
+     (see prose.css for the heading-anchor #), so the actions group can be
+     absolutely anchored to the heading's right edge without flexing the
+     heading itself — keeping the heading's normal block flow intact and
+     avoiding empty-row reflow on narrow viewports.
+
+     Buttons stay invisible until the heading is hovered/focused, matching
+     the per-item button affordance. `is-copied` / `is-failed` keep the
+     button visible during the 1.8s feedback window. */
+  .cv-prose :global(.cv-section-actions) {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .cv-prose :global(.cv-section-btn) {
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.3;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-fg);
+    background: var(--color-bg);
+    font-family: inherit;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+  .cv-prose :global(h2.cv-section-h2:hover .cv-section-btn),
+  .cv-prose :global(h2.cv-section-h2:focus-within .cv-section-btn),
+  .cv-prose :global(.cv-section-btn:focus-visible),
+  .cv-prose :global(.cv-section-btn.is-copied),
+  .cv-prose :global(.cv-section-btn.is-failed) {
+    opacity: 1;
+  }
+  .cv-prose :global(.cv-section-btn:hover),
+  .cv-prose :global(.cv-section-btn.is-copied) {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+  .cv-prose :global(.cv-section-btn.is-failed) {
+    color: #c0392b;
+    border-color: #c0392b;
+  }
+  /* Touch devices have no hover — keep the buttons faintly visible, same
+     as the per-item copy buttons. */
+  @media (hover: none) {
+    .cv-prose :global(.cv-section-btn) { opacity: 0.55; }
+  }
+  @media print {
+    .cv-prose :global(.cv-section-actions) { display: none; }
+  }
+
+  /* CrossRef cited-by badge appended next to DOI links by the script above.
+     Kept visually quiet so it sits next to a paper title without competing
+     with the link. Hidden in print because the PDF is the formal CV and the
+     count goes stale between rebuilds. */
+  .cv-prose :global(.citation-badge) {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0 0.4rem;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    vertical-align: 0.05em;
+    user-select: none;
+    white-space: nowrap;
+  }
+  @media print {
+    .cv-prose :global(.citation-badge) { display: none; }
+  }
+</style>

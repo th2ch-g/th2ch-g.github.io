@@ -1,0 +1,88 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { t, type Lang } from '@/i18n/ui';
+import { localeSlug } from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props {
+  prev: CollectionEntry<'posts'> | null;
+  next: CollectionEntry<'posts'> | null;
+  lang: Lang;
+}
+const { prev, next, lang } = Astro.props;
+
+const prevHref = prev ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(prev.id)}`) : null;
+const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)}`) : null;
+---
+{(prev || next) && (
+  <nav class="post-nav" aria-label="Post navigation">
+    {prev && prevHref ? (
+      <a class="nav-card nav-prev" href={prevHref}>
+        <span class="nav-direction muted">← {t(lang, 'posts.prev')}</span>
+        <span class="nav-title">{prev.data.title}</span>
+      </a>
+    ) : (
+      // Empty placeholder so the next-post slot stays right-aligned even
+      // when there's no previous post.
+      <span class="nav-spacer" aria-hidden="true"></span>
+    )}
+    {next && nextHref ? (
+      <a class="nav-card nav-next" href={nextHref}>
+        <span class="nav-direction muted">{t(lang, 'posts.next')} →</span>
+        <span class="nav-title">{next.data.title}</span>
+      </a>
+    ) : (
+      <span class="nav-spacer" aria-hidden="true"></span>
+    )}
+  </nav>
+)}
+
+<style>
+  .post-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 2rem 0 1rem;
+  }
+  .nav-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+    color: var(--color-fg);
+    transition: border-color 160ms ease, transform 160ms ease;
+  }
+  .nav-next {
+    text-align: right;
+  }
+  .nav-card:hover,
+  .nav-card:focus-visible {
+    border-color: var(--color-accent);
+    text-decoration: none;
+    transform: translateY(-2px);
+  }
+  .nav-direction {
+    font-size: 0.8rem;
+  }
+  .nav-title {
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .nav-spacer {
+    /* Reserves the column so a single nav-card stays in its original side. */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-card { transition: none; }
+    .nav-card:hover,
+    .nav-card:focus-visible { transform: none; }
+  }
+  @media (max-width: 540px) {
+    /* Stack on narrow viewports so each card fills the row. */
+    .post-nav { grid-template-columns: 1fr; }
+    .nav-spacer { display: none; }
+    .nav-next { text-align: left; }
+  }
+</style>

@@ -1,0 +1,98 @@
+---
+import Base from '@/layouts/Base.astro';
+import PostEntry from './PostEntry.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import { t, tEn, type Lang } from '@/i18n/ui';
+import { getPublishedByLang, sortByDateDesc } from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props {
+  lang: Lang;
+  tag: string;
+}
+const { lang, tag } = Astro.props;
+
+// Match PostsListPage / ArchivePage / posts [...slug]: drafts are visible
+// in dev (`npm run dev`) but excluded from production. Without the DEV
+// guard a draft visible elsewhere would 404 from its own tag page.
+const posts = sortByDateDesc(
+  (await getPublishedByLang('posts', lang, { includeDevDrafts: true })).filter((p) =>
+    (p.data.tags ?? []).includes(tag),
+  ),
+  'pubDate',
+);
+const tagFeed = lang === 'en' ? `/en/tags/${tag}.xml` : `/tags/${tag}.xml`;
+const tagFeedExists = posts.length > 0;
+---
+<Base
+  lang={lang}
+  title={`${tEn('tags.heading')}: #${tag}`}
+  image={lang === 'en' ? `/en/og/tags/${tag}.png` : `/og/tags/${tag}.png`}
+>
+  <Breadcrumbs
+    lang={lang}
+    items={[
+      { label: t(lang, 'nav.home'), href: getRelativeLocaleUrl(lang, '/') },
+      { label: t(lang, 'nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
+      { label: `#${tag}` },
+    ]}
+  />
+  <div class="tag-head">
+    <h1>
+      #{tag}
+      {posts.length > 0 && (
+        <span class="count-badge">{posts.length}</span>
+      )}
+    </h1>
+    {tagFeedExists && (
+      <a class="tag-feed" href={tagFeed} aria-label={t(lang, 'feed.tag.title')}>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M4 11a9 9 0 0 1 9 9" />
+          <path d="M4 4a16 16 0 0 1 16 16" />
+          <circle cx="5" cy="19" r="1" />
+        </svg>
+        <span>RSS</span>
+      </a>
+    )}
+  </div>
+
+  {posts.length > 0 ? (
+    <section>
+      <h2>{t(lang, 'tags.posts')}</h2>
+      <div class="post-list">
+        {posts.map((post) => <PostEntry post={post} lang={lang} />)}
+      </div>
+    </section>
+  ) : (
+    <p class="muted">{t(lang, 'list.empty')}</p>
+  )}
+</Base>
+
+<style>
+  .post-list { display: flex; flex-direction: column; }
+  .tag-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .tag-head h1 { margin: 0; }
+  .tag-feed {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+  .tag-feed:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+</style>

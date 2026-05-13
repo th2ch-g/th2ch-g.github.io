@@ -1,0 +1,280 @@
+---
+import { t, type Lang } from '@/i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+// Pagefind ships its UI bundle into `dist/pagefind/` after `pagefind --site dist`
+// runs in `npm run build`. We load the script lazily on first dialog open so
+// the search assets (~150KB) don't tax the initial page load.
+---
+<button
+  type="button"
+  class="search-trigger"
+  data-search-open
+  aria-label={t(lang, 'search.title')}
+  title={t(lang, 'search.title')}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="18"
+    height="18"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
+  </svg>
+  <kbd class="kbd">⌘K</kbd>
+</button>
+
+<dialog class="search-dialog" data-search-dialog aria-label={t(lang, 'search.title')}>
+  <div class="search-shell">
+    <div id="pagefind-search" data-pagefind-ui data-placeholder={t(lang, 'search.placeholder')}></div>
+    <p class="search-error muted" data-search-error hidden>
+      Search index unavailable. Run <code>npm run build</code> to generate it
+      (the Pagefind index is only produced by the production build).
+    </p>
+  </div>
+</dialog>
+
+<script is:inline data-astro-rerun>
+  // Open dialog on click / Ctrl+K. Pagefind UI assets are loaded on first
+  // open; in dev (`astro dev`) the assets live only in the production
+  // `dist/pagefind/`, so loading will 404 and we surface an inline notice
+  // instead of failing silently.
+  //
+  // CRITICAL: this whole block is wrapped in an IIFE. `is:inline` scripts
+  // emit raw code into the document, and `data-astro-rerun` causes them
+  // to re-execute on every <ClientRouter /> view transition. Without the
+  // IIFE, top-level `const`/`let` declarations live in the document's
+  // shared global scope and the second execution throws "Identifier
+  // 'trigger' has already been declared". That uncaught error aborted
+  // the ClientRouter swap mid-flight, which is why the user reported
+  // "after navigating to gallery/posts the card hover-zoom and ⌘K
+  // search both stop working until reload" — the whole post-swap
+  // initialization (style sync, listener wiring) was being torn down by
+  // a single thrown error in this script. Keep the IIFE.
+  (() => {
+  const trigger = document.querySelector('[data-search-open]');
+  const dialog = document.querySelector('[data-search-dialog]');
+  if (trigger && dialog) {
+    let pagefindReady = false;
+    let pagefindLoading = null;
+    // Track the element that held focus before the dialog opened so we
+    // can restore it on close. `<dialog>.showModal()` does not reliably
+    // do this on every browser, especially when ESC is pressed while
+    // focus has moved into the Pagefind input.
+    let previouslyFocused = null;
+
+    const loadPagefind = () => {
+      if (pagefindReady) return Promise.resolve();
+      if (pagefindLoading) return pagefindLoading;
+      pagefindLoading = (async () => {
+        if (!document.querySelector('link[data-pagefind-css]')) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = '/pagefind/pagefind-ui.css';
+          link.dataset.pagefindCss = '';
+          document.head.appendChild(link);
+        }
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = '/pagefind/pagefind-ui.js';
+          s.onload = resolve;
+          s.onerror = () => reject(new Error('pagefind-ui.js failed to load'));
+          document.head.appendChild(s);
+        });
+        const el = document.getElementById('pagefind-search');
+        const placeholder = el?.dataset.placeholder ?? 'Search...';
+        // @ts-ignore - PagefindUI is provided by the dynamically loaded script
+        new PagefindUI({
+          element: '#pagefind-search',
+          showSubResults: true,
+          showImages: false,
+          // showFilters surfaces the `data-pagefind-filter="tag:..."`
+          // hints emitted by PostDetailPage as a chip-style refiner panel.
+          showFilters: true,
+          translations: { placeholder },
+        });
+        pagefindReady = true;
+      })().catch((err) => {
+        // Reset the in-flight promise so a future click retries from scratch
+        // (e.g. if the user runs `npm run build` in another terminal and
+        // reloads the page).
+        pagefindLoading = null;
+        throw err;
+      });
+      return pagefindLoading;
+    };
+
+    const open = () => {
+      previouslyFocused = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+      // @ts-ignore - showModal exists on HTMLDialogElement at runtime
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+
+      const errorEl = dialog.querySelector('[data-search-error]');
+      if (errorEl) errorEl.setAttribute('hidden', '');
+
+      loadPagefind()
+        .then(() => {
+          const input = dialog.querySelector('input.pagefind-ui__search-input');
+          if (input instanceof HTMLInputElement) input.focus();
+        })
+        .catch(() => {
+          if (errorEl) errorEl.removeAttribute('hidden');
+        });
+    };
+
+    trigger.addEventListener('click', open);
+    // Click outside the inner shell closes the dialog.
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    // Restore focus to the trigger (or whatever held focus before open)
+    // when the dialog closes for any reason — backdrop click, ESC key,
+    // or programmatic close. Without this, focus lands on <body> and
+    // keyboard users lose their place.
+    dialog.addEventListener('close', () => {
+      if (previouslyFocused instanceof HTMLElement && document.contains(previouslyFocused)) {
+        previouslyFocused.focus();
+      }
+      previouslyFocused = null;
+    });
+
+    // Document-level keydown is bound only once across the lifetime of
+    // the page. With `data-astro-rerun`, this script re-executes on
+    // every ClientRouter transition, so a naive addEventListener would
+    // pile up handlers on the persistent `document` and trigger open()
+    // N times per ⌘K press. We delegate to the *current* trigger via
+    // .click() so the latest `open()` closure (with its lazy Pagefind
+    // load) is invoked, regardless of how many transitions have run.
+    if (!window.__th2chSearchKeydownBound) {
+      window.__th2chSearchKeydownBound = true;
+      document.addEventListener('keydown', (e) => {
+        if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          const t = document.querySelector('[data-search-open]');
+          if (t instanceof HTMLElement) t.click();
+          return;
+        }
+        if (e.key === 'Escape') {
+          const dlg = document.querySelector('[data-search-dialog]');
+          // @ts-ignore - close exists on HTMLDialogElement at runtime
+          if (dlg && dlg.hasAttribute('open')) dlg.close();
+        }
+      });
+    }
+  }
+  })();
+</script>
+
+<style>
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+  .search-trigger:hover,
+  .search-trigger:focus-visible {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .kbd {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.05rem 0.3rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+  }
+  .search-dialog {
+    border: none;
+    padding: 0;
+    background: transparent;
+    max-width: min(640px, 100vw - 2rem);
+    width: 100%;
+  }
+  .search-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+  }
+  .search-shell {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  }
+  .search-error {
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+  .search-error code {
+    background: var(--color-border);
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  /* Hide the kbd hint on narrow viewports — the trigger already shrinks. */
+  @media (max-width: 540px) {
+    .search-trigger .kbd { display: none; }
+  }
+</style>
+
+<style is:global>
+  /* Pagefind UI ships its own CSS variables for theming. Map them onto
+     this site's tokens so search results inherit the same surface,
+     border, and text colors as the rest of the page. The selector is
+     scoped to `#pagefind-search` so the variables don't leak to any
+     other Pagefind UI mounted elsewhere. */
+  #pagefind-search {
+    --pagefind-ui-primary: var(--color-accent);
+    --pagefind-ui-text: var(--color-fg);
+    --pagefind-ui-background: var(--color-card);
+    --pagefind-ui-border: var(--color-border);
+    --pagefind-ui-tag: var(--color-bg);
+    --pagefind-ui-border-width: 1px;
+    --pagefind-ui-border-radius: 6px;
+    --pagefind-ui-font: var(--font-sans);
+  }
+  /* Pagefind highlights matched substrings with `<mark>` whose default
+     UA style is a bright yellow background — illegible on the dark
+     theme. Replace it with the accent + a contrasting fg color so
+     matches read clearly in both themes. */
+  #pagefind-search mark {
+    background: var(--color-accent);
+    color: var(--color-bg);
+    padding: 0 0.15em;
+    border-radius: 2px;
+  }
+  /* The result list's body text uses muted color by default. Force the
+     full foreground color so paragraphs and headings stay readable. */
+  #pagefind-search .pagefind-ui__result-title,
+  #pagefind-search .pagefind-ui__result-link {
+    color: var(--color-fg);
+  }
+  #pagefind-search .pagefind-ui__result-excerpt {
+    color: var(--color-muted);
+  }
+  #pagefind-search .pagefind-ui__result-link:hover {
+    color: var(--color-accent);
+  }
+</style>

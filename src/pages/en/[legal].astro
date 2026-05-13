@@ -1,0 +1,14 @@
+---
+import LegalPage from '@/components/LegalPage.astro';
+import { getLegalByLang } from '@/lib/content';
+
+// Catch-all route for every en legal document. See the ja sibling at
+// src/pages/[legal].astro for design notes.
+export async function getStaticPaths() {
+  const docs = await getLegalByLang('en');
+  return docs.map((d) => ({ params: { legal: d.slug } }));
+}
+
+const { legal = '' } = Astro.params;
+---
+<LegalPage lang="en" slug={legal} />

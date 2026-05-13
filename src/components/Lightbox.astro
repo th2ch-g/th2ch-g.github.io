@@ -1,0 +1,71 @@
+---
+// Global image preview overlay. A single instance is mounted in Base.astro and
+// listens (via event delegation) for sustained pointer hovers on card images
+// in posts and gallery entries. After HOLD_MS of continuous hover the
+// hovered image's src/alt is copied here and the overlay fades in. Click
+// anywhere or press Esc to close.
+---
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview" hidden>
+  {/* `src` is intentionally omitted on the initial render. The empty-string
+      form (`src=""`) makes some browsers re-fetch the current document URL
+      and emits a console warning. The controller assigns `.src` on first
+      open, which creates the attribute lazily. */}
+  <img class="lightbox-img" alt="" />
+  <button class="lightbox-close" type="button" aria-label="Close preview">&times;</button>
+</div>
+
+<style>
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: grid;
+    place-items: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 220ms ease;
+    cursor: zoom-out;
+  }
+  .lightbox.open { opacity: 1; }
+  .lightbox[hidden] { display: none; }
+  .lightbox-img {
+    max-width: 92vw;
+    max-height: 92vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    border-radius: var(--radius);
+    transform: scale(0.92);
+    transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: #fff;
+  }
+  .lightbox.open .lightbox-img { transform: scale(1); }
+  .lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 150ms ease;
+  }
+  .lightbox-close:hover { background: rgba(0, 0, 0, 0.85); }
+  .lightbox-close:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lightbox, .lightbox-img { transition: none; }
+  }
+</style>
+
+<script>
+  import { wireLightbox } from '@/lib/lightbox-controller';
+  wireLightbox();
+</script>

@@ -1,0 +1,14 @@
+# ai.txt — explicit AI usage policy for this site
+# Spec reference: https://site.spawning.ai/spaces/ai-txt
+#
+# This file declares that no portion of this site may be used for AI/ML
+# training, fine-tuning, retrieval-augmented generation, or any related
+# automated ingestion. Read this in conjunction with /robots.txt.
+
+User-Agent: *
+Disallow: /
+
+# Code is licensed under MIT and content under CC BY 4.0, but neither license
+# constitutes consent for ingestion into AI training datasets. Attribution
+# requirements of CC BY are typically incompatible with how training data is
+# used by current AI systems.

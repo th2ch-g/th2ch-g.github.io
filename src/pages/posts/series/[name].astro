@@ -1,0 +1,11 @@
+---
+import SeriesListPage from '@/components/SeriesListPage.astro';
+import { buildSeriesPaths } from '@/lib/page-builders/series-paths';
+
+export async function getStaticPaths() {
+  return buildSeriesPaths('ja');
+}
+
+const { name, posts } = Astro.props;
+---
+<SeriesListPage lang="ja" name={name} posts={posts} />

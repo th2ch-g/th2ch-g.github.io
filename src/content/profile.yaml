@@ -1,0 +1,97 @@
+name: th
+# Stable site brand / GitHub handle. Used as the brand text in the header,
+# the copyright line in the footer, and the `<siteHandle> posts` titles
+# of RSS feeds. Kept separate from `name` so the human display name and
+# the site identifier can drift independently.
+siteHandle: th2ch-g
+# `<owner>/<name>` GitHub slug for the source repository. Used to derive
+# the source / license URLs in the footer AND, by default, the giscus
+# comment repo (see `giscus:` block below).
+repo: th2ch-g/th2ch-g.github.io
+# Canonical deployment URL of this site. Consumed by:
+#   - astro.config.mjs (via `siteUrl()`) -> `site`, canonical/OG/sitemap/RSS
+#   - scripts/build-qr.mjs -> public/qr.png
+#   - SitemapPage -> shows a QR section when this field is set
+# Use the bare origin (no trailing slash, no path). Forks: change this to
+# your own deploy URL — also enough to regenerate the QR at next build.
+# Leave null / empty to skip QR generation entirely (no PNG, no section).
+site: https://th2ch-g.github.io
+location: Tokyo, Japan
+headline:
+  ja: 日本人🇯🇵・博士後期課程学生・無職
+  en: Japanese・Doctoral student
+affiliation:
+  ja: 東京科学大学
+  en: Institute of Science Tokyo
+icon:
+  url: https://avatars.githubusercontent.com/u/76892059
+  comment:
+    ja: わさびゲノムのCircos plotです😃
+    en: Circos plot of the wasabi genome 😃
+links:
+  - label: GitHub
+    url: https://github.com/th2ch-g
+    comment:
+      ja: そこそこ使っています😎
+      en: GitHub
+  - label: ORCID
+    url: https://orcid.org/0009-0001-3991-8367
+    comment:
+      ja: ここからCVを自動生成させてます🤓
+      en: ORCID
+  - label: Kaggle
+    url: https://www.kaggle.com/lst1923
+    comment:
+      ja: データサイエンス好きくない😔
+      en: Kaggle
+  - label: Huggingface
+    url: https://huggingface.co/wasarou
+    comment:
+      ja: 全然使ってません🥸
+      en: Huggingface
+
+# Third-party service integrations. Leave any field blank (or remove the
+# whole block) to gracefully disable the corresponding feature at render
+# time — empty here means "no comments" / "no analytics" / "no IndexNow".
+
+# Giscus comments (https://giscus.app). The repo defaults to the
+# top-level `repo` above; override here only if comments live in a
+# different repo. Visit https://giscus.app/ to derive `repoId` and
+# `categoryId` (GraphQL Node IDs, immutable across rename).
+giscus:
+  repoId: R_kgDOSWDKhA
+  category: Announcements
+  categoryId: DIC_kwDOSWDKhM4C8k4s
+  mapping: pathname
+
+# Webmention.io endpoints (https://webmention.io). Register your domain
+# there to get an `endpoint` URL; the `apiTarget` is the domain used to
+# fetch received mentions.
+webmention:
+  endpoint:
+  pingback:
+  apiTarget:
+
+# GoatCounter analytics (https://www.goatcounter.com). The endpoint
+# looks like `https://<handle>.goatcounter.com`. Empty disables the
+# tracker script entirely (no fetch, no data leak).
+analytics:
+  goatcounterEndpoint:
+
+# IndexNow key (Bing / Yandex / Seznam crawler ping). Generate with
+# `openssl rand -hex 16` and set here; the site exposes it at
+# `/indexnow-key.txt` so search engines can verify ownership.
+indexnow:
+  key:
+
+# Google AdSense site verification (https://www.google.com/adsense).
+# Setting `clientId` here (form `ca-pub-XXXXXXXXXXXXXXXX`) enables:
+#   - `<meta name="google-adsense-account">` in <head>
+#   - `/ads.txt` route exposing the AdSense ownership record
+# Both are stage-1 prerequisites for the AdSense application; the actual
+# ad-loader script is NOT injected by this block. After your application
+# is approved, add the loader manually to start serving Auto Ads (and
+# expect the Lighthouse perf budget in lighthouserc.json to need
+# loosening).
+adsense:
+  clientId:

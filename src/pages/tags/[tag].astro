@@ -1,0 +1,11 @@
+---
+import TagPage from '@/components/TagPage.astro';
+import { buildTagPaths } from '@/lib/static-paths';
+
+export async function getStaticPaths() {
+  return buildTagPaths('ja');
+}
+
+const { tag } = Astro.props;
+---
+<TagPage lang="ja" tag={tag} />

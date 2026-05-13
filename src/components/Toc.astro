@@ -1,0 +1,216 @@
+---
+import type { MarkdownHeading } from 'astro';
+import { t, type Lang } from '@/i18n/ui';
+
+interface Props {
+  headings: MarkdownHeading[];
+  lang: Lang;
+}
+const { headings, lang } = Astro.props;
+// Astro's `headings` only contains body-content headings — the
+// frontmatter-derived `<h1>{post.data.title}</h1>` (PostDetailPage.astro)
+// is NOT in this list, so there's no risk of double-listing the title.
+//
+// Some authors top out their body at h1 ("# Section"), others at h2
+// ("## Section"). Pick the shallowest depth that actually appears as
+// the TOC's top level and include up to two further levels under it,
+// yielding a three-level nested bullet outline (disc → circle → square).
+const minDepth = headings.length > 0 ? Math.min(...headings.map((h) => h.depth)) : 2;
+const flat = headings.filter((h) => h.depth >= minDepth && h.depth <= minDepth + 2);
+
+type TocNode = MarkdownHeading & { children: TocNode[] };
+// Monotonic-stack tree build: pop ancestors whose depth is >= current,
+// then attach the new node to whatever remains on top (or to `root`).
+function buildTree(items: MarkdownHeading[]): TocNode[] {
+  const root: TocNode[] = [];
+  const stack: TocNode[] = [];
+  for (const item of items) {
+    const node: TocNode = { ...item, children: [] };
+    while (stack.length > 0 && stack[stack.length - 1].depth >= item.depth) {
+      stack.pop();
+    }
+    if (stack.length === 0) root.push(node);
+    else stack[stack.length - 1].children.push(node);
+    stack.push(node);
+  }
+  return root;
+}
+
+// Headings come from Astro's Markdown pipeline (build-time only), but
+// `text` can contain inline HTML, so escape before injecting via set:html.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// `rehype-autolink-headings` runs with `behavior: 'prepend'` and
+// `content: '#'` (see astro.config.mjs), which leaks a leading "#" into
+// the heading text Astro extracts for the TOC. Strip a single leading
+// "#" plus optional whitespace so the TOC shows clean labels.
+function cleanHeadingText(raw: string): string {
+  return raw.replace(/^\s*#+\s*/, '');
+}
+
+function renderTree(nodes: TocNode[]): string {
+  if (nodes.length === 0) return '';
+  const children = nodes
+    .map((n) => {
+      const slug = escapeHtml(n.slug);
+      const text = escapeHtml(cleanHeadingText(n.text));
+      return `<li class="toc-item"><a href="#${slug}" data-toc-link="${slug}">${text}</a>${renderTree(n.children)}</li>`;
+    })
+    .join('');
+  return `<ul class="toc-list">${children}</ul>`;
+}
+
+const tree = buildTree(flat);
+---
+{flat.length >= 2 && (
+  <aside class="toc" aria-label={t(lang, 'posts.toc')}>
+    {/* `<details>` is collapsible by native browser behavior — no JS or
+        ARIA needed for the disclosure. We open by default on desktop;
+        the mobile breakpoint flips it closed so long contents don't push
+        the article down. The `name=""` (no group) attribute lets every
+        article instance toggle independently. */}
+    <details class="toc-details" open>
+      <summary class="toc-title">{t(lang, 'posts.toc')}</summary>
+      <Fragment set:html={renderTree(tree)} />
+    </details>
+  </aside>
+)}
+
+<script>
+  import { onReady } from '@/lib/dom-ready';
+
+  // Highlight the TOC link whose heading is currently in the viewport.
+  // The rootMargin biases the "active" zone toward the upper third so
+  // the link flips before the heading scrolls all the way up.
+  let activeObserver: IntersectionObserver | null = null;
+  // 720px matches the Header's mobile breakpoint so the TOC and nav
+  // collapse together. Below that, start the TOC closed; above, leave
+  // it open (the `<details open>` server-rendered default).
+  const MOBILE_BREAKPOINT = 720;
+
+  function wireToc() {
+    activeObserver?.disconnect();
+    activeObserver = null;
+
+    const details = document.querySelector<HTMLDetailsElement>('.toc-details');
+    if (details && window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches) {
+      details.open = false;
+    }
+
+    const linkMap = new Map<string, HTMLElement>();
+    document.querySelectorAll<HTMLElement>('[data-toc-link]').forEach((el) => {
+      const slug = el.dataset.tocLink;
+      if (slug) linkMap.set(slug, el);
+    });
+
+    if (linkMap.size > 0 && 'IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            const link = linkMap.get(entry.target.id);
+            if (!link) return;
+            if (entry.isIntersecting) {
+              link.classList.add('is-active');
+              // `aria-current="location"` is the schema.org-aligned way to
+              // mark the in-viewport section so screen readers can
+              // announce position changes — complements the visual
+              // `.is-active` class.
+              link.setAttribute('aria-current', 'location');
+            } else {
+              link.classList.remove('is-active');
+              link.removeAttribute('aria-current');
+            }
+          });
+        },
+        { rootMargin: '-20% 0% -70% 0%' },
+      );
+      linkMap.forEach((_, slug) => {
+        const heading = document.getElementById(slug);
+        if (heading) observer.observe(heading);
+      });
+      activeObserver = observer;
+    }
+  }
+  onReady(wireToc);
+</script>
+
+<style>
+  .toc {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0 2rem;
+    font-size: 0.9rem;
+  }
+  .toc-title {
+    margin: 0 0 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    list-style: none;
+  }
+  /* Hide the default `▶` marker on Webkit; we render a custom caret via
+     the `::before` rule below so the indicator lines up with the title. */
+  .toc-title::-webkit-details-marker { display: none; }
+  .toc-title::before {
+    content: '▾';
+    display: inline-block;
+    margin-right: 0.4rem;
+    font-size: 0.7rem;
+    color: var(--color-muted);
+    transition: transform 160ms ease;
+  }
+  .toc-details:not([open]) > .toc-title::before {
+    transform: rotate(-90deg);
+  }
+  .toc-details[open] > :global(.toc-list) { margin-top: 0.4rem; }
+  /* The list is injected via set:html, so its descendants do not carry
+     this component's scoped-style attribute — wrap selectors in :global()
+     so the nested bullet rules still apply. */
+  :global(.toc .toc-list) {
+    list-style: disc;
+    padding-left: 1.2rem;
+    margin: 0;
+  }
+  :global(.toc .toc-list .toc-list) {
+    list-style: circle;
+    margin-top: 0.15rem;
+    font-size: 0.95em;
+  }
+  :global(.toc .toc-list .toc-list .toc-list) {
+    list-style: square;
+  }
+  :global(.toc .toc-item) {
+    margin: 0.15rem 0;
+    line-height: 1.4;
+  }
+  :global(.toc .toc-item a) {
+    color: var(--color-fg);
+    transition: color 160ms ease;
+  }
+  :global(.toc .toc-item a:hover) {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+  :global(.toc .toc-item a.is-active) {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.toc .toc-item a),
+    .toc-title::before {
+      transition: none;
+    }
+  }
+</style>
