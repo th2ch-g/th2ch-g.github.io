@@ -1,12 +1,28 @@
 // Runs axe-core against representative pages of the built site. Fails the
 // process with a non-zero exit code if any violation is found, so the GH
 // Actions a11y job goes red on regressions.
+import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startStaticServer } from './lib/static-server.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const distDir = resolve(ROOT, 'dist');
+
+// Pick an existing tag page from the build output so the sample URL is
+// guaranteed to exist (URLs are case-sensitive on GitHub Pages, and the
+// tag set drifts with content edits — hard-coding a literal would rot).
+function firstTagPath(localePrefix) {
+  const dir = resolve(distDir, localePrefix.replace(/^\/|\/$/g, ''), 'tags');
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  const tag = entries.find((e) => e.isDirectory())?.name;
+  return tag ? `${localePrefix}tags/${tag}` : null;
+}
 
 let chromium;
 let AxeBuilder;
@@ -23,14 +39,17 @@ const { url: base, close } = await startStaticServer(distDir);
 
 // Sampling strategy: hit one of every distinct page kind so a regression
 // in a shared layout/component is caught while keeping CI runtime small.
+// Tag pages are picked dynamically from the build output (firstTagPath)
+// so the sample tracks content edits without manual maintenance.
 const pages = [
   '/',
   '/en/',
   '/cv',
   '/posts',
   '/photos',
-  '/tags/Astro',
-];
+  firstTagPath('/'),
+  firstTagPath('/en/'),
+].filter(Boolean);
 
 const browser = await chromium.launch();
 const context = await browser.newContext();
