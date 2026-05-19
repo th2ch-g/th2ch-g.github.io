@@ -1,0 +1,41 @@
+name: Dependabot auto-merge
+
+# Auto-merge Dependabot PRs that only bump minor or patch versions, once
+# required checks pass. Major bumps still require manual review so breaking
+# changes don't slip in silently.
+#
+# Requires "Allow auto-merge" to be enabled in repo Settings -> General.
+# Branch protection's required status checks (build, a11y, lighthouse, link
+# check) act as the merge gate -- this workflow only queues the merge.
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Avoid two runs racing on the same PR when Dependabot pushes a rebased commit.
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98  # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # For grouped updates, fetch-metadata reports the highest update-type
+      # in the group, so a minor+patch group surfaces as semver-minor and
+      # still passes this gate; a group containing any major bump is blocked.
+      - name: Enable auto-merge for minor/patch
+        if: steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.meta.outputs.update-type == 'version-update:semver-patch'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --squash "$PR_URL"
