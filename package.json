@@ -26,8 +26,8 @@
     "@astrojs/sitemap": "^3.7.2",
     "@types/markdown-it": "^14.1.2",
     "@types/sanitize-html": "^2.16.1",
-    "astro": "^6.3.1",
-    "katex": "^0.16.45",
+    "astro": "^6.3.5",
+    "katex": "^0.16.47",
     "markdown-it": "^14.1.1",
     "mermaid": "^11.15.0",
     "reading-time": "^1.5.0",
@@ -37,7 +37,7 @@
     "rehype-slug": "6.0.0",
     "remark-math": "^6.0.0",
     "sanitize-html": "^2.17.4",
-    "simple-icons": "^16.19.0",
+    "simple-icons": "^16.20.0",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
