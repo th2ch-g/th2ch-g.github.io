@@ -23,6 +23,10 @@ https://github.com/mogura-rs/mogura
 当時所属してた研究室では使いにくいと評判の[VMD](https://www.ks.uiuc.edu/Research/vmd/)を使って可視化をしていましたが、あまりに使いにくすぎたので自分で可視化ツールを作りたいなと思っていたので推し言語であるRustで作ってみました。
 また博士で志望していた研究室の先生が[オリジナルのvisualizer](https://cuemol.github.io/cuemol2_docs/)を作っていたので舐められないようにと、博士のテーマとしてもやりたいなとも考えていました。(結局効率が悪すぎるのとソフトウェア開発自体がAIでオワコン気味。。。)
 
+https://x.com/windymelt/status/1977112031775117616
+
+> Rustを推す理由
+
 ## 実装のポイント
 ポイントは、
 
