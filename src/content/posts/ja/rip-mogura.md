@@ -17,7 +17,7 @@ heroImageAlt: mogumi-chann
 
 https://github.com/mogura-rs/mogura
 
-> MOlecular GRAphic visualizerでmoguraです😃
+<p class="md-figcaption" style="text-align: center;">MOlecular GRAphic visualizerでmoguraです😃</p>
 
 ## モチベーション
 当時所属してた研究室では使いにくいと評判の[VMD](https://www.ks.uiuc.edu/Research/vmd/)を使って可視化をしていましたが、あまりに使いにくすぎたので自分で可視化ツールを作りたいなと思っていたので推し言語であるRustで作ってみました。
@@ -25,7 +25,7 @@ https://github.com/mogura-rs/mogura
 
 https://x.com/windymelt/status/1977112031775117616
 
-> Rustを推す理由
+<p class="md-figcaption" style="text-align: center;">Rustを推す理由</p>
 
 ## 実装のポイント
 ポイントは、
