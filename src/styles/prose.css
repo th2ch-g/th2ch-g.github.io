@@ -67,92 +67,16 @@
   padding-left: 0;
 }
 
-/* GitHub repo cards produced by `src/plugins/remark-github-card.mjs`.
-   A standalone `https://github.com/<owner>/<repo>` URL is upgraded to a
-   small clickable card showing description / star count / primary
-   language. The whole card is one <a> so the entire surface is the click
-   target — owner/repo spans inside are styled like links but inherit the
-   anchor (no nested anchors, which would be invalid HTML). */
-.gh-card {
-  display: block;
-  max-width: 36rem;
-  margin: 1.25rem auto;
-  padding: 0.9rem 1.05rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-card);
-  color: var(--color-fg);
-  text-decoration: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
-}
-.gh-card:hover {
-  border-color: var(--color-accent);
-  text-decoration: none;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
-}
-.gh-card-head {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  font-size: 1rem;
-  line-height: 1.3;
-}
-.gh-card-mark {
-  display: inline-flex;
-  flex-shrink: 0;
-  color: var(--color-fg);
-}
-.gh-card-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-.gh-card-owner,
-.gh-card-repo {
-  color: var(--color-accent);
-}
-.gh-card:hover .gh-card-owner,
-.gh-card:hover .gh-card-repo {
-  text-decoration: underline;
-}
-.gh-card-sep {
-  color: var(--color-muted);
-  font-weight: 400;
-}
-.gh-card-desc {
-  margin: 0.5rem 0 0;
-  color: var(--color-muted);
-  font-size: 0.95rem;
-  line-height: 1.55;
-}
-.gh-card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 0.6rem;
-  color: var(--color-muted);
-  font-size: 0.875rem;
-}
-.gh-card-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-.gh-card-stat svg {
-  display: block;
-}
-
-/* Twitter-style link preview cards produced by
-   `src/plugins/remark-link-card.mjs`. A standalone external URL is
-   upgraded into a horizontal card showing title / description /
-   site-name on the left and an OG thumbnail on the right. When the
-   target page has no og:image, the card collapses to a text-only
-   variant via `.link-card--no-image`. */
+/* Twitter-style social preview cards. Produced by two remark plugins
+   that share the same DOM shape:
+   - `remark-github-card.mjs` for `https://github.com/<owner>/<repo>`
+   - `remark-link-card.mjs`   for any other standalone external URL
+   Both render as `summary_large_image` (full-width hero on top, body
+   below) — the same layout Twitter / Slack use when expanding a pasted
+   URL. When the target page has no og:image the card collapses to a
+   text-only variant via `.link-card--no-image`. */
 .link-card {
-  display: flex;
-  align-items: stretch;
+  display: block;
   max-width: 36rem;
   margin: 1.25rem auto;
   border: 1px solid var(--color-border);
@@ -168,19 +92,34 @@
   text-decoration: none;
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
 }
+.link-card-thumb {
+  display: block;
+  width: 100%;
+  /* GitHub social previews ship at 1200×630; most og:images follow the
+     same 1.91:1 ratio. Reserving the aspect-ratio up front prevents the
+     card from reflowing when the image finishes loading. */
+  aspect-ratio: 1200 / 630;
+  background: var(--color-border);
+  overflow: hidden;
+}
+.link-card-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .link-card-body {
-  flex: 1 1 auto;
-  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  padding: 0.85rem 1rem;
+  padding: 0.75rem 1rem 0.9rem;
+  border-top: 1px solid var(--color-border);
 }
 .link-card-title {
   margin: 0;
   font-weight: 600;
-  font-size: 1rem;
-  line-height: 1.3;
+  font-size: 0.95rem;
+  line-height: 1.4;
   color: var(--color-fg);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -191,7 +130,7 @@
 .link-card-desc {
   margin: 0;
   color: var(--color-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -199,9 +138,9 @@
   overflow: hidden;
 }
 .link-card-site {
-  margin: auto 0 0;
+  margin: 0;
   color: var(--color-muted);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -211,30 +150,20 @@
   height: 14px;
   flex-shrink: 0;
   border-radius: 2px;
-}
-.link-card-thumb {
-  flex: 0 0 auto;
-  width: 9rem;
-  background: var(--color-border);
-  overflow: hidden;
-}
-.link-card-thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  /* Inlined SVG (e.g. the GitHub mark from remark-github-card) inherits
+     the surrounding text color so it sits on the same tonal level as the
+     site-name text next to it. */
+  color: var(--color-muted);
 }
 .link-card--no-image .link-card-body {
-  /* Without a thumbnail the body owns the whole card width; nudge the
-     padding up slightly so the card doesn't look bottom-heavy. */
+  /* Without a thumbnail the body owns the whole card; drop the divider
+     line and add a touch more padding so the card doesn't look pinched. */
+  border-top: none;
   padding: 0.95rem 1.05rem;
 }
 @media (max-width: 540px) {
-  .link-card-thumb {
-    width: 6.5rem;
-  }
   .link-card-title {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
   .link-card-desc {
     -webkit-line-clamp: 1;

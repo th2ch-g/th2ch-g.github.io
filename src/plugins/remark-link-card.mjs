@@ -336,6 +336,9 @@ function renderCard(d) {
   const desc = d.description
     ? `<p class="link-card-desc">${esc(d.description)}</p>`
     : '';
+  // Twitter-style summary_large_image layout: full-width hero image on top,
+  // body (title / description / site row) stacked below. The `.link-card`
+  // CSS handles the vertical layout; `--no-image` collapses the thumb slot.
   const image = d.image
     ? `<div class="link-card-thumb"><img src="${esc(d.image)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>`
     : '';
@@ -348,12 +351,12 @@ function renderCard(d) {
     : '';
   return (
     `<a class="link-card${d.image ? '' : ' link-card--no-image'}" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">` +
+    image +
     `<div class="link-card-body">` +
     `<p class="link-card-title">${esc(title)}</p>` +
     desc +
     `<p class="link-card-site">${favicon}<span>${site}</span></p>` +
     `</div>` +
-    image +
     `</a>`
   );
 }
