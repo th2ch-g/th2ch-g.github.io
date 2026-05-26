@@ -18,7 +18,7 @@ repo: th2ch-g/th2ch-g.github.io
 site: https://th2ch-g.github.io
 location: Tokyo, Japan
 headline:
-  ja: 日本人🇯🇵・博士後期課程学生・無職
+  ja: 日本人🇯🇵・博士後期課程学生
   en: Japanese・Doctoral student
 affiliation:
   ja: 東京科学大学
@@ -42,7 +42,7 @@ links:
   - label: Kaggle
     url: https://www.kaggle.com/lst1923
     comment:
-      ja: データサイエンス好きくない😔
+      ja: DSあんまり好きくない😔
       en: Kaggle
   - label: Huggingface
     url: https://huggingface.co/wasarou
