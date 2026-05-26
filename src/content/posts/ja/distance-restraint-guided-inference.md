@@ -7,6 +7,7 @@ tags:
   - jctc
   - restraint-guided-inference
   - molecular-dynamics-simulation
+  - twitter
 draft: false
 heroImage: ./assets/distance-restraint-guided-inference.png
 heroImageAlt: distance-restraint-guided-inference

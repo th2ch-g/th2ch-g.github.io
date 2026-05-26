@@ -5,6 +5,7 @@ pubDate: 2026-04-20
 tags:
   - dotfiles
   - ansible
+  - twitter
 draft: false
 heroImage: ./assets/2026-04-20-dotfiles-ansible-twitter.png
 heroImageAlt: 2026-04-20-dotfiles-ansible-twitter
