@@ -40,15 +40,17 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
 ---
 <Base lang={lang} title={tEn('nav.home')} description={meta.headline}>
   <section class="hero">
-    {meta.icon && (
-      <div class="avatar-wrap">
-        <img class="avatar" src="/icon.png" alt={meta.name} width="128" height="128" loading="eager" />
-        {meta.iconComment && (
-          <span class="link-tip" role="tooltip">{meta.iconComment}</span>
-        )}
-      </div>
-    )}
-    <h1>{meta.name}</h1>
+    <div class="hero-head">
+      {meta.icon && (
+        <div class="avatar-wrap">
+          <img class="avatar" src="/icon.png" alt={meta.name} width="72" height="72" loading="eager" />
+          {meta.iconComment && (
+            <span class="link-tip" role="tooltip">{meta.iconComment}</span>
+          )}
+        </div>
+      )}
+      <h1>{meta.name}</h1>
+    </div>
     {meta.headline && <p class="headline">{meta.headline}</p>}
     {(meta.affiliation || meta.location) && (
       <p class="muted">
@@ -120,18 +122,42 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
 </script>
 
 <style>
-  .hero { margin-bottom: 2rem; }
-  /* Avatar wrapper: `width: max-content` makes the wrapper hug the 128px
-     image so the tooltip's `left: 50%` centres on the avatar, not on the
-     full hero column. Stays a block so the H1 still sits underneath. */
+  /* Centred profile card. Stacking the hero as a flex column lets each
+     row (avatar+name, headline, location, links) auto-shrink to its
+     content width and centre as a unit, instead of left-aligning to
+     main's padding edge. `text-align: center` propagates so multi-line
+     paragraphs (e.g. a long headline that wraps) stay centred too. */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  /* Avatar + name share a single horizontal row. The wrapper absorbs the
+     vertical spacing that <h1> would otherwise contribute (h1's default
+     1.5em/0.5em margins from layout.css would inflate the flex row), so
+     the avatar sits flush against the name baseline. */
+  .hero-head {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin: 1.5em 0 0.5em;
+  }
+  .hero-head > h1 {
+    margin: 0;
+  }
+  /* Avatar wrapper: `width: max-content` makes the wrapper hug the 72px
+     image so the tooltip's left-anchored bubble sits flush against the
+     avatar edge, not the surrounding flex gap. */
   .avatar-wrap {
     position: relative;
     display: block;
     width: max-content;
   }
   .avatar {
-    width: 128px;
-    height: 128px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--color-border);
@@ -226,57 +252,13 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
     .link-tip { transition: opacity 0ms; }
   }
 
-  /* Avatar always sits flush to main's left padding, so the default
-     `left: 50%` centring pushes the bubble ~48 px past the avatar's
-     left edge — visibly clipping whenever main fills the viewport.
-     Anchor left at every width; re-aim the arrow at the avatar centre. */
-  .avatar-wrap > .link-tip {
-    left: 0;
-    transform: translate(0, -4px);
-  }
-  .avatar-wrap:hover > .link-tip,
-  .avatar-wrap:has(:focus-visible) > .link-tip {
-    transform: translate(0, 0);
-  }
-  .avatar-wrap > .link-tip::before,
-  .avatar-wrap > .link-tip::after {
-    left: 64px; /* half of 128 px avatar */
-  }
-
-  /* PC only: re-anchor the leftmost / rightmost SNS link tooltips to
-     the icon edges so a 14 rem bubble centred on an 80 px icon can't
-     overhang main's left / right padding. Gated to min-width:721px
-     because mobile flex-wraps the icon row, after which :first-child
-     / :last-child no longer match the row-visual extremes. */
-  @media (min-width: 721px) {
-    .links .link-item:first-child > .link-tip {
-      left: 0;
-      transform: translate(0, -4px);
-    }
-    .links .link-item:first-child:hover > .link-tip,
-    .links .link-item:first-child:has(:focus-visible) > .link-tip {
-      transform: translate(0, 0);
-    }
-    .links .link-item:first-child > .link-tip::before,
-    .links .link-item:first-child > .link-tip::after {
-      left: 2.5rem; /* half of 5 rem icon */
-    }
-    .links .link-item:last-child > .link-tip {
-      left: auto;
-      right: 0;
-      transform: translate(0, -4px);
-    }
-    .links .link-item:last-child:hover > .link-tip,
-    .links .link-item:last-child:has(:focus-visible) > .link-tip {
-      transform: translate(0, 0);
-    }
-    .links .link-item:last-child > .link-tip::before,
-    .links .link-item:last-child > .link-tip::after {
-      left: auto;
-      right: 2.5rem; /* half of 5 rem icon */
-      transform: translateX(50%);
-    }
-  }
+  /* With the hero centred (`.hero { align-items: center }`) the avatar
+     and the SNS icon row sit in the middle of main rather than flush
+     to its left padding, so the historical edge-anchored tooltip
+     overrides for `.avatar-wrap` / `.links .link-item:first-child` /
+     `:last-child` are no longer needed — the default `left: 50%;
+     translate(-50%)` from `.link-tip` centres the bubble on each icon
+     and stays comfortably inside main's gutters at every viewport. */
   .links a {
     display: inline-flex;
     align-items: center;
