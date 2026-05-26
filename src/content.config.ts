@@ -154,6 +154,11 @@ const profileMeta = defineCollection({
     analytics: z
       .object({
         goatcounterEndpoint: nullable(z.url()),
+        // GA4 measurement IDs are `G-` followed by 10 uppercase
+        // alphanumerics. Validating the shape at build time catches
+        // transposed / truncated values long before GA itself would
+        // (which silently drops malformed pings).
+        googleAnalyticsId: nullable(z.string().regex(/^G-[A-Z0-9]{10}$/)),
       })
       .nullish(),
     indexnow: z

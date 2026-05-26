@@ -72,11 +72,19 @@ webmention:
   pingback:
   apiTarget:
 
-# GoatCounter analytics (https://www.goatcounter.com). The endpoint
-# looks like `https://<handle>.goatcounter.com`. Empty disables the
-# tracker script entirely (no fetch, no data leak).
+# Analytics integrations. Each ID is independently optional; leaving
+# both blank disables the tracker scripts entirely (no fetch, no data
+# leak).
+#
+# - `goatcounterEndpoint`: GoatCounter (https://www.goatcounter.com).
+#   Privacy-respecting, cookie-free. Endpoint looks like
+#   `https://<handle>.goatcounter.com`.
+# - `googleAnalyticsId`: GA4 measurement ID (form `G-XXXXXXXXXX`).
+#   Cookie-based; if you set this, also update the privacy policy
+#   under src/content/legal/{ja,en}/privacy.md to disclose it.
 analytics:
   goatcounterEndpoint:
+  googleAnalyticsId: G-2QTGY03ENF
 
 # IndexNow key (Bing / Yandex / Seznam crawler ping). Generate with
 # `openssl rand -hex 16` and set here; the site exposes it at

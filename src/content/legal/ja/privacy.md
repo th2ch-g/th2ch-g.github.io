@@ -1,7 +1,7 @@
 ---
 title: プライバシーポリシー
 description: 本サイトにおける訪問者情報の取り扱いについて。
-updatedDate: 2026-05-13
+updatedDate: 2026-05-26
 ---
 
 本サイト「{{siteHandle}}」({{site}}、以下「本サイト」) における、訪問者の個人情報の取り扱いについて説明します。
@@ -24,9 +24,14 @@ updatedDate: 2026-05-13
 
 ブログ記事のコメント欄は [Giscus](https://giscus.app) により提供され、コメントは GitHub Discussions に保存されます。コメント投稿には GitHub アカウントが必要で、GitHub のプライバシーポリシーが適用されます。
 
-### 2.3 アクセス解析 (有効化時)
+### 2.3 アクセス解析
 
-将来的にアクセス解析ツールを導入する場合は、Cookie を使用しないプライバシー配慮型のサービス ([GoatCounter](https://www.goatcounter.com/) 等) のみを使用します。Google Analytics 等の Cookie ベースの追跡ツールは使用しません。
+本サイトでは [Google Analytics 4](https://marketingplatform.google.com/about/analytics/) (以下「GA4」) を使用してアクセス状況を計測しています。GA4 は Cookie (`_ga`, `_ga_<ID>` 等) を使用し、訪問者の IP アドレス、ユーザーエージェント、流入元、閲覧ページ、滞在時間等を Google のサーバに送信します。データは Google のプライバシーポリシーに基づき処理されます。
+
+- 収集データの詳細・利用目的: [Google のサービスを使用するサイトやアプリから収集した情報の Google による使用](https://policies.google.com/technologies/partner-sites)
+- オプトアウト: [Google アナリティクス オプトアウト アドオン](https://tools.google.com/dlpage/gaoptout) をブラウザにインストールすることで、GA4 によるデータ収集を無効化できます。
+
+ブラウザの設定で Cookie をブロック、または DNT (Do Not Track) を有効にすることでも一定の追跡を回避できます。
 
 ### 2.4 Webmention (有効化時)
 

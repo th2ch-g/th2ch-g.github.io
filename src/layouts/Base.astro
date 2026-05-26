@@ -125,9 +125,9 @@ const csp = [
   // to the document head; that sheet sets `.giscus, .giscus-frame { width: 100% }`. Without
   // it the iframe falls back to the HTML default 300px width.
   "style-src 'self' 'unsafe-inline' https://giscus.app",
-  "script-src 'self' 'unsafe-inline' https://giscus.app https://platform.twitter.com https://*.twimg.com https://gc.zgo.at",
+  "script-src 'self' 'unsafe-inline' https://giscus.app https://platform.twitter.com https://*.twimg.com https://gc.zgo.at https://www.googletagmanager.com",
   "frame-src 'self' https://giscus.app https://platform.twitter.com",
-  "connect-src 'self' https://webmention.io https://*.giscus.app https://api.github.com https://gc.zgo.at https://*.twitter.com",
+  "connect-src 'self' https://webmention.io https://*.giscus.app https://api.github.com https://gc.zgo.at https://*.twitter.com https://www.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net",
 ].join('; ');
 
 // JSON-LD structured data. Person describes the site owner, WebSite
@@ -314,6 +314,27 @@ const jsonLd = {
         data-goatcounter={`${meta.integrations.analytics.goatcounterEndpoint}/count`}
         src="https://gc.zgo.at/count.js"
       />
+    )}
+
+    {/* Google Analytics 4 (gtag.js). Cookie-based — disclosed in the
+        privacy policy under section 2.3. The measurement ID flows from
+        profile.yaml so forks can swap in their own without touching this
+        layout. CSP allows the loader origin (googletagmanager.com) and
+        the collection endpoints (google-analytics.com et al.) above. */}
+    {meta.integrations.analytics?.googleAnalyticsId && (
+      <>
+        <script
+          is:inline
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${meta.integrations.analytics.googleAnalyticsId}`}
+        />
+        <script is:inline define:vars={{ gaId: meta.integrations.analytics.googleAnalyticsId }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', gaId);
+        </script>
+      </>
     )}
 
     {/* Google AdSense site verification. The presence of `clientId` here

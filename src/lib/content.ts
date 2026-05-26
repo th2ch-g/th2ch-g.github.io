@@ -204,8 +204,10 @@ function buildIntegrations(data: ProfileData) {
     : undefined;
 
   const a = data.analytics;
-  const analytics = blank(a?.goatcounterEndpoint)
-    ? { goatcounterEndpoint: blank(a?.goatcounterEndpoint)! }
+  const goatcounterEndpoint = blank(a?.goatcounterEndpoint);
+  const googleAnalyticsId = blank(a?.googleAnalyticsId);
+  const analytics = goatcounterEndpoint || googleAnalyticsId
+    ? { goatcounterEndpoint, googleAnalyticsId }
     : undefined;
 
   const i = data.indexnow;

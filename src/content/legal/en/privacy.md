@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How visitor information is handled on this site.
-updatedDate: 2026-05-13
+updatedDate: 2026-05-26
 ---
 
 This document describes how the personal information of visitors to "{{siteHandle}}" ({{site}}, "this site") is handled.
@@ -24,9 +24,14 @@ The site is hosted on GitHub Pages, and GitHub may collect access information su
 
 Post comments are provided by [Giscus](https://giscus.app) and stored in GitHub Discussions. A GitHub account is required to post comments, and GitHub's privacy policy applies.
 
-### 2.3 Analytics (when enabled)
+### 2.3 Analytics
 
-If analytics are introduced in the future, only privacy-respecting services without cookies (such as [GoatCounter](https://www.goatcounter.com/)) will be used. Cookie-based tracking tools such as Google Analytics will not be used.
+This site uses [Google Analytics 4](https://marketingplatform.google.com/about/analytics/) ("GA4") to measure traffic. GA4 uses cookies (`_ga`, `_ga_<ID>`, etc.) and sends information such as the visitor's IP address, user agent, referrer, page paths, and time-on-page to Google's servers. Data is processed under Google's privacy policy.
+
+- Details on data collected and its use: [How Google uses information from sites or apps that use our services](https://policies.google.com/technologies/partner-sites)
+- Opt-out: Install the [Google Analytics opt-out browser add-on](https://tools.google.com/dlpage/gaoptout) to disable GA4 data collection.
+
+Blocking cookies in your browser settings, or enabling DNT (Do Not Track), can also prevent some tracking.
 
 ### 2.4 Webmention (when enabled)
 
