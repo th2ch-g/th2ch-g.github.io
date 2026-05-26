@@ -37,17 +37,15 @@ updatedDate: 2026-05-26
 
 [Webmention.io](https://webmention.io) を介して他サイトからの言及を表示する場合があります。受信した webmention の内容は webmention.io 上に保存されます。
 
-### 2.5 Google AdSense (将来的に有効化する可能性あり)
+### 2.5 Google AdSense
 
-将来的に広告を表示する場合があります。その際は [Google AdSense](https://www.google.com/adsense/) により、訪問者の興味関心に基づくパーソナライズ広告が表示される可能性があります。AdSense は Cookie を使用し、訪問履歴を Google および広告配信パートナーが収集します。
+本サイトでは [Google AdSense](https://www.google.com/adsense/) により広告を表示しています。AdSense は Cookie を使用し、訪問者の興味関心に基づくパーソナライズ広告を表示する場合があります。訪問履歴は Google および広告配信パートナーが収集します。
 
 広告配信パートナーが Cookie を使用することについて、訪問者は以下の方法でオプトアウトできます。
 
 - [Google 広告設定](https://adssettings.google.com)
 - [aboutads.info](https://www.aboutads.info/choices/) (米国)
 - [youronlinechoices.eu](https://www.youronlinechoices.eu/) (EU)
-
-なお、AdSense を実際に有効化した時点で本ポリシーを更新します。
 
 ## 3. Cookie の使用
 

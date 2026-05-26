@@ -111,8 +111,10 @@ const ogLocaleAlternate = lang === 'ja' ? 'en_US' : 'ja_JP';
 //     also sets X-Frame-Options; on GitHub Pages the site is unprotected
 //     from framing, which is acceptable for a public personal portfolio.
 //   - Third-party origins listed correspond 1:1 to the configurable
-//     integrations in profile.yaml (giscus, webmention, goatcounter) plus
-//     the on-demand Twitter widget loaded by PostDetailPage.
+//     integrations in profile.yaml (giscus, webmention, goatcounter,
+//     google analytics, adsense) plus the on-demand Twitter widget
+//     loaded by PostDetailPage. AdSense Auto Ads also reach the ad
+//     iframe origins (googleads.g.doubleclick.net, *.googlesyndication.com).
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -125,9 +127,9 @@ const csp = [
   // to the document head; that sheet sets `.giscus, .giscus-frame { width: 100% }`. Without
   // it the iframe falls back to the HTML default 300px width.
   "style-src 'self' 'unsafe-inline' https://giscus.app",
-  "script-src 'self' 'unsafe-inline' https://giscus.app https://platform.twitter.com https://*.twimg.com https://gc.zgo.at https://www.googletagmanager.com",
-  "frame-src 'self' https://giscus.app https://platform.twitter.com",
-  "connect-src 'self' https://webmention.io https://*.giscus.app https://api.github.com https://gc.zgo.at https://*.twitter.com https://www.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net",
+  "script-src 'self' 'unsafe-inline' https://giscus.app https://platform.twitter.com https://*.twimg.com https://gc.zgo.at https://www.googletagmanager.com https://*.googlesyndication.com https://*.google.com",
+  "frame-src 'self' https://giscus.app https://platform.twitter.com https://googleads.g.doubleclick.net https://*.googlesyndication.com",
+  "connect-src 'self' https://webmention.io https://*.giscus.app https://api.github.com https://gc.zgo.at https://*.twitter.com https://www.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net https://*.googlesyndication.com",
 ].join('; ');
 
 // JSON-LD structured data. Person describes the site owner, WebSite
@@ -337,13 +339,25 @@ const jsonLd = {
       </>
     )}
 
-    {/* Google AdSense site verification. The presence of `clientId` here
-        is enough for AdSense to verify ownership during the application
-        review; the actual ad-loader script is intentionally NOT injected
-        until the application is approved (and Lighthouse impact is
-        measured). See profile.yaml `adsense.clientId`. */}
+    {/* Google AdSense. The meta tag carries the site-verification record
+        (also satisfied by the loader's presence); the loader script
+        bootstraps Auto Ads, which inserts ad slots heuristically based
+        on page content. `clientId` is the single source of truth — set
+        it in profile.yaml only after the AdSense application is
+        approved, otherwise the loader wastes the perf budget without
+        serving anything. CSP allows the loader origin
+        (*.googlesyndication.com) and the ad-iframe origins
+        (googleads.g.doubleclick.net) above. */}
     {meta.integrations.adsense && (
-      <meta name="google-adsense-account" content={meta.integrations.adsense.clientId} />
+      <>
+        <meta name="google-adsense-account" content={meta.integrations.adsense.clientId} />
+        <script
+          is:inline
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${meta.integrations.adsense.clientId}`}
+          crossorigin="anonymous"
+        />
+      </>
     )}
 
     <!-- Pre-paint theme override. The <html> element ships with

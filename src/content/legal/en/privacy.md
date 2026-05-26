@@ -37,17 +37,15 @@ Blocking cookies in your browser settings, or enabling DNT (Do Not Track), can a
 
 Mentions from other sites may be displayed via [Webmention.io](https://webmention.io). Received webmentions are stored on webmention.io.
 
-### 2.5 Google AdSense (potentially enabled in the future)
+### 2.5 Google AdSense
 
-Advertisements may be displayed in the future. If so, [Google AdSense](https://www.google.com/adsense/) may display personalized ads based on visitor interests. AdSense uses cookies, and Google and its advertising partners collect visitor browsing history.
+This site displays advertisements via [Google AdSense](https://www.google.com/adsense/). AdSense uses cookies and may show personalized ads based on visitor interests. Browsing history is collected by Google and its advertising partners.
 
 You may opt out of cookie-based ad personalization at:
 
 - [Google Ads Settings](https://adssettings.google.com)
 - [aboutads.info](https://www.aboutads.info/choices/) (US)
 - [youronlinechoices.eu](https://www.youronlinechoices.eu/) (EU)
-
-This policy will be updated at the time AdSense is actually enabled.
 
 ## 3. Cookies
 

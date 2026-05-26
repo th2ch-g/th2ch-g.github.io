@@ -92,14 +92,16 @@ analytics:
 indexnow:
   key:
 
-# Google AdSense site verification (https://www.google.com/adsense).
+# Google AdSense (https://www.google.com/adsense).
 # Setting `clientId` here (form `ca-pub-XXXXXXXXXXXXXXXX`) enables:
-#   - `<meta name="google-adsense-account">` in <head>
+#   - `<meta name="google-adsense-account">` in <head> (verification)
 #   - `/ads.txt` route exposing the AdSense ownership record
-# Both are stage-1 prerequisites for the AdSense application; the actual
-# ad-loader script is NOT injected by this block. After your application
-# is approved, add the loader manually to start serving Auto Ads (and
-# expect the Lighthouse perf budget in lighthouserc.json to need
-# loosening).
+#   - `adsbygoogle.js` Auto Ads loader in <head>
+# Leave blank until your AdSense application is approved — loading the
+# script before approval wastes the perf budget for no benefit. After
+# approval, set the clientId and the loader injects automatically. Also
+# update the privacy policy (src/content/legal/{ja,en}/privacy.md §2.5)
+# to reflect that AdSense is now active, and expect the Lighthouse perf
+# budget in lighthouserc.json to need loosening.
 adsense:
-  clientId:
+  clientId: ca-pub-3059839485466897
