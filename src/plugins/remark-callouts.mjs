@@ -56,6 +56,10 @@ export function remarkCallouts() {
         firstText.value = remainder;
       } else {
         first.children.shift();
+        // A hard line break right after the marker (`> [!NOTE]\` or two
+        // trailing spaces) parses as a separate `break` node, which would
+        // otherwise render a stray <br> at the very top of the body. Drop it.
+        if (first.children[0]?.type === 'break') first.children.shift();
         if (first.children.length === 0) node.children.shift();
       }
 

@@ -34,9 +34,17 @@ function extractPostsSlugs(body: string, lang: Lang): string[] {
   // Match `[label](/posts/foo)`, `[label](/posts/foo/)`, or the EN-prefixed
   // form `(/en/posts/foo)`. We accept either `/...` (root-relative) so
   // authors don't have to think about which locale they're linking to.
+  // Strip fenced code blocks, inline code, and HTML comments before
+  // matching so a `](/posts/...)` shown as a code *example* (or commented
+  // out) isn't recorded as a real inbound link — the rendered HTML wouldn't
+  // contain a clickable link there, so the backlink would be a phantom.
+  const prose = body
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]*`/g, '')
+    .replace(/<!--[\s\S]*?-->/g, '');
   const prefix = POSTS_PREFIX_BY_LANG[lang];
   const regex = new RegExp(`\\]\\((${prefix.replace(/\//g, '\\/')})([^)\\s#?]+)`, 'g');
-  for (const m of body.matchAll(regex)) {
+  for (const m of prose.matchAll(regex)) {
     out.push(m[2].replace(/\/$/, ''));
   }
   return out;

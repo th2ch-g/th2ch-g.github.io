@@ -28,7 +28,18 @@ export async function extractDoisFromCv() {
   for (const file of CV_FILES) {
     const text = await readFile(file, 'utf8');
     for (const m of text.matchAll(DOI_URL)) {
-      set.add(m[1].replace(/[.,;]+$/, '').toLowerCase());
+      // Decode percent-encoding so the snapshot key matches the runtime
+      // lookup key CVPage.astro builds (it decodeURIComponent's the href
+      // before looking up the citation/BibTeX entry). A DOI may legitimately
+      // contain encoded characters; without decoding the lookup would miss.
+      // Fall back to the raw match on a malformed escape sequence.
+      let doi = m[1];
+      try {
+        doi = decodeURIComponent(doi);
+      } catch {
+        // keep the raw, undecoded value
+      }
+      set.add(doi.replace(/[.,;]+$/, '').toLowerCase());
     }
   }
   return [...set];

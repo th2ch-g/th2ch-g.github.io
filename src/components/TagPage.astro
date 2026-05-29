@@ -22,12 +22,21 @@ const posts = sortByDateDesc(
   'pubDate',
 );
 const tagFeed = lang === 'en' ? `/en/tags/${tag}.xml` : `/tags/${tag}.xml`;
-const tagFeedExists = posts.length > 0;
+// The per-tag OG card and RSS feed are generated from the PRODUCTION post
+// set (drafts always excluded, per the no-draft-in-syndication invariant),
+// so only advertise them when this tag has a non-draft post. A draft-only
+// tag is visible in `npm run dev` but its card/feed route is never emitted,
+// so linking them would 404 in preview.
+const tagFeedExists = (await getPublishedByLang('posts', lang)).some((p) =>
+  (p.data.tags ?? []).includes(tag),
+);
 ---
 <Base
   lang={lang}
   title={`${tEn('tags.heading')}: #${tag}`}
-  image={lang === 'en' ? `/en/og/tags/${tag}.png` : `/og/tags/${tag}.png`}
+  image={tagFeedExists
+    ? (lang === 'en' ? `/en/og/tags/${tag}.png` : `/og/tags/${tag}.png`)
+    : undefined}
 >
   <Breadcrumbs
     lang={lang}

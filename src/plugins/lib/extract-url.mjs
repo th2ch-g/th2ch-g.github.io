@@ -11,7 +11,17 @@ export function extractStandaloneUrl(paragraph, urlPattern) {
   );
   if (children.length !== 1) return null;
   const child = children[0];
-  if (child.type === 'link' && urlPattern.test(child.url)) return child.url;
+  if (child.type === 'link' && urlPattern.test(child.url)) {
+    // Only promote a link whose visible text *is* the URL. A labelled link
+    // like `[my repo](https://github.com/o/r)` is an intentional author
+    // choice — turning it into a card/embed would discard the label. This
+    // mirrors `extractBareUrl` in remark-link-card.mjs.
+    const text = (child.children ?? [])
+      .map((c) => (c.type === 'text' ? c.value : ''))
+      .join('')
+      .trim();
+    return text === child.url ? child.url : null;
+  }
   if (child.type === 'text' && urlPattern.test(child.value.trim())) {
     return child.value.trim();
   }

@@ -58,6 +58,12 @@ export async function buildPostOgRoute(lang: Lang) {
   const og = await OGImageRoute({
     param: 'slug',
     pages,
+    // Override astro-og-canvas's default `pathToSlug`, which strips
+    // everything after the last dot as a file extension: a post slug like
+    // `v2.0-release` would become `v2.png`, diverging from the
+    // `/og/<slug>.png` URL PostDetailPage references and 404-ing the card.
+    // Append `.png` to the verbatim key so the two always agree.
+    getSlug: (slug: string) => `${slug}.png`,
     getImageOptions: (_path, page) => ({
       title: page.title,
       description: page.description,

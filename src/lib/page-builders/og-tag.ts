@@ -44,6 +44,10 @@ export async function buildTagOgRoute(lang: Lang) {
   const og = await OGImageRoute({
     param: 'tag',
     pages,
+    // See og-post.ts: the library default strips a dotted tag like
+    // `node.js` down to `node.png`, diverging from the `/og/tags/<tag>.png`
+    // URL TagPage references. Append `.png` to the verbatim tag instead.
+    getSlug: (tag: string) => `${tag}.png`,
     getImageOptions: (_path, page) => ({
       title: page.title,
       description: page.description,

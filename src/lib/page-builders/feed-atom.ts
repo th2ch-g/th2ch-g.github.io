@@ -30,13 +30,16 @@ export function buildAtomFeedHandler(lang: Lang) {
     const site = requireSite(context);
     const homeUrl = new URL(`${localePrefix}/`, site).toString();
     const selfUrl = new URL(selfPath, site).toString();
-    // The feed's `<updated>` is the most-recent entry's update timestamp,
-    // falling back to the build moment when the feed is empty.
-    const newest = posts[0];
+    // The feed's `<updated>` is the most recent update across ALL entries
+    // (RFC 4287 §4.2.15), not just the newest-by-pubDate post — a recently
+    // edited older post must still bump the feed timestamp, or a hub/reader
+    // comparing feed-level <updated> could miss the change. Falls back to the
+    // build moment when the feed is empty.
+    const updateTimes = posts.map((p) =>
+      (p.data.updatedDate ?? p.data.pubDate).getTime(),
+    );
     const feedUpdated = (
-      newest?.data.updatedDate ??
-      newest?.data.pubDate ??
-      new Date()
+      updateTimes.length ? new Date(Math.max(...updateTimes)) : new Date()
     ).toISOString();
 
     const entryXml = posts

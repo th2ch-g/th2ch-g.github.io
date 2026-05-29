@@ -4,7 +4,7 @@
 // random port so multiple scripts can run in parallel without collision.
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
-import { join, extname } from 'node:path';
+import { join, extname, relative, isAbsolute, sep } from 'node:path';
 import { existsSync } from 'node:fs';
 
 const MIME = {
@@ -24,11 +24,25 @@ const MIME = {
 
 function makeResolver(distDir) {
   return async function resolvePath(urlPath) {
-    // Strip query/hash, normalize, and resolve directory routes to index.html.
-    const cleaned = urlPath.split('?')[0].split('#')[0];
+    // Strip query/hash, decode percent-encoding, and resolve directory
+    // routes to index.html. Decoding matters because Astro writes pages to
+    // disk under their decoded UTF-8 names (e.g. dist/tags/<日本語>/), while a
+    // browser/Playwright requests them percent-encoded — without decode,
+    // join() would look for a literally `%E3%82%BF...`-named dir and 404
+    // every non-ASCII route. Fall back to the raw path on a malformed escape.
+    let cleaned;
+    try {
+      cleaned = decodeURIComponent(urlPath.split('?')[0].split('#')[0]);
+    } catch {
+      cleaned = urlPath.split('?')[0].split('#')[0];
+    }
     let p = join(distDir, cleaned);
     // Disallow escapes from distDir (defense in depth — server is local).
-    if (!p.startsWith(distDir)) return null;
+    // Use path.relative rather than startsWith so a sibling like `dist-evil/`
+    // can't satisfy the guard, and `..` segments (incl. a decoded `%2e%2e`)
+    // are rejected.
+    const rel = relative(distDir, p);
+    if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) return null;
     try {
       const s = await stat(p);
       if (s.isDirectory()) p = join(p, 'index.html');

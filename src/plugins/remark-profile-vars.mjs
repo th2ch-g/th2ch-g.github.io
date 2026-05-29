@@ -42,7 +42,11 @@ const vars = {
 };
 
 const RE = /\{\{([a-zA-Z][\w]*)\}\}/g;
-const replace = (s) => s.replace(RE, (m, k) => (k in vars ? vars[k] : m));
+// Use `Object.hasOwn` rather than `k in vars`: `in` walks the prototype
+// chain, so tokens like `{{toString}}` / `{{constructor}}` would otherwise
+// resolve to inherited Object.prototype members (e.g. the native function
+// source) instead of being left verbatim. Only the four own keys substitute.
+const replace = (s) => s.replace(RE, (m, k) => (Object.hasOwn(vars, k) ? vars[k] : m));
 
 export function remarkProfileVars() {
   return (tree) => {
