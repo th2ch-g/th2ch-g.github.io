@@ -27,20 +27,22 @@
 
 1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.64898/2026.01.30.702714), *bioRxiv*, DOI:10.64898/2026.01.30.702714, (2026).
 
+1. **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Tomohiro Doura**, **Shigeki Kiyonaka**, [Off-target-free chemogenetic platform that decodes physiological roles of target GPCRs](https://doi.org/10.64898/2026.05.24.727545), *bioRxiv*, DOI:10.64898/2026.05.24.727545, (2026).
+
 ## Conference Presentations (non-peer-reviewed)
 
 ### Posters
 
-1. **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
+1. ◯ **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
    "[Molecular Dynamics Simulations of Binding and Dissociation between Mutant Adenosine A<sub>2A</sub> Receptor and Ligand Focusing on Aromatic Ring Interactions](https://sympo.mol-sim.jp/mssj38/files/presen_program_20241108.pdf)"
    [The 38th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj38/), Acrie Himeji (Himeji, Hyogo, Japan), December 2-4, 2024.
 
-1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
+1. ◯ **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
    "[Structural Sampling via Distance-Restrained Complex Structure Prediction](https://sympo.mol-sim.jp/mssj39/files/presen_program_20251122.pdf)"
    [The 39th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj39/), Kunibiki Messe (Matsue, Shimane, Japan), November 24-26, 2025.
 
 ### Oral
-1. **Hiroyuki Tanaka**, **<u>Tatsuki Hori</u>**, **Shohei Yamamoto**, **Atsushi Toyoda**, **Kentaro Yano**, **Kyoko Yamane**, **Takehiko Itoh**.
+1. ◯ **Hiroyuki Tanaka**, **<u>Tatsuki Hori</u>**, **Shohei Yamamoto**, **Atsushi Toyoda**, **Kentaro Yano**, **Kyoko Yamane**, **Takehiko Itoh**.
    "[Current Status of Wasabi Genome Decoding](https://jsbreeding.jp/meeting/143/pdf/143program.pdf)"
    [The 143rd Meeting of the Japanese Society of Breeding](https://jsbreeding.jp/meeting/143/), Shizuoka University, March 17-18, 2023.
 
@@ -49,15 +51,15 @@
 
 ### Posters
 
-1. **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
+1. ◯ **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
    "Molecular dynamics simulation of association and dissociation between Adenosine A<sub>2A</sub> receptor and ligand"
    [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [2nd Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 16-17, 2024.
 
-1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
+1. ◯ **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
    "Structural Sampling via Distance-Restrained Complex Structure Prediction"
    [Grant-in-Aid for Transformative Research Areas (A) "Predictive Biosynthetic Science"](https://bio-4cast.skr.jp/) [2025 Young Researchers' Retreat Workshop](https://bio-4cast.skr.jp/wpsite/wp-content/uploads/2026/03/NEWS-LETTER-No4.pdf), Takaone (Hachioji, Tokyo, Japan), September 7-8, 2025.
 
-1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
+1. ◯ **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
    "Structural Sampling with Distance Restrained Biomolecular Complex Structure Prediction Model"
    [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [4th Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 8-9, 2025.
 
