@@ -129,7 +129,13 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://giscus.app",
   "script-src 'self' 'unsafe-inline' https://giscus.app https://platform.twitter.com https://*.twimg.com https://gc.zgo.at https://www.googletagmanager.com https://*.googlesyndication.com https://*.google.com",
   "frame-src 'self' https://giscus.app https://platform.twitter.com https://googleads.g.doubleclick.net https://*.googlesyndication.com",
-  "connect-src 'self' https://webmention.io https://*.giscus.app https://api.github.com https://gc.zgo.at https://*.twitter.com https://www.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net https://*.googlesyndication.com",
+  // GA4 sends the page_view beacon to whichever of these Google collection
+  // endpoints its config resolves to — observed in the wild: www.google-analytics.com,
+  // region{N}.google-analytics.com, analytics.google.com (apex — NOT covered by the
+  // *.analytics.google.com wildcard), and www.google.com/g/collect. *.google.com
+  // also covers AdSense's ep{N}.adtrafficquality.google sodar beacon. Omitting any
+  // of these silently drops every hit and GA reports "data collection not active".
+  "connect-src 'self' https://webmention.io https://*.giscus.app https://api.github.com https://gc.zgo.at https://*.twitter.com https://*.google-analytics.com https://*.analytics.google.com https://*.google.com https://*.g.doubleclick.net https://*.googlesyndication.com https://*.adtrafficquality.google",
 ].join('; ');
 
 // JSON-LD structured data. Person describes the site owner, WebSite
