@@ -7,7 +7,7 @@ tags:
   - claudecode
   - portfolio
 draft: false
-heroImage: ./assets/cddlab.png
+heroImage: ./assets/cddlab.jpg
 heroImageAlt: cddlab
 ---
 

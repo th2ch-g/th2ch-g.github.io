@@ -15,24 +15,27 @@
 // metadata is much cheaper to fetch via the REST API than by scraping the
 // repo page's <head>, and the social preview image URL is deterministic.
 import { visit } from 'unist-util-visit';
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { escapeHtml as esc } from './lib/escape.mjs';
 import { extractStandaloneUrl } from './lib/extract-url.mjs';
 import { replaceWithHtml } from './lib/replace.mjs';
+import { REPO_URL, ogFilename } from './lib/github-og.mjs';
 import { siteHost } from '../lib/profile-yaml.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, '../../node_modules/.cache/github-card');
 const TTL_MS = 24 * 60 * 60 * 1000;
+// Self-hosted GitHub OG images written by scripts/build-github-og.mjs at
+// prebuild. When a copy exists here the card references it instead of
+// hotlinking opengraph.githubassets.com (see the render loop below).
+const PUBLIC_OG_DIR = join(__dirname, '../../public/github-og');
 
-// Strict match: only canonical owner/repo URLs. Reject anything with an
-// extra path segment (`/issues`, `/blob/main/...`, `/pull/123`, etc.) so
-// in-body file/issue links are not mis-promoted into cards.
-// - owner: 1–39 chars, alnum or hyphens (GitHub username spec, simplified)
-// - repo: 1–100 chars, alnum + `._-`
-const REPO_URL = /^https?:\/\/github\.com\/([A-Za-z0-9][A-Za-z0-9-]{0,38})\/([A-Za-z0-9._-]{1,100})\/?$/;
+// `REPO_URL` (the canonical owner/repo matcher) lives in ./lib/github-og.mjs
+// so the prebuild downloader keys self-hosted files off the exact same
+// pattern. See that module for the spec.
 
 // Inlined GitHub mark (Octicons, MIT) — used as the site favicon for the
 // card footer so we don't pull a per-request favicon from Google's service
@@ -122,7 +125,7 @@ async function getRepoData(owner, repo) {
 function renderCard(d) {
   return (
     `<a class="link-card" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">` +
-    `<div class="link-card-thumb"><img src="${esc(d.image)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>` +
+    `<div class="link-card-thumb"><img src="${esc(d.image)}" alt="" width="1200" height="630" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>` +
     `<div class="link-card-body">` +
     `<p class="link-card-title">${esc(d.title)}</p>` +
     `<p class="link-card-site">${ICON_MARK}<span>${esc(d.siteName)}</span></p>` +
@@ -151,7 +154,14 @@ export function remarkGithubCard() {
     );
     for (const { t, data } of resolved) {
       if (!data) continue;
-      replaceWithHtml(t.parent, t.index, renderCard(data));
+      // Prefer the self-hosted copy (scripts/build-github-og.mjs) so the
+      // card serves from our own origin instead of hotlinking GitHub's
+      // on-demand image service at runtime — which intermittently
+      // throttles / times out and blanks the card. Fall back to the
+      // upstream URL when the prebuild download was unavailable.
+      const file = ogFilename(t.owner, t.repo);
+      const image = existsSync(join(PUBLIC_OG_DIR, file)) ? `/github-og/${file}` : data.image;
+      replaceWithHtml(t.parent, t.index, renderCard({ ...data, image }));
     }
   };
 }

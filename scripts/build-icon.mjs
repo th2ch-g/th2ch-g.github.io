@@ -12,7 +12,12 @@ import { iconUrl } from '../src/lib/profile-yaml.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const OUT = resolve(ROOT, 'public/icon.png');
-const SIZE = 512;
+// 256 covers every consumer at 2x density: the home avatar (72px CSS →
+// 144px retina), the OG-card credit thumb (re-sized to 80px in
+// og-image.ts), and the favicon (≤32px). The previous 512 produced a
+// ~330 KB PNG that the home page downloaded just to draw at 72px; 256
+// quarters the pixel count (~90 KB) with no visible loss anywhere.
+const SIZE = 256;
 
 const src = (await iconUrl())?.trim();
 if (!src) {
