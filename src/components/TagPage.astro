@@ -30,9 +30,19 @@ const tagFeed = lang === 'en' ? `/en/tags/${tag}.xml` : `/tags/${tag}.xml`;
 const tagFeedExists = (await getPublishedByLang('posts', lang)).some((p) =>
   (p.data.tags ?? []).includes(tag),
 );
+// Does the opposite locale have any post under this tag? If not, suppress the
+// language switch / hreflang to it — buildTagPaths won't emit a
+// /<other>/tags/<tag> page, so the link would 404. Same draft filter as
+// getStaticPaths for dev/prod parity.
+const otherLang: Lang = lang === 'ja' ? 'en' : 'ja';
+const otherHasTag = (
+  await getPublishedByLang('posts', otherLang, { includeDevDrafts: true })
+).some((p) => (p.data.tags ?? []).includes(tag));
+const availableLocales: Lang[] = otherHasTag ? ['ja', 'en'] : [lang];
 ---
 <Base
   lang={lang}
+  availableLocales={availableLocales}
   title={`${tEn('tags.heading')}: #${tag}`}
   image={tagFeedExists
     ? (lang === 'en' ? `/en/og/tags/${tag}.png` : `/og/tags/${tag}.png`)

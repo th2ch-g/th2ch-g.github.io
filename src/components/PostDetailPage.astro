@@ -17,7 +17,7 @@ import Breadcrumbs from '@/components/Breadcrumbs.astro';
 import { getRelatedPosts, getAdjacentPosts, getSeriesPosts } from '@/lib/content';
 import { getBacklinks } from '@/lib/backlinks';
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { localeSlug } from '@/lib/content';
+import { localeSlug, getPublishedByLang } from '@/lib/content';
 
 interface Props {
   post: CollectionEntry<'posts'>;
@@ -38,6 +38,15 @@ const backlinks = await getBacklinks(post, lang);
 // frame, accent border, and avatar — just with the hero artwork mixed in
 // when available. See `src/pages/og/[...slug].ts`.
 const slug = localeSlug(post.id);
+// Does the opposite locale have this same post? If not, the language switcher
+// and hreflang alternate must NOT advertise a /<other>/posts/<slug> URL — it
+// isn't generated (see buildPostsDetailPaths) and would 404. The draft filter
+// mirrors getStaticPaths so dev (drafts visible) and prod stay consistent.
+const otherLang: Lang = lang === 'ja' ? 'en' : 'ja';
+const otherHasPost = (
+  await getPublishedByLang('posts', otherLang, { includeDevDrafts: true })
+).some((p) => localeSlug(p.id) === slug);
+const availableLocales: Lang[] = otherHasPost ? ['ja', 'en'] : [lang];
 const ogImageUrl = lang === 'en' ? `/en/og/${slug}.png` : `/og/${slug}.png`;
 // Twitter widgets.js is ~50KB and ships a privacy-relevant cookie. Inject it
 // only when the post body actually contains an X / Twitter status URL that
@@ -56,6 +65,7 @@ const heroImage = post.data.heroImage;
 ---
 <Base
   lang={lang}
+  availableLocales={availableLocales}
   title={post.data.title}
   description={post.data.description}
   image={ogImageUrl}

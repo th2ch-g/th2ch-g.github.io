@@ -6,8 +6,13 @@ import { t } from '@/i18n/ui';
 // locale, so this page intentionally renders bilingual content stacked
 // rather than picking a side. Anchors point to `/` (ja) and `/en/`
 // respectively so the visitor can land in either home.
+//
+// availableLocales={['ja']}: there is no /en/404 route (GitHub Pages only
+// serves the root 404.html), so the language switcher and hreflang must NOT
+// advertise /en/404 — it would be a dead link. The stacked sections below
+// keep the page itself bilingual regardless.
 ---
-<Base lang="ja" title="404 — Not Found">
+<Base lang="ja" title="404 — Not Found" availableLocales={['ja']}>
   <h1 class="big-404">404</h1>
   <section>
     <h2>{t('ja', '404.title')}</h2>

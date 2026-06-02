@@ -8,8 +8,11 @@ import Search from './Search.astro';
 
 interface Props {
   lang: Lang;
+  // Forwarded to LanguageSwitcher: which locales this page exists in, so a
+  // page without a translated twin doesn't render a switch link that 404s.
+  availableLocales?: Lang[];
 }
-const { lang } = Astro.props;
+const { lang, availableLocales } = Astro.props;
 
 const meta = await getProfileMeta(lang);
 // Brand text in the navbar: prefer the human display name (e.g. "th"),
@@ -82,7 +85,7 @@ function isActive(href: string, match: 'exact' | 'prefix'): boolean {
     </nav>
     <Search lang={lang} />
     <ThemeToggle lang={lang} />
-    <LanguageSwitcher lang={lang} />
+    <LanguageSwitcher lang={lang} availableLocales={availableLocales} />
     <button
       type="button"
       class="nav-toggle"

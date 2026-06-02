@@ -1,8 +1,16 @@
 name: Link check
 
-# Periodic dead-link sweep. lychee scans all HTML/MD source for external
-# URLs and reports broken ones in a GitHub Issue (created if missing,
-# updated otherwise). Manual triggers allowed for ad-hoc checks.
+# Periodic dead-link sweep. Builds the static site, then lychee crawls the
+# generated dist/ — verifying BOTH external URLs and internal/root-relative
+# links (e.g. /privacy) against real files via --root-dir. Broken links are
+# reported in a GitHub Issue (created if missing, updated otherwise). Manual
+# triggers allowed for ad-hoc checks.
+#
+# Why build first: the previous version scanned raw .astro/.md sources, where
+# (a) the brace glob '*.{md,astro,html}' matched zero files — lychee's glob
+# engine has no brace expansion, so every run failed with "No links found" —
+# and (b) root-relative links can't be resolved without routing info. Crawling
+# built HTML with --root-dir fixes both.
 on:
   schedule:
     - cron: '0 9 1 * *'  # 09:00 UTC on the 1st of each month
@@ -19,13 +27,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          # build-cv-pdf.mjs hard-fails under CI=true when Chromium is absent
+          # (a guard so deploys never ship a missing PDF). This link-check job
+          # intentionally skips Playwright — the PDF isn't needed to verify
+          # links, and the deploy workflow already generates & guards it. Force
+          # the soft-skip path to avoid a ~150MB browser download every month.
+          CI: 'false'
+
       - name: Run lychee
         id: lychee
         uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411  # v2.8.0
         with:
-          # `--no-progress` keeps the log readable; sources are limited to
-          # markdown + Astro/HTML so we don't crawl node_modules.
-          args: --no-progress --max-concurrency 4 './src/**/*.{md,astro,html}' './public/**/*.html'
+          # Crawl built output. `--root-dir dist` resolves root-relative links
+          # (e.g. /privacy) to dist/ files; the relative path dodges the
+          # Docker-action workspace remap. Excludes:
+          #   - `cv\.pdf`  PDF artifacts not built in this job (see Build step).
+          #   - `/404$`    The 404 page's ja self-link renders as href="/404/";
+          #                lychee normalizes it (strips the trailing slash) to
+          #                .../404 and resolves it against dist/, but the page ships
+          #                as 404.html (there is no dist/404/ dir), so it can't
+          #                resolve. The page always exists (GitHub Pages serves
+          #                404.html), so the check is pointless. The broken /en/404
+          #                pill is removed at the source (404.astro passes
+          #                availableLocales={['ja']}); only the ja self-link is left
+          #                to exclude here.
+          args: --no-progress --max-concurrency 4 --root-dir dist --exclude 'cv\.pdf' --exclude '/404$' './dist/**/*.html'
           fail: false
 
       - name: File issue on broken links

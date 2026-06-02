@@ -4,8 +4,14 @@ import { languages, t, type Lang } from '@/i18n/ui';
 
 interface Props {
   lang: Lang;
+  // Locales this page actually exists in. Defaults to all (most pages are
+  // fully mirrored). Pages whose translation is absent (e.g. a ja-only post)
+  // pass a subset so we never render a switch link to a URL that 404s. The
+  // current `lang` is always expected to be present in the list.
+  availableLocales?: Lang[];
 }
-const { lang } = Astro.props;
+const { lang, availableLocales } = Astro.props;
+const visible = availableLocales ?? (Object.keys(languages) as Lang[]);
 
 // Strip the current locale prefix from the path so we can append the target one.
 // Preserve `?tag=...&sort=...` (and any other query) so list-page filter state
@@ -14,7 +20,9 @@ const currentPath = Astro.url.pathname.replace(/^\/(en|ja)(?=\/|$)/, '') || '/';
 const search = Astro.url.search;
 ---
 <div class="lang-switch" aria-label={t(lang, 'lang.switch')}>
-  {(Object.keys(languages) as Lang[]).map((code) => (
+  {(Object.keys(languages) as Lang[])
+    .filter((code) => visible.includes(code))
+    .map((code) => (
     <a
       href={`${getRelativeLocaleUrl(code, currentPath)}${search}`}
       class:list={['pill', { active: code === lang }]}
