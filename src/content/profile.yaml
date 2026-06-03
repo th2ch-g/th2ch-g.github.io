@@ -105,3 +105,13 @@ indexnow:
 # budget in lighthouserc.json to need loosening.
 adsense:
   clientId: ca-pub-3059839485466897
+
+# Google Search Console site verification (https://search.google.com/search-console).
+# Use the "HTML tag" method: in Search Console pick "HTML tag", copy ONLY
+# the token inside content="…" (not the whole <meta> element), and paste it
+# below. The site then emits `<meta name="google-site-verification">` in
+# <head>. NOTE: the "Google Analytics" verification method does NOT work
+# here — gtag.js receives the measurement ID as a variable, which Search
+# Console's verifier cannot read — so the tag method is the way in.
+searchConsole:
+  verification: bxwzCEMK_IUP8oEAAzNpxT0ZUtrZBpZrVhoYjrl68Wc

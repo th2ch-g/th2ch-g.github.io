@@ -183,6 +183,17 @@ const profileMeta = defineCollection({
         clientId: nullable(z.string().regex(/^ca-pub-\d{16}$/)),
       })
       .nullish(),
+    // Google Search Console site verification (HTML-tag method). Holds the
+    // `content="…"` token Google shows for the "HTML tag" option, emitted
+    // as `<meta name="google-site-verification">`. The GA-based method
+    // fails on this site (gtag passes the measurement ID as a variable,
+    // not a literal, so Search Console's parser can't read it), so the tag
+    // method is the supported path. Token charset is base64url-ish.
+    searchConsole: z
+      .object({
+        verification: nullable(z.string().regex(/^[A-Za-z0-9_-]+$/)),
+      })
+      .nullish(),
   }),
 });
 

@@ -243,6 +243,18 @@ const jsonLd = {
     <meta name="PerplexityBot" content="noindex, nofollow" />
     <meta name="CCBot" content="noindex, nofollow" />
 
+    {/* Google Search Console ownership (HTML-tag method). Kept high in
+        <head> so the verifier reliably finds it. The GA-based method fails
+        on this site because the gtag config passes the measurement ID as a
+        variable, not a literal; this tag is the supported path. Token lives
+        in profile.yaml → integrations.searchConsole.verification. */}
+    {meta.integrations.searchConsole?.verification && (
+      <meta
+        name="google-site-verification"
+        content={meta.integrations.searchConsole.verification}
+      />
+    )}
+
     <meta property="og:title" content={title} />
     <meta property="og:type" content={ogType} />
     <meta property="og:url" content={canonical} />

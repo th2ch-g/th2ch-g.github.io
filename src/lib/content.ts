@@ -216,7 +216,12 @@ function buildIntegrations(data: ProfileData) {
   const ad = data.adsense;
   const adsense = blank(ad?.clientId) ? { clientId: blank(ad?.clientId)! } : undefined;
 
-  return { giscus: giscusReady, webmention, analytics, indexnow, adsense };
+  const sc = data.searchConsole;
+  const searchConsole = blank(sc?.verification)
+    ? { verification: blank(sc?.verification)! }
+    : undefined;
+
+  return { giscus: giscusReady, webmention, analytics, indexnow, adsense, searchConsole };
 }
 
 // Collect a sorted, de-duplicated tag list from a set of collection entries.
