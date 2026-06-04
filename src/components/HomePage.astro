@@ -4,7 +4,7 @@ import type { ImageMetadata } from 'astro';
 import Base from '@/layouts/Base.astro';
 import PostEntry from './PostEntry.astro';
 import SocialIcon from './SocialIcon.astro';
-import { t, tEn, type Lang } from '@/i18n/ui';
+import { t, type Lang } from '@/i18n/ui';
 import {
   getProfileMeta,
   getPublishedByLang,
@@ -38,7 +38,11 @@ for (let i = photoEntries.length - 1; i > 0; i--) {
 const recentPhotos = photoEntries.slice(0, 4).map(([, mod]) => mod.default);
 const galleryHref = getRelativeLocaleUrl(lang, '/photos');
 ---
-<Base lang={lang} title={tEn('nav.home')} description={meta.headline}>
+{/* Home page is titled with the site brand (meta.name), not "Home": this
+    collapses `documentTitle` to just the brand and makes og:title /
+    twitter:title the brand instead of a generic "Home" on social shares.
+    No description is passed: Base falls back to the headline. */}
+<Base lang={lang} title={meta.name}>
   <section class="hero">
     <div class="hero-head">
       {meta.icon && (
