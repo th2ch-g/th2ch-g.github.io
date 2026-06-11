@@ -150,13 +150,10 @@ function buildProfileMeta(data: ProfileData, lang: Lang) {
       .map((l) => ({
         label: blank(l.label),
         url: blank(l.url),
-        // Pick the per-locale tooltip; null/undefined collapse to undefined so
-        // consumers can simply guard on truthiness.
-        comment: blank(l.comment?.[lang]),
       }))
       // Drop entries that lack the basics — an `<a href>` with no label
       // is invisible and an icon with no url is broken.
-      .filter((l): l is { label: string; url: string; comment: string | undefined } =>
+      .filter((l): l is { label: string; url: string } =>
         Boolean(l.label && l.url),
       ),
     integrations: buildIntegrations(data),

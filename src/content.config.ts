@@ -115,14 +115,6 @@ const profileMeta = defineCollection({
         z.object({
           label: z.string().nullish(),
           url: z.preprocess(blankToUndefined, z.url().nullish()),
-          // Per-locale hover tooltip. Either side may be null/missing; the
-          // renderer treats an empty value as "no bubble for this locale".
-          comment: z
-            .object({
-              ja: z.string().nullish(),
-              en: z.string().nullish(),
-            })
-            .nullish(),
         }),
       )
       .nullish(),

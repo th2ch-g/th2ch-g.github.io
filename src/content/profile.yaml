@@ -31,24 +31,12 @@ icon:
 links:
   - label: GitHub
     url: https://github.com/th2ch-g
-    comment:
-      ja: そこそこ使っています😎
-      en: GitHub
   - label: ORCID
     url: https://orcid.org/0009-0001-3991-8367
-    comment:
-      ja: ここからCVを自動生成させてます🤓
-      en: ORCID
   - label: Kaggle
     url: https://www.kaggle.com/lst1923
-    comment:
-      ja: DSあんまり好きくない😔
-      en: Kaggle
   - label: Huggingface
     url: https://huggingface.co/wasarou
-    comment:
-      ja: 全然使ってません🥸
-      en: Huggingface
 
 # Third-party service integrations. Leave any field blank (or remove the
 # whole block) to gracefully disable the corresponding feature at render

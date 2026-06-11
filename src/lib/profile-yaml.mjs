@@ -18,9 +18,9 @@ let cached;
 export async function readProfileShallow() {
   if (cached) return cached;
   const text = await readFile(PROFILE, 'utf-8');
-  // `icon` is a mapping (`icon:` block with `url:` / `comment:` children)
-  // mirroring `links[].comment`; the legacy `icon: <scalar>` form is also
-  // accepted so older forks continue to build without manual migration.
+  // `icon` is a mapping (`icon:` block with `url:` / `comment:` children);
+  // the legacy `icon: <scalar>` form is also accepted so older forks continue
+  // to build without manual migration.
   const blockIconUrl = text.match(/^icon:\s*\n(?:\s+\S.*\n)*?\s+url:\s*(\S+)/m)?.[1];
   const flatIconUrl = text.match(/^icon:\s*(\S.*?)\s*$/m)?.[1];
   cached = {
