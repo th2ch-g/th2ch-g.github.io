@@ -18,45 +18,28 @@ const { Content } = await render(cv);
 <Base lang={lang} title={tEn('nav.cv')} image={lang === 'en' ? '/en/og/cv.png' : '/og/cv.png'}>
   <div class="cv-header">
     <h1>{t(lang, 'nav.cv')}</h1>
-    <div class="cv-header-actions">
-      <button
-        type="button"
-        class="cv-action cv-copy-all"
-        data-cv-copy-all
-        data-default-label={t(lang, 'cv.copy.all')}
-        data-copied-label={t(lang, 'code.copied')}
-        data-failed-label={t(lang, 'share.copy.failed')}
-      >{t(lang, 'cv.copy.all')}</button>
-      {/* The PDF is generated post-build by `scripts/build-cv-pdf.mjs`.
-          Opens in a new tab so the browser's built-in viewer can preview
-          it; users who want a local copy save from the viewer. Hidden in
-          the print stylesheet so the chip doesn't recurse into the PDF. */}
-      <a
-        class="cv-action cv-pdf"
-        href={lang === 'en' ? '/en/cv.pdf' : '/cv.pdf'}
-        target="_blank"
-        rel="noopener noreferrer"
-      >{t(lang, 'cv.open.pdf')}</a>
-      {/* `.bib` bundle copied to clipboard. The entry payload is already
-          embedded in `data-bibtex` on the prose container (see below),
-          so the click handler joins entries client-side — no HTTP fetch
-          and no forced download. */}
-      <button
-        type="button"
-        class="cv-action cv-bib"
-        data-cv-copy-bib
-        data-default-label={t(lang, 'cv.copy.bib')}
-        data-copied-label={t(lang, 'code.copied')}
-        data-failed-label={t(lang, 'share.copy.failed')}
-      >{t(lang, 'cv.copy.bib')}</button>
-    </div>
+    {/* Page-level toolbar. The three actions (copy all / open PDF / copy
+        .bib) are collapsed into one disclosure menu built client-side by
+        the script below — same affordance as the per-section copy menus.
+        This is just the mount point; labels + the PDF href ride along as
+        data-* so the script needn't re-derive the locale.
+        The PDF is generated post-build by `scripts/build-cv-pdf.mjs` and
+        opens in a new tab; the whole toolbar is hidden in the print
+        stylesheet so the menu doesn't recurse into the PDF. */}
+    <div
+      class="cv-header-actions"
+      data-cv-actions
+      data-pdf-href={lang === 'en' ? '/en/cv.pdf' : '/cv.pdf'}
+      data-label-all={t(lang, 'cv.copy.all')}
+      data-label-pdf={t(lang, 'cv.open.pdf')}
+      data-label-bib={t(lang, 'cv.copy.bib')}
+      data-menu-aria={t(lang, 'cv.actions.menu.aria')}
+    ></div>
   </div>
   <div
     class="prose cv-prose"
     data-cv-lang={lang}
     data-copy-label={t(lang, 'code.copy')}
-    data-copied-label={t(lang, 'code.copied')}
-    data-failed-label={t(lang, 'share.copy.failed')}
     data-citations={JSON.stringify(allCitations)}
     data-citation-label={t(lang, 'citation.label')}
     data-citation-source={t(lang, 'citation.source')}
@@ -379,8 +362,6 @@ const { Content } = await render(cv);
 
     const lang: 'ja' | 'en' = prose.dataset.cvLang === 'en' ? 'en' : 'ja';
     const copyLabel = prose.dataset.copyLabel ?? 'Copy';
-    const copiedLabel = prose.dataset.copiedLabel ?? 'Copied';
-    const failedLabel = prose.dataset.failedLabel ?? 'Copy failed';
     const bibtexLabel = prose.dataset.bibtexLabel ?? 'BibTeX';
     const itemTextLabel = prose.dataset.itemTextLabel ?? 'Text';
     const sectionBibtexLabel = prose.dataset.sectionBibtexLabel ?? 'All as BibTeX';
@@ -410,23 +391,26 @@ const { Content } = await render(cv);
     let bibtexEntries: Record<string, BibtexEntry> = {};
     try { bibtexEntries = JSON.parse(prose.dataset.bibtex ?? '{}'); } catch {}
 
-    // Build a disclosure <details> that collapses several copy actions behind
-    // one trigger. Shared by per-entry (<li>) and per-section (<h2>) copy
-    // affordances. The trigger shows a copy icon; `triggerSizingClass`
-    // (.cv-copy-btn / .cv-section-btn) sets the chip size and selects which
-    // hover rule reveals it. Each item runs its copy fn, flashes feedback on
-    // the trigger, then closes the menu.
+    // Build a disclosure <details> that collapses several actions behind one
+    // trigger. Shared by per-entry (<li>), per-section (<h2>) copy affordances
+    // and the page-level header toolbar. The trigger shows `triggerIcon`
+    // (defaults to the copy glyph); `triggerSizingClass` (.cv-copy-btn /
+    // .cv-section-btn / .cv-header-btn) sets the chip size and selects which
+    // hover rule reveals it. A `run` item copies and flashes feedback on the
+    // trigger then closes the menu; an `href` item is a real link (the CV PDF)
+    // that navigates in a new tab — no flash, since opening isn't "copied".
     const buildCopyMenu = (
       triggerAria: string,
       triggerSizingClass: string,
-      menuItems: { label: string; run: () => Promise<boolean> }[],
+      menuItems: { label: string; run?: () => Promise<boolean>; href?: string }[],
+      triggerIcon: string = COPY_ICON,
     ): HTMLDetailsElement => {
       const details = document.createElement('details');
       details.className = 'cv-menu';
 
       const summary = document.createElement('summary');
       summary.className = `${triggerSizingClass} cv-menu-trigger`;
-      summary.innerHTML = COPY_ICON;
+      summary.innerHTML = triggerIcon;
       summary.setAttribute('aria-label', triggerAria);
       details.appendChild(summary);
 
@@ -434,17 +418,33 @@ const { Content } = await render(cv);
       list.className = 'cv-menu-list';
 
       const flash = (ok: boolean) => {
-        summary.innerHTML = ok ? CHECK_ICON : COPY_ICON;
+        summary.innerHTML = ok ? CHECK_ICON : triggerIcon;
         details.classList.toggle('is-copied', ok);
         details.classList.toggle('is-failed', !ok);
         details.open = false;
         window.setTimeout(() => {
-          summary.innerHTML = COPY_ICON;
+          summary.innerHTML = triggerIcon;
           details.classList.remove('is-copied', 'is-failed');
         }, 1800);
       };
 
       for (const mi of menuItems) {
+        if (mi.href) {
+          // Link item (the CV PDF). Keep it a real anchor so cmd/middle-click
+          // open-in-new-tab still work; just close the menu and let the
+          // browser navigate — no preventDefault, no copy flash.
+          const item = document.createElement('a');
+          item.className = 'cv-menu-item';
+          item.href = mi.href;
+          item.target = '_blank';
+          item.rel = 'noopener noreferrer';
+          item.textContent = mi.label;
+          item.addEventListener('click', () => {
+            details.open = false;
+          });
+          list.appendChild(item);
+          continue;
+        }
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'cv-menu-item';
@@ -452,7 +452,7 @@ const { Content } = await render(cv);
         item.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          flash(await mi.run());
+          if (mi.run) flash(await mi.run());
         });
         list.appendChild(item);
       }
@@ -549,21 +549,23 @@ const { Content } = await render(cv);
           ]),
         );
       } else {
-        // Single action → a plain button (a one-item menu would be silly).
+        // Single action → a plain icon button (a one-item menu would be
+        // silly). Same copy→check glyph swap as the per-item button; the
+        // label survives as the aria-label so the icon stays accessible.
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
         copyBtn.className = 'cv-section-btn cv-section-copy';
-        copyBtn.textContent = sectionCopyLabel;
+        copyBtn.innerHTML = COPY_ICON;
         copyBtn.setAttribute('aria-label', sectionCopyLabel);
         copyBtn.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
           const ok = await copySection(h2, list, ff);
-          copyBtn.textContent = ok ? copiedLabel : failedLabel;
+          copyBtn.innerHTML = ok ? CHECK_ICON : COPY_ICON;
           copyBtn.classList.toggle('is-copied', ok);
           copyBtn.classList.toggle('is-failed', !ok);
           window.setTimeout(() => {
-            copyBtn.textContent = sectionCopyLabel;
+            copyBtn.innerHTML = COPY_ICON;
             copyBtn.classList.remove('is-copied', 'is-failed');
           }, 1800);
         });
@@ -577,70 +579,46 @@ const { Content } = await render(cv);
     // Native <details> stays open until its own summary is clicked again —
     // wire Escape and outside-click so the copy menus behave like a normal
     // popover. Clicking inside a menu keeps it open; opening one closes any
-    // other (only one menu open at a time).
+    // other (only one menu open at a time). Scoped to the whole document, not
+    // just `.cv-prose`, so the header toolbar menu (which lives outside the
+    // prose container) is dismissed by the same rules.
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      prose.querySelectorAll<HTMLDetailsElement>('.cv-menu[open]').forEach((d) => {
+      document.querySelectorAll<HTMLDetailsElement>('.cv-menu[open]').forEach((d) => {
         d.open = false;
       });
     });
     document.addEventListener('click', (e) => {
       const current = e.target instanceof Element ? e.target.closest('.cv-menu') : null;
-      prose.querySelectorAll<HTMLDetailsElement>('.cv-menu[open]').forEach((d) => {
+      document.querySelectorAll<HTMLDetailsElement>('.cv-menu[open]').forEach((d) => {
         if (d !== current) d.open = false;
       });
     });
 
-    const allBtn = document.querySelector<HTMLButtonElement>('[data-cv-copy-all]');
-    if (allBtn) {
-      const defaultLabel = allBtn.dataset.defaultLabel ?? 'Copy all';
-      const allCopiedLabel = allBtn.dataset.copiedLabel ?? 'Copied';
-      const allFailedLabel = allBtn.dataset.failedLabel ?? 'Copy failed';
-      allBtn.addEventListener('click', async () => {
-        allBtn.disabled = true;
-        const ok = await copyAll(prose, lang);
-        allBtn.textContent = ok ? allCopiedLabel : allFailedLabel;
-        allBtn.classList.toggle('is-copied', ok);
-        allBtn.classList.toggle('is-failed', !ok);
-        window.setTimeout(() => {
-          allBtn.textContent = defaultLabel;
-          allBtn.classList.remove('is-copied', 'is-failed');
-          allBtn.disabled = false;
-        }, 1800);
-      });
-    }
-
-    // `.bib` whole-bundle clipboard copy. Joins every BibTeX entry the
-    // same way `src/pages/cv.bib.ts` does (sorted by DOI in the source
-    // JSON), so what gets pasted matches what was previously downloaded
-    // from `/cv.bib`.
-    const bibBtn = document.querySelector<HTMLButtonElement>('[data-cv-copy-bib]');
-    if (bibBtn) {
-      const defaultLabel = bibBtn.dataset.defaultLabel ?? 'Copy .bib';
-      const bibCopiedLabel = bibBtn.dataset.copiedLabel ?? 'Copied';
-      const bibFailedLabel = bibBtn.dataset.failedLabel ?? 'Copy failed';
-      const body = Object.values(bibtexEntries)
+    // Page-level toolbar (copy all / open PDF / copy .bib) collapsed into one
+    // disclosure menu — the same affordance as the per-section copy menus.
+    // The PDF is a real link item; the two copy items reuse copyAll /
+    // copyBibtex. `fullBib` joins every BibTeX entry the same way
+    // `src/pages/cv.bib.ts` does (DOI-sorted in the source JSON), so a paste
+    // matches a `/cv.bib` download.
+    const headerActions = document.querySelector<HTMLElement>('[data-cv-actions]');
+    if (headerActions) {
+      const allLabel = headerActions.dataset.labelAll ?? 'Copy all';
+      const pdfLabel = headerActions.dataset.labelPdf ?? 'Open PDF';
+      const bibLabel = headerActions.dataset.labelBib ?? 'Copy .bib';
+      const pdfHref = headerActions.dataset.pdfHref ?? '';
+      const menuAria = headerActions.dataset.menuAria ?? 'CV actions';
+      const fullBib = Object.values(bibtexEntries)
         .map((e) => e.bibtex)
         .filter(Boolean)
         .join('\n\n') + '\n';
-      bibBtn.addEventListener('click', async () => {
-        bibBtn.disabled = true;
-        let ok = false;
-        try {
-          await navigator.clipboard.writeText(body);
-          ok = true;
-        } catch {
-          ok = false;
-        }
-        bibBtn.textContent = ok ? bibCopiedLabel : bibFailedLabel;
-        bibBtn.classList.toggle('is-copied', ok);
-        bibBtn.classList.toggle('is-failed', !ok);
-        window.setTimeout(() => {
-          bibBtn.textContent = defaultLabel;
-          bibBtn.classList.remove('is-copied', 'is-failed');
-          bibBtn.disabled = false;
-        }, 1800);
-      });
+      headerActions.appendChild(
+        buildCopyMenu(menuAria, 'cv-header-btn', [
+          { label: allLabel, run: () => copyAll(prose, lang) },
+          { label: pdfLabel, href: pdfHref },
+          { label: bibLabel, run: () => copyBibtex(fullBib) },
+        ]),
+      );
     }
   });
 </script>
@@ -659,11 +637,21 @@ const { Content } = await render(cv);
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-  /* Shared chip-style affordance used by both the PDF link and the
-     "copy all" button so the header stays visually balanced. */
-  .cv-action {
+  /* Page-level toolbar menu (copy all / open PDF / copy .bib). Built
+     client-side and appended into `.cv-header-actions`, which is OUTSIDE
+     `.cv-prose`, so it carries no scoped-style hash — the menu selectors must
+     be :global() and live here rather than reusing the `.cv-prose`-scoped
+     copy-menu rules. Unlike the hover-revealed section/per-item triggers, this
+     is the page toolbar, so it stays fully visible. `.cv-header-btn` is the
+     chip skin (mirrors the former `.cv-action`); `.cv-menu-trigger` adds the
+     inline-flex layout + caret. */
+  .cv-header-actions :global(.cv-menu) {
+    position: relative;
+    display: inline-block;
+  }
+  .cv-header-actions :global(.cv-header-btn) {
     font-size: 0.85rem;
-    padding: 0.3rem 0.7rem;
+    padding: 0.3rem 0.6rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     color: var(--color-fg);
@@ -672,27 +660,87 @@ const { Content } = await render(cv);
     font-family: inherit;
     transition: border-color 160ms ease, color 160ms ease;
   }
-  .cv-action:hover,
-  .cv-action:focus-visible {
+  .cv-header-actions :global(.cv-menu-trigger) {
+    display: inline-flex;
+    align-items: center;
+    list-style: none;
+    white-space: nowrap;
+  }
+  .cv-header-actions :global(.cv-menu-trigger svg) {
+    width: 0.95rem;
+    height: 0.95rem;
+    display: block;
+  }
+  .cv-header-actions :global(.cv-menu-trigger::-webkit-details-marker) {
+    display: none;
+  }
+  .cv-header-actions :global(.cv-menu-trigger::after) {
+    content: '▾';
+    margin-left: 0.3rem;
+    font-size: 0.7em;
+    transition: transform 160ms ease;
+  }
+  .cv-header-actions :global(.cv-menu[open] .cv-menu-trigger),
+  .cv-header-actions :global(.cv-menu-trigger:hover),
+  .cv-header-actions :global(.cv-menu-trigger:focus-visible),
+  .cv-header-actions :global(.cv-menu.is-copied .cv-menu-trigger) {
     color: var(--color-accent);
     border-color: var(--color-accent);
-    text-decoration: none;
   }
-  .cv-copy-all.is-copied,
-  .cv-bib.is-copied {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
-  }
-  .cv-copy-all.is-failed,
-  .cv-bib.is-failed {
+  .cv-header-actions :global(.cv-menu.is-failed .cv-menu-trigger) {
     color: #c0392b;
     border-color: #c0392b;
   }
-  .cv-copy-all:disabled,
-  .cv-bib:disabled { cursor: default; }
-  /* Suppress action chips in the printed/PDF output so the rendered CV
-     doesn't carry interactive controls into the static document. */
-  @media print { .cv-action { display: none; } }
+  .cv-header-actions :global(.cv-menu[open] .cv-menu-trigger::after) {
+    transform: rotate(180deg);
+  }
+  /* Hide the caret while the trigger is flashing copy feedback. */
+  .cv-header-actions :global(.cv-menu.is-copied .cv-menu-trigger::after),
+  .cv-header-actions :global(.cv-menu.is-failed .cv-menu-trigger::after) {
+    display: none;
+  }
+  .cv-header-actions :global(.cv-menu-list) {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.3rem);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    min-width: 9rem;
+    padding: 0.25rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+  }
+  .cv-header-actions :global(.cv-menu-item) {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    text-align: left;
+    white-space: nowrap;
+    padding: 0.35rem 0.55rem;
+    border: none;
+    border-radius: calc(var(--radius) - 1px);
+    background: transparent;
+    color: var(--color-fg);
+    font-family: inherit;
+    cursor: pointer;
+    /* The PDF item is an <a>; neutralize the global link underline so it
+       reads like its sibling <button> items. */
+    text-decoration: none;
+  }
+  .cv-header-actions :global(.cv-menu-item:hover),
+  .cv-header-actions :global(.cv-menu-item:focus-visible) {
+    background: var(--color-card);
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+  /* Suppress the whole toolbar in the printed/PDF output so the rendered CV
+     doesn't carry interactive controls into the static document. The menu is
+     built with JS, which Playwright runs when printing the CV PDF, so hiding
+     the always-present container (not the old per-chip class) is what keeps
+     it out of dist/cv.pdf. */
+  @media print { .cv-header-actions { display: none; } }
 
   /* Per-item copy buttons. Markdown rendered by <Content /> doesn't carry
      this component's scope hash, so the descendant selectors must be
@@ -861,14 +909,23 @@ const { Content } = await render(cv);
        box that still leaves room for the ::after caret. */
     padding: 0.25rem 0.4rem;
   }
-  /* Copy icon inside per-item buttons and menu triggers. Sized in rem so the
-     chip's font-size is irrelevant; the .cv-section-copy text button is a
-     section-btn WITHOUT .cv-menu-trigger, so it keeps its label. */
+  /* Copy icon inside per-item buttons, menu triggers, and the single-action
+     section copy button. Sized in rem so the chip's font-size is irrelevant. */
   .cv-prose :global(.cv-copy-btn svg),
-  .cv-prose :global(.cv-menu-trigger svg) {
+  .cv-prose :global(.cv-menu-trigger svg),
+  .cv-prose :global(.cv-section-copy svg) {
     width: 0.95rem;
     height: 0.95rem;
     display: block;
+  }
+  /* The single-action section copy is an icon button (no text label): center
+     the glyph and replace the .cv-section-btn text padding with a square box,
+     matching the per-item .cv-copy-btn. */
+  .cv-prose :global(.cv-section-copy) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
   }
   .cv-prose :global(.cv-menu-trigger::-webkit-details-marker) {
     display: none;
