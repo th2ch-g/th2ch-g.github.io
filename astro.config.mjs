@@ -96,7 +96,9 @@ export default defineConfig({
             const tabKey = Object.keys(node.properties).find((k) => k.toLowerCase() === 'tabindex');
             if (tabKey) {
               const code = node.children?.find((c) => c.type === 'element' && c.tagName === 'code');
-              if (code) {
+              // Re-check `type` so TS narrows ElementContent → Element (the
+              // find predicate's guard doesn't propagate to its return type).
+              if (code && code.type === 'element') {
                 (code.properties ??= {})[tabKey] = node.properties[tabKey];
                 delete node.properties[tabKey];
               }
