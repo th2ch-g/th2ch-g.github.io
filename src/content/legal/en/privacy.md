@@ -76,4 +76,4 @@ This policy may be changed without notice. For significant changes, the "Last up
 
 ## 7. Contact
 
-For questions about privacy, please open a [GitHub issue]({{repoUrl}}/issues).
+For questions about privacy, please open a [GitHub issue]({{repoUrl}}/issues) or use the [contact form](/en/contact).

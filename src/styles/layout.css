@@ -106,6 +106,17 @@ pre {
 pre code {
   background: transparent;
   padding: 0;
+  /* Make `<code>` the horizontal scroller, not the `<pre>`. Astro ships
+     `overflow-x: auto` inline on every `<pre class="astro-code">`, so the
+     `<pre>` was the scroll container; its absolutely positioned descendants —
+     the language badge (`.prose pre::before`) and the injected `.copy-code`
+     button — scrolled *with* the content and drifted out of the top-right
+     corner. A block-level `<code>` with its own `overflow-x` keeps the long
+     line inside `<code>`, so the `<pre>` never overflows and the badge/button
+     stay pinned. (`display: block` is needed because `overflow-x` is a no-op
+     on the default inline `<code>`.) */
+  display: block;
+  overflow-x: auto;
 }
 
 ul.bare {

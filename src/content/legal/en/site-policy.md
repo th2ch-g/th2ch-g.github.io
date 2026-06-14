@@ -62,4 +62,4 @@ This policy may be changed without prior notice. When significant changes occur,
 
 ## 7. Contact
 
-For questions about this policy, please open a [GitHub issue]({{repoUrl}}/issues).
+For questions about this policy, please open a [GitHub issue]({{repoUrl}}/issues) or use the [contact form](/en/contact).

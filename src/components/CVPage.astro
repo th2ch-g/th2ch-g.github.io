@@ -65,6 +65,9 @@ const { Content } = await render(cv);
     data-bibtex-aria={t(lang, 'cv.copy.bibtex.aria')}
     data-section-bibtex-label={t(lang, 'cv.copy.bibtex.section')}
     data-section-copy-label={t(lang, 'cv.copy.section')}
+    data-section-menu-label={t(lang, 'cv.copy.section.menu')}
+    data-section-menu-aria={t(lang, 'cv.copy.section.menu.aria')}
+    data-item-text-label={t(lang, 'cv.copy.item.text')}
   ><Content /></div>
 </Base>
 
@@ -72,6 +75,13 @@ const { Content } = await render(cv);
   import { onReady } from '@/lib/dom-ready';
   import type { CitationEntry } from '@/lib/citations';
   import type { BibtexEntry } from '@/lib/bibtex';
+
+  // Feather-style inline SVGs for the copy affordances (same glyphs as the
+  // code-block copy button in Base.astro): a "copy" sheet pair, swapped for a
+  // check on success. aria-hidden so the accessible name comes from each
+  // button's aria-label, not the glyph.
+  const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 
   // h2 sections whose <li>s are presentation-style entries that should be
   // copied with MS Mincho instead of Times New Roman. Matched against
@@ -372,9 +382,10 @@ const { Content } = await render(cv);
     const copiedLabel = prose.dataset.copiedLabel ?? 'Copied';
     const failedLabel = prose.dataset.failedLabel ?? 'Copy failed';
     const bibtexLabel = prose.dataset.bibtexLabel ?? 'BibTeX';
-    const bibtexAria = prose.dataset.bibtexAria ?? 'Copy BibTeX';
+    const itemTextLabel = prose.dataset.itemTextLabel ?? 'Text';
     const sectionBibtexLabel = prose.dataset.sectionBibtexLabel ?? 'All as BibTeX';
     const sectionCopyLabel = prose.dataset.sectionCopyLabel ?? 'Copy list';
+    const sectionMenuAria = prose.dataset.sectionMenuAria ?? 'Copy options';
 
     // CrossRef cited-by badges. Render only when count > 0 — a "cited by 0"
     // chip on a brand-new paper is noise.
@@ -399,6 +410,57 @@ const { Content } = await render(cv);
     let bibtexEntries: Record<string, BibtexEntry> = {};
     try { bibtexEntries = JSON.parse(prose.dataset.bibtex ?? '{}'); } catch {}
 
+    // Build a disclosure <details> that collapses several copy actions behind
+    // one trigger. Shared by per-entry (<li>) and per-section (<h2>) copy
+    // affordances. The trigger shows a copy icon; `triggerSizingClass`
+    // (.cv-copy-btn / .cv-section-btn) sets the chip size and selects which
+    // hover rule reveals it. Each item runs its copy fn, flashes feedback on
+    // the trigger, then closes the menu.
+    const buildCopyMenu = (
+      triggerAria: string,
+      triggerSizingClass: string,
+      menuItems: { label: string; run: () => Promise<boolean> }[],
+    ): HTMLDetailsElement => {
+      const details = document.createElement('details');
+      details.className = 'cv-menu';
+
+      const summary = document.createElement('summary');
+      summary.className = `${triggerSizingClass} cv-menu-trigger`;
+      summary.innerHTML = COPY_ICON;
+      summary.setAttribute('aria-label', triggerAria);
+      details.appendChild(summary);
+
+      const list = document.createElement('div');
+      list.className = 'cv-menu-list';
+
+      const flash = (ok: boolean) => {
+        summary.innerHTML = ok ? CHECK_ICON : COPY_ICON;
+        details.classList.toggle('is-copied', ok);
+        details.classList.toggle('is-failed', !ok);
+        details.open = false;
+        window.setTimeout(() => {
+          summary.innerHTML = COPY_ICON;
+          details.classList.remove('is-copied', 'is-failed');
+        }, 1800);
+      };
+
+      for (const mi of menuItems) {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'cv-menu-item';
+        item.textContent = mi.label;
+        item.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          flash(await mi.run());
+        });
+        list.appendChild(item);
+      }
+
+      details.appendChild(list);
+      return details;
+    };
+
     // Top-level list items only — nested annotations like "*共同筆頭著者"
     // get carried inside their parent <li> via cloneNode, so they don't
     // need their own button.
@@ -416,51 +478,40 @@ const { Content } = await render(cv);
       const actions = document.createElement('div');
       actions.className = 'cv-copy-actions';
 
-      // BibTeX button: only for publication entries with a known BibTeX
-      // snapshot. Inserted first so it sits to the left of the generic
-      // "Copy" button — order matches reading direction in both locales.
+      // Publication entries with a known BibTeX snapshot carry two distinct
+      // copies (formatted text + BibTeX) — collapse them into one menu, the
+      // same affordance as the section headings. Everything else keeps a
+      // single Copy button (a one-item menu would be silly).
       const doi = isPub ? extractDoi(li) : null;
       const bibtex = doi ? bibtexEntries[doi]?.bibtex : null;
+
       if (bibtex) {
-        const bibBtn = document.createElement('button');
-        bibBtn.type = 'button';
-        bibBtn.className = 'cv-copy-btn cv-copy-bibtex';
-        bibBtn.textContent = bibtexLabel;
-        bibBtn.setAttribute('aria-label', bibtexAria);
-        bibBtn.addEventListener('click', async (e) => {
+        actions.appendChild(
+          buildCopyMenu(copyLabel, 'cv-copy-btn', [
+            { label: itemTextLabel, run: () => copyItem(li, ff) },
+            { label: bibtexLabel, run: () => copyBibtex(bibtex) },
+          ]),
+        );
+      } else {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cv-copy-btn';
+        btn.innerHTML = COPY_ICON;
+        btn.setAttribute('aria-label', copyLabel);
+        btn.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const ok = await copyBibtex(bibtex);
-          bibBtn.textContent = ok ? copiedLabel : failedLabel;
-          bibBtn.classList.toggle('is-copied', ok);
-          bibBtn.classList.toggle('is-failed', !ok);
+          const ok = await copyItem(li, ff);
+          btn.innerHTML = ok ? CHECK_ICON : COPY_ICON;
+          btn.classList.toggle('is-copied', ok);
+          btn.classList.toggle('is-failed', !ok);
           window.setTimeout(() => {
-            bibBtn.textContent = bibtexLabel;
-            bibBtn.classList.remove('is-copied', 'is-failed');
+            btn.innerHTML = COPY_ICON;
+            btn.classList.remove('is-copied', 'is-failed');
           }, 1600);
         });
-        actions.appendChild(bibBtn);
+        actions.appendChild(btn);
       }
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'cv-copy-btn';
-      btn.textContent = copyLabel;
-      btn.setAttribute('aria-label', copyLabel);
-
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const ok = await copyItem(li, ff);
-        btn.textContent = ok ? copiedLabel : failedLabel;
-        btn.classList.toggle('is-copied', ok);
-        btn.classList.toggle('is-failed', !ok);
-        window.setTimeout(() => {
-          btn.textContent = copyLabel;
-          btn.classList.remove('is-copied', 'is-failed');
-        }, 1600);
-      });
-      actions.appendChild(btn);
 
       li.classList.add('cv-copyable');
       if (bibtex) li.classList.add('cv-has-bibtex');
@@ -482,51 +533,62 @@ const { Content } = await render(cv);
       const actions = document.createElement('span');
       actions.className = 'cv-section-actions';
 
-      if (isPub) {
-        const bulkBibtex = collectSectionBibtex(h2, list, bibtexEntries);
-        if (bulkBibtex) {
-          const bibBtn = document.createElement('button');
-          bibBtn.type = 'button';
-          bibBtn.className = 'cv-section-btn cv-section-bibtex';
-          bibBtn.textContent = sectionBibtexLabel;
-          bibBtn.setAttribute('aria-label', sectionBibtexLabel);
-          bibBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const ok = await copyBibtex(bulkBibtex);
-            bibBtn.textContent = ok ? copiedLabel : failedLabel;
-            bibBtn.classList.toggle('is-copied', ok);
-            bibBtn.classList.toggle('is-failed', !ok);
-            window.setTimeout(() => {
-              bibBtn.textContent = sectionBibtexLabel;
-              bibBtn.classList.remove('is-copied', 'is-failed');
-            }, 1800);
-          });
-          actions.appendChild(bibBtn);
-        }
-      }
+      // Publication sections may carry two distinct copies — the formatted
+      // list and the section's BibTeX bundle. `collectSectionBibtex` is null
+      // when no entry in the section is in the snapshot (then there's only
+      // one action, even for a publication heading).
+      const bulkBibtex = isPub ? collectSectionBibtex(h2, list, bibtexEntries) : null;
 
-      const copyBtn = document.createElement('button');
-      copyBtn.type = 'button';
-      copyBtn.className = 'cv-section-btn cv-section-copy';
-      copyBtn.textContent = sectionCopyLabel;
-      copyBtn.setAttribute('aria-label', sectionCopyLabel);
-      copyBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const ok = await copySection(h2, list, ff);
-        copyBtn.textContent = ok ? copiedLabel : failedLabel;
-        copyBtn.classList.toggle('is-copied', ok);
-        copyBtn.classList.toggle('is-failed', !ok);
-        window.setTimeout(() => {
-          copyBtn.textContent = sectionCopyLabel;
-          copyBtn.classList.remove('is-copied', 'is-failed');
-        }, 1800);
-      });
-      actions.appendChild(copyBtn);
+      if (bulkBibtex) {
+        // Two actions → one disclosure menu so the heading carries a single
+        // chip instead of two side-by-side buttons.
+        actions.appendChild(
+          buildCopyMenu(sectionMenuAria, 'cv-section-btn', [
+            { label: sectionCopyLabel, run: () => copySection(h2, list, ff) },
+            { label: sectionBibtexLabel, run: () => copyBibtex(bulkBibtex) },
+          ]),
+        );
+      } else {
+        // Single action → a plain button (a one-item menu would be silly).
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'cv-section-btn cv-section-copy';
+        copyBtn.textContent = sectionCopyLabel;
+        copyBtn.setAttribute('aria-label', sectionCopyLabel);
+        copyBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const ok = await copySection(h2, list, ff);
+          copyBtn.textContent = ok ? copiedLabel : failedLabel;
+          copyBtn.classList.toggle('is-copied', ok);
+          copyBtn.classList.toggle('is-failed', !ok);
+          window.setTimeout(() => {
+            copyBtn.textContent = sectionCopyLabel;
+            copyBtn.classList.remove('is-copied', 'is-failed');
+          }, 1800);
+        });
+        actions.appendChild(copyBtn);
+      }
 
       h2.classList.add('cv-section-h2');
       h2.appendChild(actions);
+    });
+
+    // Native <details> stays open until its own summary is clicked again —
+    // wire Escape and outside-click so the copy menus behave like a normal
+    // popover. Clicking inside a menu keeps it open; opening one closes any
+    // other (only one menu open at a time).
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      prose.querySelectorAll<HTMLDetailsElement>('.cv-menu[open]').forEach((d) => {
+        d.open = false;
+      });
+    });
+    document.addEventListener('click', (e) => {
+      const current = e.target instanceof Element ? e.target.closest('.cv-menu') : null;
+      prose.querySelectorAll<HTMLDetailsElement>('.cv-menu[open]').forEach((d) => {
+        if (d !== current) d.open = false;
+      });
     });
 
     const allBtn = document.querySelector<HTMLButtonElement>('[data-cv-copy-all]');
@@ -649,9 +711,6 @@ const { Content } = await render(cv);
     text-decoration: underline;
     text-underline-offset: 0.15em;
   }
-  .cv-prose :global(li.cv-copyable.cv-has-bibtex) {
-    padding-right: 7rem;
-  }
   .cv-prose :global(.cv-copy-actions) {
     position: absolute;
     top: 0.05rem;
@@ -661,9 +720,11 @@ const { Content } = await render(cv);
     gap: 0.3rem;
   }
   .cv-prose :global(.cv-copy-btn) {
-    font-size: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1.2;
-    padding: 0.15rem 0.5rem;
+    padding: 0.25rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     color: var(--color-fg);
@@ -700,6 +761,15 @@ const { Content } = await render(cv);
     .cv-prose :global(.cv-copy-actions) { display: none; }
   }
 
+  /* Reserve room at the heading's right edge so the absolutely-positioned
+     actions never sit over the (often long) section title — the same
+     strategy as `li.cv-copyable` above. One trigger/button is narrow, so a
+     single reservation suffices; zeroed in print further down so the PDF
+     headings don't carry phantom right padding. */
+  .cv-prose :global(h2.cv-section-h2) {
+    padding-right: 4rem;
+  }
+
   /* Section-level bulk-copy buttons appended inside every <h2> that has a
      following list. `.prose :is(h2,h3,h4)` is already `position: relative`
      (see prose.css for the heading-anchor #), so the actions group can be
@@ -718,6 +788,11 @@ const { Content } = await render(cv);
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
+    /* `transform` makes this a stacking context, so the open menu's own
+       z-index is scoped inside it. Lift the whole group above the section
+       list below — otherwise the per-item copy buttons (later in the DOM)
+       paint over the dropdown and steal its clicks. */
+    z-index: 20;
   }
   .cv-prose :global(.cv-section-btn) {
     font-size: 0.78rem;
@@ -737,7 +812,10 @@ const { Content } = await render(cv);
   .cv-prose :global(h2.cv-section-h2:focus-within .cv-section-btn),
   .cv-prose :global(.cv-section-btn:focus-visible),
   .cv-prose :global(.cv-section-btn.is-copied),
-  .cv-prose :global(.cv-section-btn.is-failed) {
+  .cv-prose :global(.cv-section-btn.is-failed),
+  .cv-prose :global(.cv-menu[open] .cv-menu-trigger),
+  .cv-prose :global(.cv-menu.is-copied .cv-menu-trigger),
+  .cv-prose :global(.cv-menu.is-failed .cv-menu-trigger) {
     opacity: 1;
   }
   .cv-prose :global(.cv-section-btn:hover),
@@ -750,12 +828,113 @@ const { Content } = await render(cv);
     color: #c0392b;
     border-color: #c0392b;
   }
+
+  /* Copy menu: one trigger (<summary>) that drops a small popover of copy
+     actions. Shared by section headings and individual list entries. The
+     list is absolutely positioned so opening it never reflows the row.
+     Mirrors the native <details> disclosure used by Toc.astro. */
+  .cv-prose :global(.cv-menu) {
+    position: relative;
+    display: inline-block;
+    /* Neutralize the generic `.prose details` card styling (prose.css):
+       the menu is an inline trigger, not a bordered block. */
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+  }
+  .cv-prose :global(.cv-menu[open]) {
+    padding: 0;
+  }
+  /* Suppress the generic `.prose summary::before` chevron — the trigger
+     carries its own caret via ::after. */
+  .cv-prose :global(.cv-menu-trigger::before) {
+    display: none;
+  }
+  .cv-prose :global(.cv-menu-trigger) {
+    display: inline-flex;
+    align-items: center;
+    list-style: none;
+    white-space: nowrap;
+    /* Icon trigger: override the sizing-class text padding with a square-ish
+       box that still leaves room for the ::after caret. */
+    padding: 0.25rem 0.4rem;
+  }
+  /* Copy icon inside per-item buttons and menu triggers. Sized in rem so the
+     chip's font-size is irrelevant; the .cv-section-copy text button is a
+     section-btn WITHOUT .cv-menu-trigger, so it keeps its label. */
+  .cv-prose :global(.cv-copy-btn svg),
+  .cv-prose :global(.cv-menu-trigger svg) {
+    width: 0.95rem;
+    height: 0.95rem;
+    display: block;
+  }
+  .cv-prose :global(.cv-menu-trigger::-webkit-details-marker) {
+    display: none;
+  }
+  .cv-prose :global(.cv-menu-trigger::after) {
+    content: '▾';
+    margin-left: 0.3rem;
+    font-size: 0.7em;
+    transition: transform 160ms ease;
+  }
+  .cv-prose :global(.cv-menu[open] .cv-menu-trigger::after) {
+    transform: rotate(180deg);
+  }
+  /* Hide the caret while the trigger is flashing copy feedback. */
+  .cv-prose :global(.cv-menu.is-copied .cv-menu-trigger::after),
+  .cv-prose :global(.cv-menu.is-failed .cv-menu-trigger::after) {
+    display: none;
+  }
+  .cv-prose :global(.cv-menu.is-copied .cv-menu-trigger) {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .cv-prose :global(.cv-menu.is-failed .cv-menu-trigger) {
+    color: #c0392b;
+    border-color: #c0392b;
+  }
+  .cv-prose :global(.cv-menu-list) {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.3rem);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    min-width: 9rem;
+    padding: 0.25rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+  }
+  .cv-prose :global(.cv-menu-item) {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    text-align: left;
+    white-space: nowrap;
+    padding: 0.35rem 0.55rem;
+    border: none;
+    border-radius: calc(var(--radius) - 1px);
+    background: transparent;
+    color: var(--color-fg);
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .cv-prose :global(.cv-menu-item:hover),
+  .cv-prose :global(.cv-menu-item:focus-visible) {
+    background: var(--color-card);
+    color: var(--color-accent);
+  }
+
   /* Touch devices have no hover — keep the buttons faintly visible, same
      as the per-item copy buttons. */
   @media (hover: none) {
     .cv-prose :global(.cv-section-btn) { opacity: 0.55; }
   }
   @media print {
+    .cv-prose :global(h2.cv-section-h2) { padding-right: 0; }
     .cv-prose :global(.cv-section-actions) { display: none; }
   }
 

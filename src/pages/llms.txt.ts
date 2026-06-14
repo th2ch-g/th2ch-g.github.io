@@ -35,6 +35,8 @@ export const GET: APIRoute = async (context) => {
     `- [Posts (en)](${site}/en/posts)`,
     `- [Gallery (ja)](${site}/photos): photographs.`,
     `- [Gallery (en)](${site}/en/photos)`,
+    `- [Contact (ja)](${site}/contact): contact form.`,
+    `- [Contact (en)](${site}/en/contact)`,
     '',
     '## Feeds',
     '',

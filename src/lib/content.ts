@@ -140,6 +140,7 @@ function buildProfileMeta(data: ProfileData, lang: Lang) {
     repo: blank(data.repo),
     location: blank(data.location),
     email: blank(data.email),
+    contactForm: blank(data.contactForm),
     // Flatten the icon object so callers keep treating `meta.icon` as a
     // plain URL string; the hover comment is exposed alongside.
     icon: blank(data.icon?.url),

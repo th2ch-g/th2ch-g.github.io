@@ -85,6 +85,10 @@ const profileMeta = defineCollection({
     site: nullable(z.url()),
     location: z.string().nullish(),
     email: z.string().nullish(),
+    // Contact-form URL (e.g. a Google Form). Drives the /contact page CTA
+    // button and the "Contact" nav item. Validated as a URL only when
+    // present; blank disables the button and shows a placeholder instead.
+    contactForm: nullable(z.url()),
     // Avatar source plus an optional per-locale hover tooltip. The URL is
     // also consumed by `scripts/build-icon.mjs` to bake `public/icon.png`.
     icon: z

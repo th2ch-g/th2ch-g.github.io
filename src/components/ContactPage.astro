@@ -1,0 +1,57 @@
+---
+import Base from '@/layouts/Base.astro';
+import { t, type Lang } from '@/i18n/ui';
+import { getProfileMeta } from '@/lib/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const meta = await getProfileMeta(lang);
+// The localized `nav.contact` doubles as the page H1, matching the
+// per-section H1 convention used by the other static pages.
+const title = t(lang, 'nav.contact');
+const description = t(lang, 'contact.description');
+---
+<Base lang={lang} title={title} description={description}>
+  <h1>{title}</h1>
+  {meta.contactForm ? (
+    <p>
+      <a class="cta" href={meta.contactForm} target="_blank" rel="noopener noreferrer">
+        {t(lang, 'contact.cta')}
+      </a>
+    </p>
+  ) : (
+    /* Forkable fallback: a fork that leaves `contactForm` blank still gets
+       a coherent page rather than a dangling button or build error. */
+    <p class="muted">{t(lang, 'contact.unavailable')}</p>
+  )}
+</Base>
+
+<style>
+  /* Accent-outline CTA that inverts on hover. Contrast ratio is symmetric
+     between two colors, so if `--color-accent` text on `--color-bg` passes
+     WCAG (it does — it's the site link color), the inverted hover state
+     (bg text on accent fill) passes by the same ratio. */
+  .cta {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.55rem 1.3rem;
+    font-size: 1rem;
+    color: var(--color-accent);
+    background: var(--color-bg);
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius);
+    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+  }
+  .cta:hover,
+  .cta:focus-visible {
+    background: var(--color-accent);
+    color: var(--color-bg);
+    text-decoration: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cta { transition: none; }
+  }
+</style>

@@ -1,4 +1,15 @@
 
+/* Long unbreakable tokens — bare URLs used as link text, long inline code —
+   must wrap instead of forcing the document wider than the viewport. Without
+   this a single space-less URL in a post body blows out the page width on
+   mobile, which both exposes a side gap beside the max-width column and makes
+   the sticky header ride horizontally (looking "unfixed"). `overflow-wrap` is
+   inherited, so this covers <a>/<p>/<li>; it doesn't touch <pre>/<code>
+   (white-space: pre + their own scroll), so code blocks keep scrolling. */
+.prose {
+  overflow-wrap: break-word;
+}
+
 .prose img {
   max-width: 100%;
   height: auto;
@@ -218,20 +229,38 @@
    on every fenced code block. Authors can additionally write
    `​```ts title="src/foo.ts"` to surface a filename — the Shiki transformer
    in `astro.config.mjs` extracts that into `data-filename`. We project the
-   combination as a small pill in the upper-right corner. The `pre` is set
+   combination as a small pill in the upper-left corner. The `pre` is set
    to `position: relative` only inside `.prose` so non-content code (e.g.
    inside the Search dialog) is unaffected. */
 .prose pre {
   position: relative;
 }
+/* Labelled blocks: lift the label OUT of the code box and present it as a tab
+   sitting directly ABOVE the code, Zenn-style. Reserve top margin so that tab
+   has room to clear the preceding paragraph. Mermaid renders to SVG and carries
+   no badge (`content: none` below), so it's excluded. */
+.prose pre:is([data-language], [data-filename]):not(.mermaid) {
+  margin-top: 2.4rem;
+  /* Release the clip so the tab (translated above the top edge) shows instead
+     of being cut off. Safe ONLY because the layout.css rule makes <code> the
+     horizontal scroller — the pre never holds overflow content of its own, so
+     going visible changes nothing about scrolling; it just stops clipping the
+     tab. overflow-x must be overridden too (a lone `overflow-y: visible`
+     computes back to auto when overflow-x isn't visible), and Astro bakes
+     `overflow-x: auto` inline on every astro-code pre — hence !important. */
+  overflow: visible !important;
+}
 .prose pre:is([data-language], [data-filename])::before {
   content: attr(data-language);
   position: absolute;
-  top: 0.4rem;
-  /* Sit to the LEFT of the copy button (which lives at `right: 0.4rem`).
-     Padding accounts for the copy button's ~3.5rem width plus a gap. */
-  right: 4rem;
-  padding: 0.05rem 0.5rem;
+  /* Sit the label as a tab ABOVE the code box: translateY(-100%) lifts it fully
+     off the top edge, flush-left. The block's `margin-top` (rule above) keeps
+     it clear of the preceding paragraph. The copy button lives INSIDE the box
+     at its upper-right — a different height — so the two never collide. */
+  top: 0;
+  left: 0;
+  transform: translateY(-100%);
+  padding: 0.12rem 0.6rem;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   line-height: 1.4;
@@ -240,9 +269,14 @@
   color: var(--color-muted);
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  /* Drop the bottom edge and round only the TOP corners so the tab reads as
+     joined to the code box below it (folder-tab silhouette). */
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
   pointer-events: none;
-  max-width: calc(100% - 5rem);
+  /* The tab sits above the box (not beside the copy button), so it can span
+     the full width; cap at 100% to avoid overflow on long filenames. */
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

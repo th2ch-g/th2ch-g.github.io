@@ -85,6 +85,22 @@ export default defineConfig({
             const meta = typeof rawMeta === 'string' ? rawMeta : '';
             const m = /title=["']([^"']+)["']/.exec(meta);
             if (m) node.properties['data-filename'] = m[1];
+            // The highlighter marks the <pre> with `tabindex="0"` so keyboard
+            // users can scroll a wide code block (WCAG 2.1.1 / axe-core's
+            // `scrollable-region-focusable`). But the horizontal scroller is
+            // the <code>, not the <pre> (see `pre code { overflow-x: auto }`
+            // in layout.css) — that keeps the language badge and copy button,
+            // which are positioned against the <pre>, from drifting on scroll.
+            // Relocate the tabindex onto the <code> so the *actual* scroller is
+            // the focusable one, baked into the static HTML (no client JS).
+            const tabKey = Object.keys(node.properties).find((k) => k.toLowerCase() === 'tabindex');
+            if (tabKey) {
+              const code = node.children?.find((c) => c.type === 'element' && c.tagName === 'code');
+              if (code) {
+                (code.properties ??= {})[tabKey] = node.properties[tabKey];
+                delete node.properties[tabKey];
+              }
+            }
           },
         },
       ],

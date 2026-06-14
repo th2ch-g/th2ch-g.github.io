@@ -38,6 +38,11 @@ links:
   - label: Huggingface
     url: https://huggingface.co/wasarou
 
+# Contact form URL (e.g. a Google Form). Drives the /contact page CTA
+# button and the "Contact" nav item. Leave blank to show a placeholder
+# message instead of the button — the page still renders.
+contactForm: https://forms.gle/k7xjWNLY6CaEJ7oX8
+
 # Third-party service integrations. Leave any field blank (or remove the
 # whole block) to gracefully disable the corresponding feature at render
 # time — empty here means "no comments" / "no analytics" / "no IndexNow".

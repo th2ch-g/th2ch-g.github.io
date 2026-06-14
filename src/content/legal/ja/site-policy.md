@@ -62,4 +62,4 @@ JavaScript を無効にしても主要コンテンツの閲覧は可能ですが
 
 ## 7. お問い合わせ
 
-本ポリシーに関するご質問は、[GitHub Issue]({{repoUrl}}/issues) からお願いします。
+本ポリシーに関するご質問は、[GitHub Issue]({{repoUrl}}/issues) または[お問い合わせフォーム](/contact)からお願いします。
