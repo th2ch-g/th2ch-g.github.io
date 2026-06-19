@@ -141,27 +141,16 @@ ul.bare {
   border-color: var(--color-accent);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
 }
-/* Page-navigation animation, deliberately implemented WITHOUT browser-
-   native cross-document View Transitions. We previously opted in via
-   `@view-transition { navigation: auto }` but every Chromium-side
-   variation produced a brief white flash mid-swap (additive blending in
-   regions where old/new diverge, snapshot/compositor handoff exposing
-   the UA canvas). Instead we rely on the browser's existing paint-
-   holding behavior — the old page stays fully painted until the new
-   page is ready — and animate ONLY the new page's <main> content as it
-   appears. html/body keep `var(--color-bg)` from first paint, so no
-   transparent gap can ever expose UA white. Works the same in every
-   browser (no VT support required). */
-@keyframes ftt-page-in {
-  from { transform: translateY(16px); opacity: 0; }
-  to   { transform: none;              opacity: 1; }
-}
-main {
-  animation: ftt-page-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  main { animation: none; }
-}
+/* Page navigation deliberately uses NO browser-native cross-document View
+   Transitions. We previously opted in via `@view-transition { navigation:
+   auto }` but every Chromium-side variation produced a brief white flash
+   mid-swap (additive blending where old/new diverge, snapshot/compositor
+   handoff exposing the UA canvas). Instead we rely on the browser's
+   existing paint-holding behavior — the old page stays fully painted until
+   the new page is ready — and html/body keep `var(--color-bg)` from first
+   paint, so no transparent gap can ever expose UA white. There is no
+   <main> entrance animation: the new page swaps in instantly. Works the
+   same in every browser (no VT support required). */
 
 /* IMPORTANT: keep these as a single `:is()` selector — do NOT rewrite as
    `.card .thumb img, .card .img-wrap img`. The Vite CSS minifier groups

@@ -84,7 +84,7 @@ Reading-time: English uses the `reading-time` package; Japanese uses a char-coun
 
 1. **Do NOT add `<ClientRouter />`.** It was removed for breaking card hover zoom (a CSS minifier interaction). The site uses regular full-document navigation. See user memory `feedback_card_hover_zoom_minifier_trap.md`.
 2. **Do NOT listen for `astro:page-load`.** Without ClientRouter, that event never fires. Use the `onReady(fn)` helper in `src/lib/dom-ready.ts` (DOMContentLoaded + immediate-call branch on `readyState`).
-3. **Do NOT add `@view-transition`** in CSS. Cross-document VT caused an unfixable white flash on this site. Page transitions use paint-holding + a CSS-only fade-in keyframe on `<main>`. See user memory `project_view_transitions_color_scheme.md`.
+3. **Do NOT add `@view-transition`** in CSS. Cross-document VT caused an unfixable white flash on this site. Page transitions rely on paint-holding only — there is no `<main>` entrance animation (the fade-in/slide keyframe was removed by user request). See user memory `project_view_transitions_color_scheme.md`.
 4. **`getStaticPaths` must be `export async function`,** not `export const … = async () => …`.
 5. **Image service is `passthroughImageService()`** to avoid sharp's native deps in CI. Don't switch to the default service without first confirming CI compatibility.
 6. **`profile.yaml` is the source of truth for site identity** (name, links, icon, bio). The icon URL is also consumed by `build-icon.mjs` at build time — changing it requires a rebuild before the new icon appears.
