@@ -16,13 +16,9 @@ repo: th2ch-g/th2ch-g.github.io
 # your own deploy URL — also enough to regenerate the QR at next build.
 # Leave null / empty to skip QR generation entirely (no PNG, no section).
 site: https://th2ch-g.github.io
-location: Tokyo, Japan
-headline:
+bio:
   ja: 日本人🇯🇵・博士後期課程学生
   en: Japanese・Doctoral student
-affiliation:
-  ja: 東京科学大学
-  en: Institute of Science Tokyo
 icon:
   url: https://avatars.githubusercontent.com/u/76892059
   comment:

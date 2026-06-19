@@ -5,14 +5,14 @@ import { requireSite } from '@/lib/site';
 // llms.txt — sitemap-style hint for LLM crawlers. Generated entirely
 // from profile.yaml + the configured site URL so a fork inherits the
 // correct identity without touching this file. The "About" line is
-// composed from siteHandle + headline + affiliation (EN flatten); if
+// composed from siteHandle + bio (EN flatten); if
 // any of those are blank the surrounding punctuation collapses.
 export const GET: APIRoute = async (context) => {
   const site = requireSite(context).toString().replace(/\/$/, '');
   const meta = await getProfileMeta('en');
   const repoUrl = meta.repo ? `https://github.com/${meta.repo}` : undefined;
 
-  const tagline = [meta.headline, meta.affiliation].filter(Boolean).join(' — ');
+  const tagline = meta.bio ?? '';
   const aboutLine =
     `> Personal portfolio site of ${meta.siteHandle}` +
     (tagline ? ` (${tagline}).` : '.') +

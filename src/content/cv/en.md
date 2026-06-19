@@ -18,28 +18,28 @@
 
 ## [Publications (peer-reviewed)](https://orcid.org/0009-0001-3991-8367)
 
-1. **Hiroyuki Tanaka**, **<u>Tatsuki Hori</u>**, **Shohei Yamamoto**, **Atsushi Toyoda**, **Kentaro Yano**, **Kyoko Yamane**, **Takehiko Itoh**, [Haplotype-resolved chromosomal-level assembly of wasabi (Eutrema japonicum) genome](https://doi.org/10.1038/s41597-023-02356-z), *Scientific Data*, DOI:10.1038/s41597-023-02356-z, (2023).
+1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.1021/acs.jctc.6c00199), *Journal of Chemical Theory and Computation*, DOI:10.1021/acs.jctc.6c00199, (2026).
 1. **Shinji Ikizawa\***, **<u>Tatsuki Hori\*</u>**, **Tegar Nurwahyu Wijaya\***, **Hiroshi Kono**, **Zhen Bai**, **Tatsuhiro Kimizono**, **Wenbo Lu**, **Duy Phuoc Tran**, **Akio Kitao**, [PaCS-Toolkit: Optimized Software Utilities for Parallel Cascade Selection Molecular Dynamics (PaCS-MD) Simulations and Subsequent Analyses](https://doi.org/10.1021/acs.jpcb.4c01271), *The Journal of Physical Chemistry B*, DOI:10.1021/acs.jpcb.4c01271, (2024).
    - \*Co-first authors
-1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.1021/acs.jctc.6c00199), *Journal of Chemical Theory and Computation*, DOI:10.1021/acs.jctc.6c00199, (2026).
+1. **Hiroyuki Tanaka**, **<u>Tatsuki Hori</u>**, **Shohei Yamamoto**, **Atsushi Toyoda**, **Kentaro Yano**, **Kyoko Yamane**, **Takehiko Itoh**, [Haplotype-resolved chromosomal-level assembly of wasabi (Eutrema japonicum) genome](https://doi.org/10.1038/s41597-023-02356-z), *Scientific Data*, DOI:10.1038/s41597-023-02356-z, (2023).
 
 ## [Publications (preprints)](https://orcid.org/0009-0001-3991-8367)
 
-1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.64898/2026.01.30.702714), *bioRxiv*, DOI:10.64898/2026.01.30.702714, (2026) (Published as *Journal of Chemical Theory and Computation*, DOI:10.1021/acs.jctc.6c00199).
-
 1. **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Tomohiro Doura**, **Shigeki Kiyonaka**, [Off-target-free chemogenetic platform that decodes physiological roles of target GPCRs](https://doi.org/10.64898/2026.05.24.727545), *bioRxiv*, DOI:10.64898/2026.05.24.727545, (2026).
+
+1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.64898/2026.01.30.702714), *bioRxiv*, DOI:10.64898/2026.01.30.702714, (2026) (Published as *Journal of Chemical Theory and Computation*, DOI:10.1021/acs.jctc.6c00199).
 
 ## Conference Presentations (non-peer-reviewed)
 
 ### Posters
 
-1. ◯ **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
-   "[Molecular Dynamics Simulations of Binding and Dissociation between Mutant Adenosine A<sub>2A</sub> Receptor and Ligand Focusing on Aromatic Ring Interactions](https://sympo.mol-sim.jp/mssj38/files/presen_program_20241108.pdf)"
-   [The 38th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj38/), Acrie Himeji (Himeji, Hyogo, Japan), December 2-4, 2024.
-
 1. ◯ **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
    "[Structural Sampling via Distance-Restrained Complex Structure Prediction](https://sympo.mol-sim.jp/mssj39/files/presen_program_20251122.pdf)"
    [The 39th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj39/), Kunibiki Messe (Matsue, Shimane, Japan), November 24-26, 2025.
+
+1. ◯ **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
+   "[Molecular Dynamics Simulations of Binding and Dissociation between Mutant Adenosine A<sub>2A</sub> Receptor and Ligand Focusing on Aromatic Ring Interactions](https://sympo.mol-sim.jp/mssj38/files/presen_program_20241108.pdf)"
+   [The 38th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj38/), Acrie Himeji (Himeji, Hyogo, Japan), December 2-4, 2024.
 
 ### Oral
 1. ◯ **Hiroyuki Tanaka**, **<u>Tatsuki Hori</u>**, **Shohei Yamamoto**, **Atsushi Toyoda**, **Kentaro Yano**, **Kyoko Yamane**, **Takehiko Itoh**.
@@ -51,17 +51,17 @@
 
 ### Posters
 
-1. ◯ **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
-   "Molecular dynamics simulation of association and dissociation between Adenosine A<sub>2A</sub> receptor and ligand"
-   [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [2nd Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 16-17, 2024.
+1. ◯ **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
+   "Structural Sampling with Distance Restrained Biomolecular Complex Structure Prediction Model"
+   [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [4th Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 8-9, 2025.
 
 1. ◯ **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
    "Structural Sampling via Distance-Restrained Complex Structure Prediction"
    [Grant-in-Aid for Transformative Research Areas (A) "Predictive Biosynthetic Science"](https://bio-4cast.skr.jp/) [2025 Young Researchers' Retreat Workshop](https://bio-4cast.skr.jp/wpsite/wp-content/uploads/2026/03/NEWS-LETTER-No4.pdf), Takaone (Hachioji, Tokyo, Japan), September 7-8, 2025.
 
-1. ◯ **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
-   "Structural Sampling with Distance Restrained Biomolecular Complex Structure Prediction Model"
-   [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [4th Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 8-9, 2025.
+1. ◯ **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
+   "Molecular dynamics simulation of association and dissociation between Adenosine A<sub>2A</sub> receptor and ligand"
+   [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [2nd Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 16-17, 2024.
 
 ## Awards
 - Outstanding Bachelor's Thesis Research Award, Alumni Association of the School of Life Science and Technology (presented by the School of Life Science and Technology, Tokyo Institute of Technology, to outstanding undergraduate thesis researchers), March 2023

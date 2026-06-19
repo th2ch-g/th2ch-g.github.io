@@ -83,7 +83,6 @@ const profileMeta = defineCollection({
     // which is correct for GitHub User/Org Pages. Set this only when you
     // ship to a custom domain.
     site: nullable(z.url()),
-    location: z.string().nullish(),
     email: z.string().nullish(),
     // Contact-form URL (e.g. a Google Form). Drives the /contact page CTA
     // button and the "Contact" nav item. Validated as a URL only when
@@ -102,13 +101,7 @@ const profileMeta = defineCollection({
           .nullish(),
       })
       .nullish(),
-    headline: z
-      .object({
-        ja: z.string().nullish(),
-        en: z.string().nullish(),
-      })
-      .nullish(),
-    affiliation: z
+    bio: z
       .object({
         ja: z.string().nullish(),
         en: z.string().nullish(),

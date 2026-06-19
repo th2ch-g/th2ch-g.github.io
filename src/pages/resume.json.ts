@@ -12,11 +12,9 @@ export async function GET(_context: APIContext) {
     $schema: 'https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json',
     basics: {
       name: meta.name,
-      label: meta.headline,
+      label: meta.bio,
       image: meta.icon,
       email: meta.email,
-      summary: meta.affiliation,
-      location: meta.location ? { city: meta.location } : undefined,
       profiles: meta.links.map((l) => ({
         network: l.label,
         url: l.url,

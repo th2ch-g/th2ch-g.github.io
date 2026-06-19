@@ -138,15 +138,13 @@ function buildProfileMeta(data: ProfileData, lang: Lang) {
     name: name ?? siteHandle ?? '',
     siteHandle: siteHandle ?? name ?? '',
     repo: blank(data.repo),
-    location: blank(data.location),
     email: blank(data.email),
     contactForm: blank(data.contactForm),
     // Flatten the icon object so callers keep treating `meta.icon` as a
     // plain URL string; the hover comment is exposed alongside.
     icon: blank(data.icon?.url),
     iconComment: blank(data.icon?.comment?.[lang]),
-    headline: blank(data.headline?.[lang]),
-    affiliation: blank(data.affiliation?.[lang]),
+    bio: blank(data.bio?.[lang]),
     links: (data.links ?? [])
       .map((l) => ({
         label: blank(l.label),

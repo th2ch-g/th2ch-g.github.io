@@ -48,11 +48,11 @@ const { title, description, lang, image, article, breadcrumbs, availableLocales 
 const locales = availableLocales ?? (['ja', 'en'] as Lang[]);
 const meta = await getProfileMeta(lang);
 
-// Site-wide description fallback: the verbatim headline. Ensures no page
+// Site-wide description fallback: the verbatim bio. Ensures no page
 // ships a thin/empty <meta name="description"> (search engines scrape the
 // footer / shortcut text for a snippet otherwise). A page that supplies its
 // own description (e.g. a post detail) overrides it.
-const metaDescription = description ?? meta.headline;
+const metaDescription = description ?? meta.bio;
 
 // Browser-tab title: "<page> | <site>". When the page title already equals
 // the site name (the home page passes `meta.name`), skip the suffix to avoid
@@ -156,7 +156,6 @@ const personLd = {
   name: meta.name,
   url: Astro.site?.toString(),
   ...(meta.icon ? { image: meta.icon } : {}),
-  ...(meta.affiliation ? { affiliation: meta.affiliation } : {}),
   ...(meta.links.length > 0 ? { sameAs: meta.links.map((l) => l.url) } : {}),
 };
 const websiteLd = {
@@ -172,7 +171,7 @@ const websiteLd = {
     ? { alternateName: meta.siteHandle }
     : {}),
   url: Astro.site?.toString(),
-  ...(meta.headline ? { description: meta.headline } : {}),
+  ...(meta.bio ? { description: meta.bio } : {}),
   inLanguage: lang === 'ja' ? 'ja-JP' : 'en-US',
 };
 const articleLd = article

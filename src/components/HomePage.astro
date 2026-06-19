@@ -40,7 +40,7 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
 {/* Home page is titled with the site brand (meta.name), not "Home": this
     collapses `documentTitle` to just the brand and makes og:title /
     twitter:title the brand instead of a generic "Home" on social shares.
-    No description is passed: Base falls back to the headline. */}
+    No description is passed: Base falls back to the bio. */}
 <Base lang={lang} title={meta.name}>
   <section class="hero">
     <div class="hero-head">
@@ -54,12 +54,7 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
       )}
       <h1>{meta.name}</h1>
     </div>
-    {meta.headline && <p class="headline">{meta.headline}</p>}
-    {(meta.affiliation || meta.location) && (
-      <p class="muted">
-        {[meta.affiliation, meta.location].filter(Boolean).join(' · ')}
-      </p>
-    )}
+    {meta.bio && <p class="bio">{meta.bio}</p>}
     {meta.links.length > 0 && (
       <ul class="bare links">
         {meta.links.map((link) => (
@@ -117,10 +112,10 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
 
 <style>
   /* Centred profile card. Stacking the hero as a flex column lets each
-     row (avatar+name, headline, location, links) auto-shrink to its
+     row (avatar+name, bio, links) auto-shrink to its
      content width and centre as a unit, instead of left-aligning to
      main's padding edge. `text-align: center` propagates so multi-line
-     paragraphs (e.g. a long headline that wraps) stay centred too. */
+     paragraphs (e.g. a long bio that wraps) stay centred too. */
   .hero {
     display: flex;
     flex-direction: column;
@@ -220,7 +215,7 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
   @media (max-width: 720px) {
     .avatar-tip { max-width: calc(100vw - 2rem); }
   }
-  .headline { font-size: 1.1rem; color: var(--color-muted); margin: 0.25rem 0 0.5rem; }
+  .bio { font-size: 1.1rem; color: var(--color-muted); margin: 0.25rem 0 0.5rem; }
   /* SNS links as a centred, wrapping row of plain-text links separated by
      literal "|" dividers (no trailing bar). Replaces the former icon pills. */
   .links {

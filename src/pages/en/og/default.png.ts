@@ -8,7 +8,7 @@ export const GET: APIRoute = async () => {
   return renderSectionOg({
     lang: 'en',
     title: meta.name,
-    description: meta.headline ?? '',
+    description: meta.bio ?? '',
     pageLabel: 'Home',
   });
 };
