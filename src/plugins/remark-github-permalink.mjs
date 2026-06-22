@@ -16,18 +16,21 @@
 // no-op (the URL is left as a normal Markdown link) — never blocks the build,
 // mirroring remark-github-card's fail-soft contract.
 //
-// Highlighting goes through @astrojs/markdown-remark's createShikiHighlighter
-// (a transitive Astro dep) rather than a raw `shiki` import: it defaults to
-// the same `github-dark` theme as the Markdown pipeline, trims the trailing
-// newline (no phantom blank line), and lazily loads / plaintext-falls-back
-// unknown languages. Its built-in transformer stamps `data-language` onto the
-// <pre>; we strip it in our own transformer so prose.css's language tab
-// doesn't double up with our header.
+// Highlighting uses `shiki` directly — the semver-stable library Astro wraps —
+// rather than @astrojs/markdown-remark's createShikiHighlighter, which 7.2.0
+// dropped from its public exports (its impl moved to the private
+// @astrojs/internal-helpers; depending on either internal surface just rebreaks
+// on the next Astro bump). We pin the same `github-dark` theme as the Markdown
+// pipeline (Astro's Shiki default) and replicate the two wrapper behaviours we
+// relied on: on-demand language loading with a plaintext fallback (shiki's
+// codeToHtml throws on an unloaded lang), and stripping the `data-language` our
+// own transformer leaves so prose.css's language tab doesn't double up with our
+// header.
 import { visit } from 'unist-util-visit';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createShikiHighlighter } from '@astrojs/markdown-remark';
+import { createHighlighter, isSpecialLang } from 'shiki';
 import { escapeHtml as esc } from './lib/escape.mjs';
 import { extractStandaloneUrl } from './lib/extract-url.mjs';
 import { replaceWithHtml } from './lib/replace.mjs';
@@ -138,8 +141,8 @@ async function fetchSnippet(p) {
   const sliced = p.end == null ? all.slice(p.start - 1) : all.slice(p.start - 1, p.end);
   // A file-final "\n" makes split() yield a trailing "" element. If the range
   // over-reaches the last content line, that empty tail would inflate the gutter
-  // by one while createShikiHighlighter trims the trailing newline away — a
-  // phantom line number. Drop it so the gutter count matches the rendered code.
+  // by one while contributing no visible code (shiki renders it as a blank
+  // line) — a phantom line number. Drop it so the gutter count matches the code.
   if (sliced.at(-1) === '') sliced.pop();
   if (sliced.length === 0) throw new Error('empty slice (range outside file)');
   const truncated = sliced.length > MAX_LINES;
@@ -172,16 +175,36 @@ async function getSnippet(p) {
   }
 }
 
-// Lazily created once per build process. createShikiHighlighter caches the
-// underlying highlighter internally and shares it with Astro's pipeline, so
-// calling it per snippet is cheap.
+// Lazily created once per build process; shiki caches grammars/themes inside
+// the instance, so highlighting each snippet against it is cheap.
 let _highlighter;
-const getHighlighter = () => (_highlighter ??= createShikiHighlighter());
+const getHighlighter = () =>
+  (_highlighter ??= createHighlighter({ themes: ['github-dark'], langs: [] }));
+
+// shiki's codeToHtml throws on a language it hasn't loaded, so load on demand
+// and fall back to plaintext for unknown/unbundled langs — langFromPath can
+// emit an extension shiki doesn't bundle. Special langs (plaintext/ansi/…) are
+// always available and need no loading. renderCard is awaited serially in
+// remarkGithubPermalink, so concurrent loadLanguage calls can't race here.
+async function resolveLang(highlighter, lang) {
+  if (isSpecialLang(lang) || highlighter.getLoadedLanguages().includes(lang)) {
+    return lang;
+  }
+  try {
+    await highlighter.loadLanguage(lang);
+    return lang;
+  } catch {
+    return 'plaintext';
+  }
+}
 
 async function renderCard(url, p, snip) {
   const highlighter = await getHighlighter();
+  const lang = await resolveLang(highlighter, snip.lang);
   let codeBg = '#24292e'; // github-dark editor background; refined from Shiki below
-  const inner = await highlighter.codeToHtml(snip.code, snip.lang, {
+  const inner = highlighter.codeToHtml(snip.code, {
+    lang,
+    theme: 'github-dark',
     transformers: [
       {
         pre(node) {
