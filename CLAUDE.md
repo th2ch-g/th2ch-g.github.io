@@ -70,6 +70,7 @@ OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canva
 Custom remark plugins in `src/plugins/`:
 - `remark-twitter-embed` — bare X/Twitter URL → embed
 - `remark-github-card` — bare GitHub repo URL → repo card
+- `remark-github-permalink` — bare GitHub blob URL `…/blob/<ref>/<path>` (whole file) or with an optional `#L10-L20` line anchor → embedded snippet card (Shiki-highlighted, fixed line-number gutter, capped at 40 lines with a "view more" footer). Build-time fetch from raw.githubusercontent.com, disk-cached; **must run before `remark-link-card`** so the blob URL isn't claimed as a generic link card
 - `remark-link-card` — bare URL on its own line → OGP-style link card
 - `remark-figure-caption` — image alt text → `<figcaption>`
 - `remark-mermaid-block` — `mermaid` code fence → client-rendered diagram

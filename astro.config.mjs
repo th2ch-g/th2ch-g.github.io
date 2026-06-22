@@ -11,6 +11,7 @@ import { remarkTwitterEmbed } from './src/plugins/remark-twitter-embed.mjs';
 import { remarkMermaidBlock } from './src/plugins/remark-mermaid-block.mjs';
 import { remarkCallouts } from './src/plugins/remark-callouts.mjs';
 import { remarkGithubCard } from './src/plugins/remark-github-card.mjs';
+import { remarkGithubPermalink } from './src/plugins/remark-github-permalink.mjs';
 import { remarkLinkCard } from './src/plugins/remark-link-card.mjs';
 import { remarkFigureCaption } from './src/plugins/remark-figure-caption.mjs';
 import { remarkProfileVars } from './src/plugins/remark-profile-vars.mjs';
@@ -107,7 +108,7 @@ export default defineConfig({
         },
       ],
     },
-    remarkPlugins: [remarkProfileVars, remarkTwitterEmbed, remarkGithubCard, remarkLinkCard, remarkFigureCaption, remarkMermaidBlock, remarkCallouts, remarkMath],
+    remarkPlugins: [remarkProfileVars, remarkTwitterEmbed, remarkGithubCard, remarkGithubPermalink, remarkLinkCard, remarkFigureCaption, remarkMermaidBlock, remarkCallouts, remarkMath],
     rehypePlugins: [
       [
         rehypeExternalLinks,

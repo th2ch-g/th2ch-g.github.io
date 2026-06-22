@@ -181,6 +181,111 @@
   }
 }
 
+/* GitHub code-permalink embed. Produced by `remark-github-permalink.mjs` for a
+   standalone `…/blob/<ref>/<path>#L<a>-L<b>` URL: a header (octocat + path +
+   line range) above the referenced lines, highlighted with the same Shiki
+   `github-dark` theme as Markdown code blocks. The card stays dark in both
+   site themes because the code body always is (Shiki runs a single theme, not
+   a light/dark pair) — site light/dark tokens would clash with it — so the
+   chrome below uses GitHub's own dark palette. */
+.gh-permalink-card {
+  margin: 1.25rem 0;
+  border: 1px solid #30363d;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.gh-permalink-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-decoration: none;
+}
+.gh-permalink-header:hover .gh-permalink-path {
+  text-decoration: underline;
+}
+.gh-permalink-icon {
+  flex: none;
+  color: #8b949e;
+}
+.gh-permalink-path {
+  color: #58a6ff;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gh-permalink-meta {
+  margin-left: auto;
+  flex: none;
+  color: #8b949e;
+  font-size: 0.92em;
+}
+/* Body row: a non-scrolling line-number gutter beside the code. Only the code
+   (<code> inside the <pre>) scrolls horizontally; the gutter stays pinned. The
+   two align because they share font-size, line-height and top padding. */
+.gh-permalink-body {
+  display: flex;
+  align-items: stretch;
+  background: var(--gh-code-bg, #24292e);
+}
+.gh-permalink-nums {
+  flex: none;
+  margin: 0;
+  padding: 0.7rem 0.7rem 0.7rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  text-align: right;
+  white-space: pre;
+  color: #6e7681;
+  background: var(--gh-code-bg, #24292e);
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Strip the rounded corners / margin the global `pre` rule gives this block so
+   it sits flush in the card. `min-width: 0` lets this flex child shrink below
+   its content width so `overflow-x: auto` on <code> actually engages (without
+   it the flex item grows to fit and nothing scrolls). <code> is the scroller,
+   so the <pre>-anchored copy button doesn't drift on horizontal scroll. */
+.gh-permalink-card pre.gh-permalink-pre {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  border-radius: 0;
+  padding: 0.7rem 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+.gh-permalink-card pre.gh-permalink-pre > code {
+  display: block;
+  overflow-x: auto;
+  padding: 0 0.9rem;
+  /* Cancel the site-wide `code { font-size: 0.9em }` shrink: it would make the
+     code lines shorter than the gutter (which isn't inside a <code>), so the
+     two columns drift apart by ~1 line every ~10 rows. Inheriting the <pre>'s
+     size keeps both at an identical line box — the gutter stays aligned. */
+  font-size: inherit;
+  line-height: 1.6;
+}
+.gh-permalink-more {
+  display: block;
+  padding: 0.5rem 0.9rem;
+  background: #161b22;
+  border-top: 1px solid #30363d;
+  color: #58a6ff;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+.gh-permalink-more:hover {
+  text-decoration: underline;
+}
+
 /* Heading anchor links injected by rehype-autolink-headings. The `#` glyph
    sits in the left gutter and only fades in on heading hover/focus, so it
    doesn't visually compete with the prose layout. Clicking copies the
