@@ -1,4 +1,3 @@
-import type { APIContext, APIRoute } from 'astro';
 import { OGImageRoute } from 'astro-og-canvas';
 import { collectTags } from '@/lib/content';
 import {
@@ -11,7 +10,7 @@ import {
   describeTagCounts,
   stripForOg,
 } from '@/lib/og-config';
-import { addOgChrome } from '@/lib/og-image';
+import { ogPngSlug, makeChromedOgGet } from './og-route';
 import { buildPageMeta } from '@/lib/page-builders';
 import type { Lang } from '@/i18n/ui';
 
@@ -44,10 +43,7 @@ export async function buildTagOgRoute(lang: Lang) {
   const og = await OGImageRoute({
     param: 'tag',
     pages,
-    // See og-post.ts: the library default strips a dotted tag like
-    // `node.js` down to `node.png`, diverging from the `/og/tags/<tag>.png`
-    // URL TagPage references. Append `.png` to the verbatim tag instead.
-    getSlug: (tag: string) => `${tag}.png`,
+    getSlug: ogPngSlug,
     getImageOptions: (_path, page) => ({
       title: page.title,
       description: page.description,
@@ -61,11 +57,5 @@ export async function buildTagOgRoute(lang: Lang) {
     }),
   });
 
-  const GET: APIRoute = async (ctx: APIContext) => {
-    const res = await og.GET(ctx);
-    const buf = Buffer.from(await res.arrayBuffer());
-    return new Response(new Blob([await addOgChrome(buf, profileChrome)], { type: 'image/png' }));
-  };
-
-  return { getStaticPaths: og.getStaticPaths, GET };
+  return { getStaticPaths: og.getStaticPaths, GET: makeChromedOgGet(og, profileChrome) };
 }

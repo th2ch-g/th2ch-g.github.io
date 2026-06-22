@@ -1,4 +1,3 @@
-import type { APIContext, APIRoute } from 'astro';
 import { OGImageRoute } from 'astro-og-canvas';
 import { localeSlug } from '@/lib/content';
 import {
@@ -10,7 +9,8 @@ import {
   OG_DESC_COLOR,
   stripForOg,
 } from '@/lib/og-config';
-import { addOgChrome, prepareHeroBackdrop, resolveHeroImageSource } from '@/lib/og-image';
+import { prepareHeroBackdrop, resolveHeroImageSource } from '@/lib/og-image';
+import { ogPngSlug, makeChromedOgGet } from './og-route';
 import { buildPageMeta } from '@/lib/page-builders';
 import type { Lang } from '@/i18n/ui';
 
@@ -58,12 +58,7 @@ export async function buildPostOgRoute(lang: Lang) {
   const og = await OGImageRoute({
     param: 'slug',
     pages,
-    // Override astro-og-canvas's default `pathToSlug`, which strips
-    // everything after the last dot as a file extension: a post slug like
-    // `v2.0-release` would become `v2.png`, diverging from the
-    // `/og/<slug>.png` URL PostDetailPage references and 404-ing the card.
-    // Append `.png` to the verbatim key so the two always agree.
-    getSlug: (slug: string) => `${slug}.png`,
+    getSlug: ogPngSlug,
     getImageOptions: (_path, page) => ({
       title: page.title,
       description: page.description,
@@ -80,11 +75,5 @@ export async function buildPostOgRoute(lang: Lang) {
     }),
   });
 
-  const GET: APIRoute = async (ctx: APIContext) => {
-    const res = await og.GET(ctx);
-    const buf = Buffer.from(await res.arrayBuffer());
-    return new Response(new Blob([await addOgChrome(buf, profileChrome)], { type: 'image/png' }));
-  };
-
-  return { getStaticPaths: og.getStaticPaths, GET };
+  return { getStaticPaths: og.getStaticPaths, GET: makeChromedOgGet(og, profileChrome) };
 }

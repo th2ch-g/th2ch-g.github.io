@@ -5,6 +5,7 @@ import { Jimp } from 'jimp';
 import CanvasKitInit from 'canvaskit-wasm';
 import type { CollectionEntry } from 'astro:content';
 import {
+  OG_BG_GRADIENT,
   OG_FONTS,
   OG_FONT_FAMILIES,
   OG_TITLE_COLOR,
@@ -438,4 +439,42 @@ async function renderText(
   surface.delete();
   if (!bytes) throw new Error('canvaskit encodeToBytes returned null');
   return Buffer.from(bytes);
+}
+
+// Guaranteed-safe OG fallback card: a 1200x630 vertical gradient built
+// with jimp construction only. It touches neither canvaskit nor
+// `Jimp.read`, so it survives every failure mode that breaks the real
+// cards (FontMgr.FromData / MakeSurface / encodeToBytes in renderText, and
+// the hero/icon/name `Jimp.read` decode steps in addOgChrome). The OG
+// route handlers fall back to this instead of aborting `astro build` —
+// extending the CV-PDF "fail soft" guarantee to image endpoints. It is
+// identity-free (no name / icon / text) so it stays forkable and needs no
+// profile.yaml read. Computed once and cached for the whole build.
+let _fallbackCard: Uint8Array<ArrayBuffer> | undefined;
+export async function renderFallbackOgCard(): Promise<Uint8Array<ArrayBuffer>> {
+  if (_fallbackCard) return _fallbackCard;
+  const img = new Jimp({ width: OG_WIDTH, height: OG_HEIGHT, color: 0xffffffff });
+  const [r1, g1, b1] = OG_BG_GRADIENT[0];
+  const [r2, g2, b2] = OG_BG_GRADIENT[OG_BG_GRADIENT.length - 1];
+  const data = img.bitmap.data;
+  for (let y = 0; y < OG_HEIGHT; y++) {
+    const t = OG_HEIGHT <= 1 ? 0 : y / (OG_HEIGHT - 1);
+    const r = Math.round(r1 + (r2 - r1) * t);
+    const g = Math.round(g1 + (g2 - g1) * t);
+    const b = Math.round(b1 + (b2 - b1) * t);
+    for (let x = 0; x < OG_WIDTH; x++) {
+      const idx = (y * OG_WIDTH + x) * 4;
+      data[idx] = r;
+      data[idx + 1] = g;
+      data[idx + 2] = b;
+      data[idx + 3] = 0xff;
+    }
+  }
+  const out = await img.getBuffer('image/png');
+  // Concrete-ArrayBuffer copy (same dance as addOgChrome) so the result is
+  // accepted as a BlobPart / Response body without TS friction on Node 22+.
+  const ab = new ArrayBuffer(out.byteLength);
+  _fallbackCard = new Uint8Array(ab);
+  _fallbackCard.set(out);
+  return _fallbackCard;
 }

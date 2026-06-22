@@ -230,6 +230,23 @@ export function collectTags<T extends { data: { tags?: string[] } }>(
   );
 }
 
+// Tags with post counts for the tags-index page. Routes through
+// `getPublishedByLang(..., { includeDevDrafts: true })` — the same call
+// TagPage uses, and logically identical to buildTagPaths's `!draft || DEV`
+// filter — so the index lists exactly the tags that have a `/tags/<tag>`
+// page and the per-tag counts match the click-through, with no parallel
+// filter expression to drift. Tags arrive alphabetised + de-duped from
+// `collectTags`, so the rendered order is stable across builds.
+export async function getAllTags(
+  lang: Lang,
+): Promise<{ tag: string; count: number }[]> {
+  const posts = await getPublishedByLang('posts', lang, { includeDevDrafts: true });
+  return collectTags(posts).map((tag) => ({
+    tag,
+    count: posts.filter((p) => (p.data.tags ?? []).includes(tag)).length,
+  }));
+}
+
 export function sortByDateDesc<T extends { id: string; data: Record<string, unknown> }>(
   items: T[],
   key: string,
