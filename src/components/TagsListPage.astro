@@ -1,0 +1,74 @@
+---
+import Base from '@/layouts/Base.astro';
+import { t, tEn, type Lang } from '@/i18n/ui';
+import { getAllTags } from '@/lib/content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+// Alphabetised, de-duped tags with post counts (dev-inclusive — see
+// getAllTags). No client JS: the page is fully static, so the
+// no-ClientRouter / no-`astro:page-load` constraints are trivially met.
+const tags = await getAllTags(lang);
+---
+<Base
+  lang={lang}
+  title={tEn('tags.index.title')}
+  image={lang === 'en' ? '/en/og/tags.png' : '/og/tags.png'}
+>
+  <h1>{t(lang, 'tags.index.title')}</h1>
+  {tags.length === 0 ? (
+    <p class="muted">{t(lang, 'list.empty')}</p>
+  ) : (
+    <ul class="tag-cloud">
+      {tags.map(({ tag, count }) => (
+        <li>
+          <a href={getRelativeLocaleUrl(lang, `/tags/${tag}/`)}>
+            <span class="tag-name">#{tag}</span>
+            <span class="tag-count">
+              {t(lang, 'tags.index.count').replace('{n}', String(count))}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</Base>
+
+<style>
+  .tag-cloud {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .tag-cloud a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-card);
+    color: var(--color-fg);
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+  .tag-cloud a:hover,
+  .tag-cloud a:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .tag-name {
+    font-weight: 600;
+  }
+  .tag-count {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+  }
+</style>

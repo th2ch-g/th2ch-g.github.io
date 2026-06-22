@@ -1,6 +1,6 @@
 import { generateOpenGraphImage } from 'astro-og-canvas';
 import { getProfileMeta } from '@/lib/content';
-import { addOgChrome } from './og-image';
+import { addOgChrome, renderFallbackOgCard } from './og-image';
 import type { Lang } from '@/i18n/ui';
 
 // Shared visual config for OG card generation. Extracted so that the four
@@ -105,28 +105,48 @@ export interface SectionOgInput {
 }
 
 export async function renderSectionOg(input: SectionOgInput): Promise<Response> {
+  // `getProfileMeta` is intentionally OUTSIDE the fail-soft try: a missing
+  // profile.yaml is a fail-loud config error (site identity is broken), not
+  // the transient font/canvaskit/jimp failure this crash-proofing targets.
   const meta = await getProfileMeta(input.lang);
-  const png = await generateOpenGraphImage({
-    title: stripForOg(input.title),
-    description: stripForOg(input.description ?? ''),
-    bgGradient: OG_BG_GRADIENT,
-    padding: OG_PADDING,
-    font: {
-      title: { color: OG_TITLE_COLOR, size: 96, weight: 'Bold', families: OG_FONT_FAMILIES },
-      description: { color: OG_DESC_COLOR, size: 32, weight: 'Bold', lineHeight: 1.4, families: OG_FONT_FAMILIES },
-    },
-    fonts: OG_FONTS,
-  });
-  const decorated = await addOgChrome(png as Buffer, {
-    name: meta.name,
-    // `meta.icon` reflects profile.yaml's `icon.url`. When it's empty,
-    // scripts/build-icon.mjs skips writing public/icon.png, so we must
-    // omit `iconPath` here too — `addOgChrome` then collapses the credit
-    // row to "name only" instead of failing on a missing file.
-    iconPath: meta.icon ? './public/icon.png' : undefined,
-    pageLabel: input.pageLabel,
-  });
-  return new Response(new Blob([decorated], { type: 'image/png' }));
+  let png: Buffer;
+  try {
+    png = (await generateOpenGraphImage({
+      title: stripForOg(input.title),
+      description: stripForOg(input.description ?? ''),
+      bgGradient: OG_BG_GRADIENT,
+      padding: OG_PADDING,
+      font: {
+        title: { color: OG_TITLE_COLOR, size: 96, weight: 'Bold', families: OG_FONT_FAMILIES },
+        description: { color: OG_DESC_COLOR, size: 32, weight: 'Bold', lineHeight: 1.4, families: OG_FONT_FAMILIES },
+      },
+      fonts: OG_FONTS,
+    })) as Buffer;
+  } catch (err) {
+    // Base render (canvaskit: font load / surface / encode) failed. Degrade
+    // to the engine-independent fallback card instead of aborting the build.
+    console.warn('[og] section base render failed; using fallback card:', err);
+    return new Response(new Blob([await renderFallbackOgCard()], { type: 'image/png' }));
+  }
+  try {
+    const decorated = await addOgChrome(png, {
+      name: meta.name,
+      // `meta.icon` reflects profile.yaml's `icon.url`. When it's empty,
+      // scripts/build-icon.mjs skips writing public/icon.png, so we must
+      // omit `iconPath` here too — `addOgChrome` then collapses the credit
+      // row to "name only" instead of failing on a missing file.
+      iconPath: meta.icon ? './public/icon.png' : undefined,
+      pageLabel: input.pageLabel,
+    });
+    return new Response(new Blob([decorated], { type: 'image/png' }));
+  } catch (err) {
+    // Base card already rendered; only the chrome pass (jimp composites /
+    // credit text) failed. Ship the undecorated-but-valid card.
+    console.warn('[og] section chrome failed; serving undecorated card:', err);
+    // Concrete-ArrayBuffer copy so the raw canvaskit Buffer is a valid
+    // BlobPart on Node 22+ (see og-route.ts / addOgChrome for the same dance).
+    return new Response(new Blob([new Uint8Array(png)], { type: 'image/png' }));
+  }
 }
 
 // Description suffix for tag OG cards. Keeps the locale-specific phrasing
