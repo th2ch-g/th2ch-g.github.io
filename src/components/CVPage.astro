@@ -75,7 +75,7 @@ const { Content } = await render(cv);
   // h2 sections whose <li>s are publication entries (peer-reviewed papers
   // and preprints). Only these get a "BibTeX" copy button — presentations,
   // education, awards etc. don't have a canonical BibTeX form.
-  const PUBLICATION_H2 = /論文|Publication/i;
+  const PUBLICATION_H2 = /論文|プレプリント|Publication/i;
 
   function findSectionH2(li: Element): Element | null {
     const list = li.parentElement;
