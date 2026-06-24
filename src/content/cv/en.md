@@ -33,6 +33,10 @@
 
 ### Posters
 
+1. ◯ **Atsushi Nakato**, **Ryuichiro Ishitani**, **Yoshitaka Moriwaki**, **<u>Tatsuki Hori</u>**, **Hiroshi Nishimasu**, **Teppei Soma**.
+   "[Rotational Simulation of Large Serine Recombinase](https://aeplan.jp/pssj2026/pdf/flashtalk_day1.pdf)"
+   [The 26th Annual Meeting of the Protein Science Society of Japan](https://aeplan.jp/pssj2026/), Tottori Ginko Cultural Hall (Tottori, Tottori, Japan), June 17-19, 2026.
+
 1. ◯ **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
    "[Structural Sampling via Distance-Restrained Complex Structure Prediction](https://sympo.mol-sim.jp/mssj39/files/presen_program_20251122.pdf)"
    [The 39th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj39/), Kunibiki Messe (Matsue, Shimane, Japan), November 24-26, 2025.

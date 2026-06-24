@@ -31,6 +31,10 @@
 
 ### ポスター発表
 
+1. ◯ **仲渡敦**, **石谷隆一郎**, **森脇由隆**, **<u>堀立樹</u>**, **西増弘志**, **相馬哲兵**.
+   「[Large Serine Recombinase の回転シミュレーション](https://aeplan.jp/pssj2026/pdf/flashtalk_day1.pdf)」
+   [第26回日本蛋白質科学会年会](https://aeplan.jp/pssj2026/), とりぎん文化会館（鳥取県鳥取市）, 2026年6月17–19日.
+
 1. ◯ **<u>堀立樹</u>**, **森脇由隆**, **石谷隆一郎**.
    「[拘束条件付き複合体構造予測による構造サンプリング](https://sympo.mol-sim.jp/mssj39/files/presen_program_20251122.pdf)」
    [第39回分子シミュレーション討論会](https://sympo.mol-sim.jp/mssj39/), くにびきメッセ（島根県松江市）, 2025年11月24–26日.
