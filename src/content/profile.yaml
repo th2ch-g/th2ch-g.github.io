@@ -34,10 +34,13 @@ links:
   - label: Huggingface
     url: https://huggingface.co/wasarou
 
-# Contact form URL (e.g. a Google Form). Drives the /contact page CTA
-# button and the "Contact" nav item. Leave blank to show a placeholder
-# message instead of the button — the page still renders.
-contactForm: https://forms.gle/k7xjWNLY6CaEJ7oX8
+# Contact form URL (e.g. a Google Form). Embedded as an <iframe> on the
+# /contact page (with a "open in a new tab" fallback link) and drives the
+# "Contact" nav item. Leave blank to show a placeholder message instead —
+# the page still renders. NOTE: use the form's canonical viewform URL, not
+# the forms.gle shortlink — the embed appends `?embedded=true`, and the
+# host here must be allow-listed in `frame-src` (see src/layouts/Base.astro).
+contactForm: https://docs.google.com/forms/d/e/1FAIpQLScLUM1Tly7yty6vto3AJ0Y0vY0YWtrf-01evjnY1I21rlsiXQ/viewform
 
 # Third-party service integrations. Leave any field blank (or remove the
 # whole block) to gracefully disable the corresponding feature at render

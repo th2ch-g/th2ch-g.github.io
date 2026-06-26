@@ -13,45 +13,65 @@ const meta = await getProfileMeta(lang);
 // per-section H1 convention used by the other static pages.
 const title = t(lang, 'nav.contact');
 const description = t(lang, 'contact.description');
+
+// Build the iframe src from the configured form URL. Google Forms render a
+// chrome-less, embed-friendly page when `embedded=true` is present; the URL
+// API appends it without caring whether the URL already carries a query.
+// The form host must also be allow-listed in `frame-src` (src/layouts/Base.astro).
+let embedSrc: string | null = null;
+if (meta.contactForm) {
+  const u = new URL(meta.contactForm);
+  u.searchParams.set('embedded', 'true');
+  embedSrc = u.toString();
+}
 ---
 <Base lang={lang} title={title} description={description}>
   <h1>{title}</h1>
-  {meta.contactForm ? (
-    <p>
-      <a class="cta" href={meta.contactForm} target="_blank" rel="noopener noreferrer">
-        {t(lang, 'contact.cta')}
-      </a>
-    </p>
+  {embedSrc ? (
+    <>
+      {/* Do NOT add a `sandbox` attribute: Google Forms needs its own
+          scripts and same-origin context to load and submit, and sandboxing
+          silently breaks submission. The iframe carries no resize protocol,
+          so the height is fixed (see `.contact-form` below). */}
+      <iframe
+        class="contact-form"
+        src={embedSrc}
+        title={t(lang, 'contact.embedTitle')}
+        loading="lazy"
+      >…</iframe>
+      {/* Fallback for browsers/extensions that block the frame, and for
+          visitors who prefer the full-page form. Uses the plain URL. */}
+      <p class="fallback">
+        <a href={meta.contactForm} target="_blank" rel="noopener noreferrer">
+          {t(lang, 'contact.cta')}
+        </a>
+      </p>
+    </>
   ) : (
     /* Forkable fallback: a fork that leaves `contactForm` blank still gets
-       a coherent page rather than a dangling button or build error. */
+       a coherent page rather than a dangling embed or build error. */
     <p class="muted">{t(lang, 'contact.unavailable')}</p>
   )}
 </Base>
 
 <style>
-  /* Accent-outline CTA that inverts on hover. Contrast ratio is symmetric
-     between two colors, so if `--color-accent` text on `--color-bg` passes
-     WCAG (it does — it's the site link color), the inverted hover state
-     (bg text on accent fill) passes by the same ratio. */
-  .cta {
-    display: inline-block;
+  .contact-form {
+    display: block;
+    width: 100%;
+    /* Google Forms posts no height message to the parent frame, so the
+       height is fixed. Tall enough that a typical contact form fits without
+       an inner scrollbar; bump this if the form grows. */
+    min-height: 1100px;
     margin-top: 0.5rem;
-    padding: 0.55rem 1.3rem;
-    font-size: 1rem;
-    color: var(--color-accent);
-    background: var(--color-bg);
-    border: 1px solid var(--color-accent);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+    /* The embedded form is always Google's light theme; pinning the scheme
+       keeps its form controls and scrollbar consistent on the dark site. */
+    color-scheme: light;
+    background: #fff;
   }
-  .cta:hover,
-  .cta:focus-visible {
-    background: var(--color-accent);
-    color: var(--color-bg);
-    text-decoration: none;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .cta { transition: none; }
+  .fallback {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
   }
 </style>
