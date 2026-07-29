@@ -114,7 +114,7 @@ const tree = buildTree(flat);
   import { onReady } from '@/lib/dom-ready';
 
   let activeObserver: IntersectionObserver | null = null;
-  const desktopMedia = window.matchMedia('(min-width: 960px)');
+  const desktopMedia = window.matchMedia('(min-width: 84rem)');
 
   function wireToc() {
     activeObserver?.disconnect();
@@ -258,8 +258,13 @@ const tree = buildTree(flat);
     width: min(20rem, 88vw);
     height: 100dvh;
     overflow-y: auto;
-    border: 1px solid var(--color-border);
-    background: var(--color-card);
+    border: 1px solid color-mix(in srgb, var(--color-border) 78%, var(--color-accent));
+    background:
+      linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--color-accent) 10%, var(--color-card)) 0,
+        var(--color-card) 5rem
+      );
     padding: 1rem;
     font-size: 0.9rem;
     transform: translateX(100%);
@@ -277,12 +282,23 @@ const tree = buildTree(flat);
     margin-bottom: 0.75rem;
   }
   .toc-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin: 0;
-    color: var(--color-muted);
-    font-size: 0.75rem;
+    color: var(--color-fg);
+    font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+  }
+  .toc-title::before {
+    content: '';
+    width: 0.28rem;
+    height: 1.05rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--color-accent), var(--color-accent-hover));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 12%, transparent);
   }
   .toc-close {
     display: grid;
@@ -299,40 +315,53 @@ const tree = buildTree(flat);
   }
   /* The list is injected via set:html, so its descendants do not carry
      this component's scoped-style attribute — wrap selectors in :global()
-     so the nested bullet rules still apply. */
+     so the nested navigation rules still apply. */
   :global(.toc .toc-list) {
-    list-style: disc;
-    padding-left: 1.2rem;
+    list-style: none;
+    padding: 0;
     margin: 0;
   }
   :global(.toc .toc-list .toc-list) {
-    list-style: circle;
-    margin-top: 0.15rem;
-    font-size: 0.95em;
+    margin: 0.15rem 0 0.25rem 0.6rem;
+    padding-left: 0.65rem;
+    border-left: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+    font-size: 0.93em;
   }
   :global(.toc .toc-list .toc-list .toc-list) {
-    list-style: square;
+    margin-left: 0.35rem;
   }
   :global(.toc .toc-item) {
-    margin: 0.15rem 0;
-    line-height: 1.4;
+    margin: 0.08rem 0;
+    line-height: 1.45;
   }
   :global(.toc .toc-item a) {
+    display: block;
+    margin-left: -0.45rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 0.4rem;
+    color: var(--color-muted);
+    text-wrap: pretty;
+    transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  }
+  :global(.toc > .toc-list > .toc-item > a) {
     color: var(--color-fg);
-    transition: color 160ms ease;
+    font-weight: 600;
   }
   :global(.toc .toc-item a:hover) {
     color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
     text-decoration: none;
   }
   :global(.toc .toc-item a.is-active) {
     color: var(--color-accent);
     font-weight: 600;
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+    box-shadow: inset 3px 0 var(--color-accent);
   }
   :global(body.toc-drawer-open) {
     overflow: hidden;
   }
-  @media (min-width: 960px) {
+  @media (min-width: 84rem) {
     .toc-toggle,
     .toc-backdrop,
     .toc-close {
@@ -347,10 +376,10 @@ const tree = buildTree(flat);
       max-height: calc(100vh - 5.75rem);
       margin: 0;
       border-radius: var(--radius);
-      padding: 0.75rem 1rem;
+      padding: 0.85rem 1rem 1rem;
       transform: none;
       transition: none;
-      box-shadow: none;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
     }
     .toc-head {
       margin-bottom: 0.5rem;

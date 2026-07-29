@@ -30,7 +30,7 @@ export const OG_DESC_COLOR: RGB = [15, 23, 42];
 // has no gradient option.
 export const OG_BORDER_COLOR_LEFT: RGB = [74, 222, 128];
 export const OG_BORDER_COLOR_RIGHT: RGB = [121, 184, 255];
-export const OG_BORDER_WIDTH = 24;
+export const OG_BORDER_WIDTH = 40;
 
 // Local TTF copies maintained by `scripts/build-fonts.mjs`. Both Regular
 // and Bold are loaded so that `font: { title: { weight: 'Bold' } }` resolves
@@ -77,8 +77,8 @@ export const OG_INNER_CORNER_RADIUS = 40;
 // Inner shadow on the border that fakes a "floating" body — the
 // gradient ring darkens just outside the inner rounded rect, fading
 // linearly with distance, as if the body content is raised above the
-// frame and casting a shadow on it. Width 14 covers the inner ~half
-// of the 24px border; intensity 0.35 = up to 35% darkening at the
+// frame and casting a shadow on it. Width 14 covers the inner part
+// of the border; intensity 0.35 = up to 35% darkening at the
 // edge. Set INTENSITY to 0 to disable the effect.
 export const OG_INNER_SHADOW_WIDTH = 14;
 export const OG_INNER_SHADOW_INTENSITY = 0.35;

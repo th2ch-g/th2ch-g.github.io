@@ -263,13 +263,18 @@ const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
     color: var(--color-fg);
     margin: 0.5rem 0 1rem;
   }
-  @media (min-width: 960px) {
+  /* Keep the article at the same width as posts without a TOC. The sidebar
+     becomes persistent only when the viewport can fit the full article,
+     gap, and TOC; narrower screens use the drawer instead. */
+  @media (min-width: 84rem) {
     .post-layout.has-toc {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 15rem;
       grid-template-areas: 'article toc';
       gap: 2rem;
       align-items: start;
+      width: calc(100% + 17rem);
+      margin-left: -8.5rem;
     }
     .post-layout.has-toc article {
       grid-area: article;

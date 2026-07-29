@@ -4,7 +4,7 @@
 Reads ORCID iD from ``src/content/profile.yaml`` (the link with a URL
 under ``orcid.org``), fetches works from ``pub.orcid.org`` (no authentication
 required), and inserts any DOIs not already present in ``ja.md`` / ``en.md``
-into the matching section.
+at the top of the matching section in reverse chronological order.
 
 For each new work, also queries the CrossRef API by DOI to fetch the author
 list (ORCID itself does not return authors). Each author is rendered as a
@@ -327,6 +327,7 @@ def extract_works(orcid_data: dict) -> list[dict]:
         pubdate = ws.get("publication-date") or {}
         year = (pubdate.get("year") or {}).get("value", "")
         month = (pubdate.get("month") or {}).get("value")
+        day = (pubdate.get("day") or {}).get("value")
         work_type = ws.get("type", "") or ""
         out.append(
             {
@@ -335,9 +336,16 @@ def extract_works(orcid_data: dict) -> list[dict]:
                 "journal": journal,
                 "year": year,
                 "month": month,
+                "day": day,
                 "type": work_type,
             },
         )
+    out.sort(
+        key=lambda work: tuple(
+            int(work.get(part) or 0) for part in ("year", "month", "day")
+        ),
+        reverse=True,
+    )
     return out
 
 
@@ -365,7 +373,7 @@ def insert_into_section(
     fallback_header: str,
     entries: list[str],
 ) -> str:
-    """Append `entries` to the section matching `header_pattern`. If absent,
+    """Prepend `entries` to the section matching `header_pattern`. If absent,
     append a new section using `fallback_header` at the end of the file."""
     if not entries:
         return content
@@ -374,9 +382,12 @@ def insert_into_section(
     if span is None:
         sep = "" if content.endswith("\n") else "\n"
         return f"{content}{sep}\n{fallback_header}\n\n{block}"
-    _, end = span
+    start, end = span
     lines = content.splitlines(keepends=True)
-    return "".join(lines[:end]) + block + "".join(lines[end:])
+    insert_at = start + 1
+    while insert_at < end and not lines[insert_at].strip():
+        insert_at += 1
+    return "".join(lines[:insert_at]) + block + "".join(lines[insert_at:])
 
 
 def show_diff(label: str, old: str, new: str) -> bool:
@@ -546,8 +557,8 @@ def main() -> int:
     )
     new_ja = insert_into_section(
         new_ja,
-        r"^## \[?論文\(プレプリント",
-        f"## [論文(プレプリント, 査読無し)]({orcid_url})",
+        r"^## \[?(?:論文\(プレプリント|プレプリント\(査読無し\))",
+        f"## [プレプリント(査読無し)]({orcid_url})",
         ja_preprint,
     )
 

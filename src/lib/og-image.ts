@@ -52,9 +52,9 @@ export interface OgChromeOptions {
 const CREDIT_ICON_SIZE = 80;
 const CREDIT_FONT_HEIGHT = 64;
 const CREDIT_GAP = 18;
-// Distance from the canvas's bottom edge to the bottom of the chrome row
-// (icon + label + name). 60 = 24 (border) + 36 (clear inset).
-const CHROME_BOTTOM = 60;
+// Keep the chrome row a stable distance inside the colored frame when the
+// border thickness changes.
+const CHROME_BOTTOM = OG_BORDER_WIDTH + 36;
 // Optical-centering nudge for credit-row text. canvaskit's paragraph
 // bitmap height = ascent + descent + leading, so glyph cap-heights sit
 // in the upper ~40% of the bitmap. Centering the bitmap mathematically

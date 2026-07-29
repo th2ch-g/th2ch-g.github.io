@@ -47,7 +47,7 @@ The user may not say "ORCID" explicitly. If they ask to refresh the publications
    - DOI prefix in the known preprint-server list: `10.1101` (bioRxiv), `10.48550` (arXiv), `10.31219` (OSF/medRxiv), `10.20944` (Preprints.org), `10.64898` (ChemRxiv)
    - otherwise → peer-reviewed (journal article)
 7. For each new work, queries `https://api.crossref.org/works/<DOI>` to fetch the author list (ORCID itself does not return authors). Each author is rendered as **bold name**; the user's own name (matched on family name + first given-name token) is wrapped in `<u>...</u>`. CrossRef failure is non-fatal — that entry falls back to the `[authors — TODO]` placeholder for manual filling later. The HTTP request includes a `User-Agent` with a contact email per CrossRef's "polite pool" convention so requests get a faster queue without auth.
-8. Formats each entry as a numbered list item (using the `1.` marker — CommonMark auto-numbers them, mirroring the conference-presentations sections) and inserts it at the end of the matching section in both `ja.md` and `en.md`. If a section header doesn't exist (typical for `en.md`, which is mostly empty), it creates the header.
+8. Sorts new works by their ORCID publication date in descending order, formats each entry as a numbered list item (using the `1.` marker — CommonMark auto-numbers them, mirroring the conference-presentations sections), and inserts them at the top of the matching section in both `ja.md` and `en.md`. If a section header doesn't exist (typical for `en.md`, which is mostly empty), it creates the header.
 
 ## Output format
 
@@ -69,7 +69,7 @@ Notes on this format:
 
 The script looks for these existing headers:
 - **ja.md peer-reviewed**: `## [論文(査読付き)](...)` (the link target is ignored, only the leading `## 論文(査読付き)` text is matched)
-- **ja.md preprint**: `## [論文(プレプリント, 査読無し)](...)`
+- **ja.md preprint**: `## [プレプリント(査読無し)](...)` (the legacy `論文(プレプリント, 査読無し)` form is also accepted)
 - **en.md peer-reviewed**: `## Publications (peer-reviewed)` (created on first run if missing)
 - **en.md preprint**: `## Publications (preprints)` (created on first run if missing)
 
