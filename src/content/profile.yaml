@@ -17,8 +17,8 @@ repo: th2ch-g/th2ch-g.github.io
 # Leave null / empty to skip QR generation entirely (no PNG, no section).
 site: https://th2ch-g.github.io
 bio:
-  ja: 日本人🇯🇵・博士後期課程学生
-  en: Japanese・Doctoral student
+  ja: 日本人🇯🇵
+  en: Japanese
 icon:
   url: https://avatars.githubusercontent.com/u/76892059
   comment:
