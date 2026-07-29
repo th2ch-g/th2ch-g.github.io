@@ -17,6 +17,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REPO_URL, ogFilename, ogRemoteUrl } from '../src/plugins/lib/github-og.mjs';
+import { readResponseBuffer } from '../src/plugins/lib/response-body.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const OUT_DIR = resolve(ROOT, 'public/github-og');
@@ -83,9 +84,8 @@ async function download(url) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const type = res.headers.get('content-type') ?? '';
       if (!type.startsWith('image/')) throw new Error(`unexpected content-type ${type || '(none)'}`);
-      const buf = Buffer.from(await res.arrayBuffer());
+      const buf = await readResponseBuffer(res, MAX_BYTES);
       if (buf.length === 0) throw new Error('empty body');
-      if (buf.length > MAX_BYTES) throw new Error(`too large (${buf.length} bytes)`);
       return buf;
     } catch (err) {
       lastErr = err;

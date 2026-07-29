@@ -33,12 +33,14 @@ import { fileURLToPath } from 'node:url';
 import { createHighlighter, isSpecialLang } from 'shiki';
 import { escapeHtml as esc } from './lib/escape.mjs';
 import { extractStandaloneUrl } from './lib/extract-url.mjs';
+import { readResponseBuffer } from './lib/response-body.mjs';
 import { replaceWithHtml } from './lib/replace.mjs';
 import { siteHost } from '../lib/profile-yaml.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, '../../node_modules/.cache/github-permalink');
 const TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_SOURCE_BYTES = 1024 * 1024;
 // Cap the rendered slice so a pasted multi-hundred-line range can't blow the
 // post open vertically; the overflow is linked out to GitHub instead.
 const MAX_LINES = 40;
@@ -135,7 +137,8 @@ async function fetchSnippet(p) {
   // AbortError surfaces through getSnippet's catch and serves stale cache.
   const res = await fetch(raw, { headers, signal: AbortSignal.timeout(15_000) });
   if (!res.ok) throw new Error(`raw.githubusercontent ${res.status}`);
-  const all = (await res.text()).split('\n');
+  const source = await readResponseBuffer(res, MAX_SOURCE_BYTES);
+  const all = new TextDecoder('utf-8', { fatal: false }).decode(source).split('\n');
   // 1-indexed inclusive slice, clamped to the file's actual length. A null end
   // (whole-file URL, no #L anchor) slices through to the last line.
   const sliced = p.end == null ? all.slice(p.start - 1) : all.slice(p.start - 1, p.end);

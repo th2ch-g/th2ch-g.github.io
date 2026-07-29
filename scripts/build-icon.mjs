@@ -9,6 +9,8 @@ import { writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { iconUrl } from '../src/lib/profile-yaml.mjs';
+import { fetchPublicHttp } from '../src/plugins/lib/public-http.mjs';
+import { readResponseBuffer } from '../src/plugins/lib/response-body.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const OUT = resolve(ROOT, 'public/icon.png');
@@ -65,29 +67,18 @@ if (!src) {
   process.exit(0);
 }
 
-// Restrict the icon source to http(s) so a malformed/footgun profile.yaml
-// can't make Jimp read file:// or other local URIs from the build host.
-// Fail-soft to match the rest of this script's contract.
-if (!/^https?:\/\//i.test(src)) {
-  console.warn(`[build-icon] skipped: icon.url must be http(s), got: ${src}`);
-  process.exit(0);
-}
-
 console.log(`[build-icon] reading ${src}`);
 try {
   // Fetch the avatar ourselves rather than letting `Jimp.read(url)` do it
   // — Jimp's internal HTTP layer has no abort path, so a stalled CDN
   // could pin `npm run dev` indefinitely. A 15s AbortSignal matches the
   // contract used by `build-fonts.mjs` and the CrossRef sync scripts.
-  const res = await fetch(src, { signal: AbortSignal.timeout(15_000) });
+  const res = await fetchPublicHttp(src, { signal: AbortSignal.timeout(15_000) });
   if (!res.ok) throw new Error(`icon fetch ${res.status} for ${src}`);
   // 4MB upper bound: well above realistic avatar sizes (commonly < 200KB)
   // but small enough to bail before pinning RAM on a malformed source.
   const MAX_BYTES = 4 * 1024 * 1024;
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length > MAX_BYTES) {
-    throw new Error(`icon too large (${buf.length} bytes, max ${MAX_BYTES})`);
-  }
+  const buf = await readResponseBuffer(res, MAX_BYTES);
   const image = await Jimp.read(buf);
   image.cover({ w: SIZE, h: SIZE });
 

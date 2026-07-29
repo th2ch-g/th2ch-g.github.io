@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { escapeHtml as esc } from './lib/escape.mjs';
 import { fetchPublicHttp, parsePublicHttpUrl } from './lib/public-http.mjs';
+import { readResponseBuffer } from './lib/response-body.mjs';
 import { replaceWithHtml } from './lib/replace.mjs';
 import { siteHost, readProfileShallow } from '../lib/profile-yaml.mjs';
 
@@ -160,19 +161,8 @@ async function fetchMeta(url) {
   }
 
   // Stream-cap the body so a giant page can't blow up memory.
-  const reader = res.body?.getReader();
-  if (!reader) throw new Error('no response body');
-  const chunks = [];
-  let total = 0;
-  while (total < MAX_BYTES) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    total += value.byteLength;
-  }
-  try { await reader.cancel(); } catch { /* ignore */ }
   const html = new TextDecoder('utf-8', { fatal: false }).decode(
-    Buffer.concat(chunks.map((c) => Buffer.from(c))),
+    await readResponseBuffer(res, MAX_BYTES, { allowTruncated: true }),
   );
 
   const meta = parseMeta(html, res.url || url);
