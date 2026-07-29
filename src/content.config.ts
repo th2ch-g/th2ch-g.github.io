@@ -30,6 +30,15 @@ const sanitiseTags = (v: unknown) =>
 const nullable = <T extends z.ZodTypeAny>(inner: T) =>
   z.preprocess(blankToUndefined, inner.optional());
 
+// Zod's emoji validator accepts a sequence containing multiple emoji.
+// Segment the value into Unicode grapheme clusters as a second guard so
+// combined emoji such as "🧑‍💻" remain valid while "🧬🚀" is rejected.
+const emojiSegmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+const singleEmoji = z.emoji().refine(
+  (value) => Array.from(emojiSegmenter.segment(value)).length === 1,
+  { message: 'emoji must contain exactly one grapheme cluster' },
+);
+
 // Body-only collection: per-locale CV prose lives in cv/<lang>.md.
 // All structured metadata moved to profile.yaml at the content root.
 const cv = defineCollection({
@@ -188,42 +197,30 @@ const profileMeta = defineCollection({
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
-  schema: ({ image }) =>
-    z.object({
-      // Title remains required — list pages, feed entries, OG cards, and
-      // breadcrumbs all key off it. An empty <h1> would cascade visually.
-      title: z.string(),
-      description: nullable(z.string()),
-      // pubDate remains required because list ordering, feeds, and the
-      // adjacent-post navigator all depend on it.
-      pubDate: z.coerce.date(),
-      updatedDate: nullable(z.coerce.date()),
-      tags: z.preprocess(sanitiseTags, z.array(z.string()).optional()),
-      // null-tolerant boolean: YAML `draft:` (no value) deserialises to
-      // null, which `z.boolean()` would reject; coerce it to undefined
-      // so the `.default(false)` engages.
-      draft: z.preprocess(blankToUndefined, z.boolean().default(false)),
-      // Optional series identifier — posts sharing the same `series`
-      // string are linked at the bottom of each post in chronological
-      // order. Free-form so authors can name a series without registering
-      // it elsewhere; the slug is used both as a key and a display label.
-      series: nullable(z.string()),
-      // Hero image shown at the top of the post and as a thumbnail in lists.
-      // Accepts either a co-located asset path (resolved via Astro's `image()`
-      // into `ImageMetadata` for build-time optimisation) or an absolute
-      // remote URL — useful when the source image lives on a CDN or external
-      // host and shouldn't be vendored into the repo. Remote URLs are rendered
-      // verbatim through a plain `<img>` (no width/height hints; layout shift
-      // is bounded by the CSS aspect-ratio on `.thumb` / `.hero`) and are
-      // also downloaded at build time by the OG-card pipeline so the card
-      // backdrop matches the in-post hero (see `resolveHeroImageSource` in
-      // og-image.ts). Fetch failures fall back to the gradient-only design.
-      heroImage: z.preprocess(
-        blankToUndefined,
-        z.union([image(), z.url()]).optional(),
-      ),
-      heroImageAlt: nullable(z.string()),
-    }),
+  schema: z.object({
+    // Title remains required — list pages, feed entries, OG cards, and
+    // breadcrumbs all key off it. An empty <h1> would cascade visually.
+    title: z.string(),
+    description: nullable(z.string()),
+    // pubDate remains required because list ordering, feeds, and the
+    // adjacent-post navigator all depend on it.
+    pubDate: z.coerce.date(),
+    updatedDate: nullable(z.coerce.date()),
+    tags: z.preprocess(sanitiseTags, z.array(z.string()).optional()),
+    // null-tolerant boolean: YAML `draft:` (no value) deserialises to
+    // null, which `z.boolean()` would reject; coerce it to undefined
+    // so the `.default(false)` engages.
+    draft: z.preprocess(blankToUndefined, z.boolean().default(false)),
+    // Optional series identifier — posts sharing the same `series`
+    // string are linked at the bottom of each post in chronological
+    // order. Free-form so authors can name a series without registering
+    // it elsewhere; the slug is used both as a key and a display label.
+    series: nullable(z.string()),
+    // Required visual identity for post cards and detail headers.
+    // A grapheme-aware validator allows composed emoji while rejecting
+    // multiple adjacent emoji.
+    emoji: singleEmoji,
+  }),
 });
 
 // Note: the gallery is no longer a content collection. Photos are loose

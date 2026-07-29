@@ -63,7 +63,7 @@ Each page's `getStaticPaths` is evaluated independently by Astro and **must be a
 
 `npm run build` then runs `astro build`, `scripts/inject-sitemap-xsl.mjs` (post-processes the generated sitemap to reference `public/sitemap.xsl` for human-readable rendering), `pagefind --site dist` (search index), and `scripts/build-cv-pdf.mjs` (Playwright spins up a static server, prints `/cv` and `/en/cv` to `dist/cv.pdf` and `dist/en/cv.pdf`). The CV PDF step **fails soft** — if Playwright is missing or Chromium crashes, the build still succeeds.
 
-OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm. Hero-image backdrops are cached under `node_modules/.cache/og-hero/` keyed by source path + mtime.
+OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm.
 
 ### Markdown plumbing
 

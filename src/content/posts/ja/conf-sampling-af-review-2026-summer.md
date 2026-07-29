@@ -7,8 +7,7 @@ tags:
   - conformational-sampling
   - review
 draft: false
-heroImage:
-heroImageAlt:
+emoji: 🧪
 ---
 
 分類は、1. 入力するMSAを改変、2. MSA特徴量を改変、3. 3次元座標を改変、4. アンサンブルそのものを生成、をそれぞれ示す。

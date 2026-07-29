@@ -86,13 +86,12 @@ const ogImage =
 // fetching bytes (faster perceived render, no layout shift). astro-og-canvas
 // hardcodes 1200x630 for every generated card, so when the source is one of
 // our `/og/...` routes (string input) or the locale default fallback, we
-// know the dimensions exactly. For an Astro `image()` asset (heroImage),
-// use the asset's own metadata.
+// know the dimensions exactly. For any Astro image asset supplied by a
+// caller, use the asset's own metadata.
 const ogImageWidth = typeof image === 'object' && image !== null ? image.width : 1200;
 const ogImageHeight = typeof image === 'object' && image !== null ? image.height : 630;
-// All cards are now >= 1200x630, satisfying Twitter's `summary_large_image`
-// minimum (300x157, 2:1 ratio). For a heroImage with non-2:1 aspect ratio,
-// Twitter still accepts it but may letterbox.
+// Generated cards are 1200x630, satisfying Twitter's
+// `summary_large_image` minimum (300x157, 2:1 ratio).
 const twitterCard = 'summary_large_image';
 // Alt text for the OG image. Falls back to title — short, accurate, and
 // what most SNS previewers surface to assistive tech. Twitter caps this

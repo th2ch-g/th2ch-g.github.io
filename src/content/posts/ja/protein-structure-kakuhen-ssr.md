@@ -6,10 +6,8 @@ tags:
   - twitter
   - protein
 draft: false
-heroImage: ./assets/protein-kakuhen-ssr.jpeg
-heroImageAlt: protein-kakuhen-ssr
+emoji: 🤯
 ---
 
 ## 石谷先生も喜んでくれました😃
 https://x.com/cuemolnohito/status/2047466824191914454
-

@@ -70,47 +70,123 @@ function renderTree(nodes: TocNode[]): string {
 const tree = buildTree(flat);
 ---
 {flat.length >= 2 && (
-  <aside class="toc" aria-label={t(lang, 'posts.toc')}>
-    {/* `<details>` is collapsible by native browser behavior — no JS or
-        ARIA needed for the disclosure. We open by default on desktop;
-        the mobile breakpoint flips it closed so long contents don't push
-        the article down. The `name=""` (no group) attribute lets every
-        article instance toggle independently. */}
-    <details class="toc-details" open>
-      <summary class="toc-title">{t(lang, 'posts.toc')}</summary>
+  <>
+    <button
+      class="toc-toggle"
+      type="button"
+      data-toc-toggle
+      aria-controls="post-toc-panel"
+      aria-expanded="false"
+      aria-label={t(lang, 'posts.toc.open')}
+    >
+      {t(lang, 'posts.toc')}
+    </button>
+    <button
+      class="toc-backdrop"
+      type="button"
+      data-toc-backdrop
+      aria-label={t(lang, 'posts.toc.close')}
+      tabindex="-1"
+    ></button>
+    <aside
+      id="post-toc-panel"
+      class="toc"
+      data-toc-panel
+      aria-label={t(lang, 'posts.toc')}
+    >
+      <div class="toc-head">
+        <p class="toc-title">{t(lang, 'posts.toc')}</p>
+        <button
+          class="toc-close"
+          type="button"
+          data-toc-close
+          aria-label={t(lang, 'posts.toc.close')}
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
       <Fragment set:html={renderTree(tree)} />
-    </details>
-  </aside>
+    </aside>
+  </>
 )}
 
 <script>
   import { onReady } from '@/lib/dom-ready';
 
-  // Highlight the TOC link whose heading is currently in the viewport.
-  // The rootMargin biases the "active" zone toward the upper third so
-  // the link flips before the heading scrolls all the way up.
   let activeObserver: IntersectionObserver | null = null;
-  // 720px matches the Header's mobile breakpoint so the TOC and nav
-  // collapse together. Below that, start the TOC closed; above, leave
-  // it open (the `<details open>` server-rendered default).
-  const MOBILE_BREAKPOINT = 720;
+  const desktopMedia = window.matchMedia('(min-width: 960px)');
 
   function wireToc() {
     activeObserver?.disconnect();
     activeObserver = null;
 
-    const details = document.querySelector<HTMLDetailsElement>('.toc-details');
-    if (details && window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches) {
-      details.open = false;
+    const panel = document.querySelector<HTMLElement>('[data-toc-panel]');
+    const toggle = document.querySelector<HTMLButtonElement>('[data-toc-toggle]');
+    const closeButton = document.querySelector<HTMLButtonElement>('[data-toc-close]');
+    const backdrop = document.querySelector<HTMLButtonElement>('[data-toc-backdrop]');
+    if (!panel || !toggle || !closeButton || !backdrop) return;
+    const tocPanel = panel;
+    const tocToggle = toggle;
+    const tocCloseButton = closeButton;
+    const tocBackdrop = backdrop;
+
+    let isOpen = false;
+
+    function syncA11y() {
+      const isDesktop = desktopMedia.matches;
+      tocToggle.setAttribute('aria-expanded', String(!isDesktop && isOpen));
+      if (isDesktop) {
+        tocPanel.removeAttribute('aria-hidden');
+        tocPanel.inert = false;
+        document.body.classList.remove('toc-drawer-open');
+        return;
+      }
+      tocPanel.setAttribute('aria-hidden', String(!isOpen));
+      tocPanel.inert = !isOpen;
+      document.body.classList.toggle('toc-drawer-open', isOpen);
     }
 
+    function openDrawer() {
+      if (desktopMedia.matches) return;
+      isOpen = true;
+      tocPanel.classList.add('is-open');
+      tocBackdrop.classList.add('is-open');
+      syncA11y();
+      tocCloseButton.focus();
+    }
+
+    function closeDrawer(restoreFocus = true) {
+      const wasOpen = isOpen;
+      isOpen = false;
+      tocPanel.classList.remove('is-open');
+      tocBackdrop.classList.remove('is-open');
+      syncA11y();
+      if (wasOpen && restoreFocus) tocToggle.focus();
+    }
+
+    tocToggle.addEventListener('click', openDrawer);
+    tocCloseButton.addEventListener('click', () => closeDrawer());
+    tocBackdrop.addEventListener('click', () => closeDrawer());
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && isOpen) closeDrawer();
+    });
+    tocPanel.querySelectorAll<HTMLAnchorElement>('[data-toc-link]').forEach((link) => {
+      link.addEventListener('click', () => {
+        if (!desktopMedia.matches) closeDrawer(false);
+      });
+    });
+    desktopMedia.addEventListener('change', () => closeDrawer(false));
+    syncA11y();
+
     const linkMap = new Map<string, HTMLElement>();
-    document.querySelectorAll<HTMLElement>('[data-toc-link]').forEach((el) => {
+    tocPanel.querySelectorAll<HTMLElement>('[data-toc-link]').forEach((el) => {
       const slug = el.dataset.tocLink;
       if (slug) linkMap.set(slug, el);
     });
 
     if (linkMap.size > 0 && 'IntersectionObserver' in window) {
+      // Bias the active zone toward the upper third so the link switches
+      // before its heading reaches the top edge.
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -142,39 +218,85 @@ const tree = buildTree(flat);
 </script>
 
 <style>
-  .toc {
+  .toc-toggle {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    z-index: 70;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    padding: 0.7rem 0.4rem;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    border-right: 0;
+    border-radius: var(--radius) 0 0 var(--radius);
     background: var(--color-card);
-    padding: 0.75rem 1rem;
-    margin: 1rem 0 2rem;
+    color: var(--color-fg);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+  .toc-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 75;
+    border: 0;
+    background: rgba(0, 0, 0, 0.46);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+  .toc-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .toc {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 80;
+    width: min(20rem, 88vw);
+    height: 100dvh;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    padding: 1rem;
     font-size: 0.9rem;
+    transform: translateX(100%);
+    transition: transform 180ms ease;
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.22);
+  }
+  .toc.is-open {
+    transform: translateX(0);
+  }
+  .toc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
   }
   .toc-title {
-    margin: 0 0 0.5rem;
+    margin: 0;
     color: var(--color-muted);
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+  }
+  .toc-close {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-fg);
+    font-size: 1.4rem;
     cursor: pointer;
-    list-style: none;
   }
-  /* Hide the default `▶` marker on Webkit; we render a custom caret via
-     the `::before` rule below so the indicator lines up with the title. */
-  .toc-title::-webkit-details-marker { display: none; }
-  .toc-title::before {
-    content: '▾';
-    display: inline-block;
-    margin-right: 0.4rem;
-    font-size: 0.7rem;
-    color: var(--color-muted);
-    transition: transform 160ms ease;
-  }
-  .toc-details:not([open]) > .toc-title::before {
-    transform: rotate(-90deg);
-  }
-  .toc-details[open] > :global(.toc-list) { margin-top: 0.4rem; }
   /* The list is injected via set:html, so its descendants do not carry
      this component's scoped-style attribute — wrap selectors in :global()
      so the nested bullet rules still apply. */
@@ -207,9 +329,37 @@ const tree = buildTree(flat);
     color: var(--color-accent);
     font-weight: 600;
   }
+  :global(body.toc-drawer-open) {
+    overflow: hidden;
+  }
+  @media (min-width: 960px) {
+    .toc-toggle,
+    .toc-backdrop,
+    .toc-close {
+      display: none;
+    }
+    .toc {
+      position: sticky;
+      top: 4.75rem;
+      z-index: auto;
+      width: auto;
+      height: auto;
+      max-height: calc(100vh - 5.75rem);
+      margin: 0;
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      transform: none;
+      transition: none;
+      box-shadow: none;
+    }
+    .toc-head {
+      margin-bottom: 0.5rem;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
-    :global(.toc .toc-item a),
-    .toc-title::before {
+    .toc,
+    .toc-backdrop,
+    :global(.toc .toc-item a) {
       transition: none;
     }
   }

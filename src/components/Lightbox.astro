@@ -1,9 +1,6 @@
 ---
-// Global image preview overlay. A single instance is mounted in Base.astro and
-// listens (via event delegation) for sustained pointer hovers on card images
-// in posts and gallery entries. After HOLD_MS of continuous hover the
-// hovered image's src/alt is copied here and the overlay fades in. Click
-// anywhere or press Esc to close.
+// Global image preview overlay. Gallery controls open it through a custom
+// event; click anywhere on the overlay or press Escape to close.
 ---
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview" hidden>
   {/* `src` is intentionally omitted on the initial render. The empty-string

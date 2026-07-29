@@ -30,7 +30,7 @@ const heading = `${tEn('series.heading')}: ${name}`;
   {posts.length === 0 ? (
     <p class="muted">{t(lang, 'list.empty')}</p>
   ) : (
-    <div class="post-list">
+    <div class="post-grid">
       {posts.map((post) => <PostEntry post={post} lang={lang} />)}
     </div>
   )}
@@ -43,5 +43,4 @@ const heading = `${tEn('series.heading')}: ${name}`;
     font-size: 0.7em;
     margin-right: 0.4rem;
   }
-  .post-list { display: flex; flex-direction: column; }
 </style>

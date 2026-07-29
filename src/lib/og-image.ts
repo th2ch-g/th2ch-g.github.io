@@ -1,9 +1,6 @@
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, statSync, promises as fsp } from 'node:fs';
-import { dirname, resolve as resolvePath, sep } from 'node:path';
+import { promises as fsp } from 'node:fs';
 import { Jimp } from 'jimp';
 import CanvasKitInit from 'canvaskit-wasm';
-import type { CollectionEntry } from 'astro:content';
 import {
   OG_BG_GRADIENT,
   OG_FONTS,
@@ -19,149 +16,8 @@ import {
   type RGB,
 } from './og-config';
 
-// Resolve a post's heroImage front-matter value to a source `prepareHeroBackdrop`
-// can read. We re-parse the .md front-matter rather than relying on
-// `post.data.heroImage` because Astro 5's `ImageMetadata` only exposes
-// `src / width / height / format / orientation` publicly — the underlying
-// file path is intentionally hidden. `post.filePath` (Astro 5+) gives us
-// the .md location, and the front-matter line preserves the original
-// relative path the author wrote (e.g. `./cover.jpg`).
-//
-// Returns:
-//   { kind: 'local',  path }  — co-located file under src/content/
-//   { kind: 'remote', url  }  — absolute http(s) URL (downloaded lazily)
-//   undefined                 — missing heroImage / unreadable / unsafe path
-//
-// `src/content/` is the legitimate root for any co-located heroImage. We
-// resolve once at module load so the per-call check is a string prefix.
-export type HeroImageSource =
-  | { kind: 'local'; path: string }
-  | { kind: 'remote'; url: string };
-
-const HERO_ALLOWED_ROOT = resolvePath(process.cwd(), 'src/content') + sep;
-
-export function resolveHeroImageSource(
-  post: CollectionEntry<'posts'>,
-): HeroImageSource | undefined {
-  if (!post.data.heroImage || !post.filePath) return undefined;
-  let text: string;
-  try {
-    text = readFileSync(post.filePath, 'utf-8');
-  } catch {
-    return undefined;
-  }
-  const m = text.match(/^heroImage:\s*['"]?(.+?)['"]?\s*$/m);
-  if (!m) return undefined;
-  const raw = m[1].trim();
-  if (/^https?:\/\//i.test(raw)) {
-    try {
-      // Validate shape early so `downloadRemoteHero` can assume a
-      // well-formed URL when computing the cache key.
-      new URL(raw);
-      return { kind: 'remote', url: raw };
-    } catch {
-      return undefined;
-    }
-  }
-  const resolved = resolvePath(dirname(post.filePath), raw);
-  // Containment check: heroImage is intended for `./cover.jpg`-style
-  // co-located paths. Anything that climbs out of `src/content/` (e.g.
-  // `../../../etc/passwd`) is treated as missing so a malformed post
-  // can't make `Jimp.read` open arbitrary files at build time. The OG
-  // route then falls back to the gradient-only card design.
-  if (!resolved.startsWith(HERO_ALLOWED_ROOT)) return undefined;
-  return { kind: 'local', path: resolved };
-}
-
-// Build-time pre-processor for heroImage backdrops. astro-og-canvas has
-// no overlay / filter / opacity API, so we composite a darkened version
-// of the heroImage ourselves and feed the result back as `bgImage` —
-// which restores readable white-on-photo titles without the busy hero
-// drowning out the text. The output is cached under `node_modules/`
-// (gitignored, regenerated when the source mtime changes) so repeat
-// builds are essentially free.
-const HERO_CACHE_DIR = resolvePath(process.cwd(), 'node_modules/.cache/og-hero');
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
-// Hero is faded toward white (not black) so the new black-on-light card
-// theme keeps consistent contrast: the heroImage becomes a pale watermark
-// behind the dark Bold title. Alpha tuned so most pixels lift to ~85%
-// luminance — enough for `OG_TITLE_COLOR` to read on the brightest, most
-// saturated heroImages we ship today.
-const HERO_OVERLAY_COLOR_HEX = 0xffffffff;
-const HERO_OVERLAY_ALPHA = 0.7;
-// Refresh interval for downloaded remote heroes. 7 days matches the
-// link-card OG cache so authors who swap a CDN image see the new card
-// after about a week without us re-fetching on every build.
-const REMOTE_HERO_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-async function downloadRemoteHero(url: string): Promise<string> {
-  // Cache name keyed by URL only. The processed-backdrop cache below
-  // additionally keys on file mtime, so refreshing this binary (TTL
-  // expiry, or a manual cache wipe) automatically invalidates the
-  // downstream `.jpg` and the next request re-renders the OG card.
-  const key = createHash('sha1').update(url).digest('hex').slice(0, 20);
-  const cachePath = resolvePath(HERO_CACHE_DIR, `remote-${key}.bin`);
-  try {
-    const stat = statSync(cachePath);
-    if (Date.now() - stat.mtimeMs < REMOTE_HERO_TTL_MS) return cachePath;
-  } catch {
-    // not cached yet
-  }
-  mkdirSync(HERO_CACHE_DIR, { recursive: true });
-  // Some CDNs (notably avatars.githubusercontent.com when called from
-  // GitHub Actions runners) drop requests that omit a User-Agent — the
-  // request silently aborts with "fetch failed" before any HTTP status
-  // is returned. An explicit, generic UA + Accept makes the call look
-  // like a normal browser fetch and unblocks remote heroImage download.
-  const headers = {
-    'user-agent': 'Mozilla/5.0 (compatible; AstroOgBuilder/1.0)',
-    accept: 'image/*,*/*;q=0.5',
-  };
-  // Retry transient network errors. CI runners occasionally see TLS /
-  // socket failures on cold connections to external CDNs; a short
-  // exponential backoff between attempts recovers from those without
-  // turning a build flake into a permanently broken OG card.
-  let lastErr: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const res = await fetch(url, {
-        redirect: 'follow',
-        signal: AbortSignal.timeout(30_000),
-        headers,
-      });
-      if (!res.ok) throw new Error(`hero fetch ${url}: HTTP ${res.status}`);
-      await fsp.writeFile(cachePath, Buffer.from(await res.arrayBuffer()));
-      return cachePath;
-    } catch (err) {
-      lastErr = err;
-      if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
-    }
-  }
-  throw lastErr;
-}
-
-export async function prepareHeroBackdrop(source: HeroImageSource): Promise<string> {
-  // Remote sources are downloaded once into the cache directory and
-  // then flow through the same Jimp pipeline as local sources, so the
-  // overlay / cover / mtime-keyed caching logic stays single-source.
-  const heroPath =
-    source.kind === 'remote' ? await downloadRemoteHero(source.url) : source.path;
-  const stat = statSync(heroPath);
-  const key = createHash('sha1')
-    .update(`${heroPath}:${stat.mtimeMs}:overlay${HERO_OVERLAY_COLOR_HEX.toString(16)}@${HERO_OVERLAY_ALPHA}:${OG_WIDTH}x${OG_HEIGHT}`)
-    .digest('hex')
-    .slice(0, 12);
-  const cachePath = resolvePath(HERO_CACHE_DIR, `${key}.jpg`);
-  if (existsSync(cachePath)) return cachePath;
-  mkdirSync(HERO_CACHE_DIR, { recursive: true });
-  const img = await Jimp.read(heroPath);
-  img.cover({ w: OG_WIDTH, h: OG_HEIGHT });
-  const overlay = new Jimp({ width: OG_WIDTH, height: OG_HEIGHT, color: HERO_OVERLAY_COLOR_HEX });
-  img.composite(overlay, 0, 0, { opacitySource: HERO_OVERLAY_ALPHA });
-  await img.write(cachePath as `${string}.jpg`);
-  return cachePath;
-}
 
 // Post-process step: paint the bottom-right credit (profile icon + name,
 // Zenn-style) and then stroke a gradient outline around the perimeter.
@@ -445,7 +301,7 @@ async function renderText(
 // with jimp construction only. It touches neither canvaskit nor
 // `Jimp.read`, so it survives every failure mode that breaks the real
 // cards (FontMgr.FromData / MakeSurface / encodeToBytes in renderText, and
-// the hero/icon/name `Jimp.read` decode steps in addOgChrome). The OG
+// the icon/name `Jimp.read` decode steps in addOgChrome). The OG
 // route handlers fall back to this instead of aborting `astro build` —
 // extending the CV-PDF "fail soft" guarantee to image endpoints. It is
 // identity-free (no name / icon / text) so it stays forkable and needs no

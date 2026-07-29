@@ -52,18 +52,11 @@ jobs:
         with:
           # Crawl built output. `--root-dir dist` resolves root-relative links
           # (e.g. /privacy) to dist/ files; the relative path dodges the
-          # Docker-action workspace remap. Excludes:
-          #   - `cv\.pdf`  PDF artifacts not built in this job (see Build step).
-          #   - `/404$`    The 404 page's ja self-link renders as href="/404/";
-          #                lychee normalizes it (strips the trailing slash) to
-          #                .../404 and resolves it against dist/, but the page ships
-          #                as 404.html (there is no dist/404/ dir), so it can't
-          #                resolve. The page always exists (GitHub Pages serves
-          #                404.html), so the check is pointless. The broken /en/404
-          #                pill is removed at the source (404.astro passes
-          #                availableLocales={['ja']}); only the ja self-link is left
-          #                to exclude here.
-          args: --no-progress --max-concurrency 4 --root-dir dist --exclude 'cv\.pdf' --exclude '/404$' './dist/**/*.html'
+          # Docker-action workspace remap. The generated cv.pdf is skipped in
+          # this job, and GitHub Pages serves the root 404 route from 404.html.
+          # External 401/403/429 responses commonly reject CI bots despite
+          # being valid in a browser, so treat those statuses as reachable.
+          args: --no-progress --max-concurrency 4 --host-concurrency 2 --host-request-interval 250ms --accept '100..=103,200..=299,401,403,429' --root-dir dist --exclude 'cv\.pdf' --exclude '^https://th2ch-g\.github\.io/404/?$' './dist/**/*.html'
           fail: false
 
       - name: File issue on broken links
@@ -73,3 +66,27 @@ jobs:
           title: 'Broken links detected'
           content-filepath: ./lychee/out.md
           labels: 'broken-link,automated'
+
+      - name: Close resolved broken-link issues
+        if: steps.lychee.outputs.exit_code == 0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          while read -r issue_number; do
+            if [ -z "$issue_number" ]; then
+              continue
+            fi
+            gh issue close "$issue_number" \
+              --repo "$GH_REPO" \
+              --comment "The latest automated link check completed without errors."
+          done < <(
+            gh issue list \
+              --repo "$GH_REPO" \
+              --state open \
+              --label broken-link \
+              --label automated \
+              --search '"Broken links detected" in:title' \
+              --json number,title \
+              --jq '.[] | select(.title == "Broken links detected") | .number'
+          )

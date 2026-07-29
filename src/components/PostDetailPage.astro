@@ -1,8 +1,8 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { Image } from 'astro:assets';
 import { t, type Lang } from '@/i18n/ui';
 import { formatDate, getReadingMinutes, getWordCount } from '@/lib/content';
+import { getPostVisualHue } from '@/lib/post-visual';
 import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content';
 import ShareButtons from '@/components/ShareButtons.astro';
@@ -31,12 +31,8 @@ const related = await getRelatedPosts(post, lang, 3);
 const { prev, next } = await getAdjacentPosts(post, lang);
 const seriesPosts = post.data.series ? await getSeriesPosts(post.data.series, lang) : [];
 const backlinks = await getBacklinks(post, lang);
-// Always use the build-time-generated OG card. When the post has a
-// heroImage the OG endpoint paints it as the card background and overlays
-// the title/description; without a hero it falls back to the gradient
-// design. Either way the SNS link preview keeps a consistent 1200x630
-// frame, accent border, and avatar — just with the hero artwork mixed in
-// when available. See `src/pages/og/[...slug].ts`.
+// Always use the build-time-generated OG card so social previews keep a
+// consistent 1200x630 frame, accent border, and avatar.
 const slug = localeSlug(post.id);
 // Does the opposite locale have this same post? If not, the language switcher
 // and hreflang alternate must NOT advertise a /<other>/posts/<slug> URL — it
@@ -55,13 +51,12 @@ const ogImageUrl = lang === 'en' ? `/en/og/${slug}.png` : `/og/${slug}.png`;
 // the set of URLs that need the embed library.
 const TWEET_URL_PATTERN = /^https?:\/\/(?:twitter\.com|x\.com|mobile\.twitter\.com)\/[A-Za-z0-9_]{1,15}\/status\/\d+(?:\?[^\s]*)?\/?$/m;
 const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
-// `heroImage` accepts a co-located asset or a remote URL. Remote URLs skip
-// the `<Image>` pipeline because Astro's asset system only optimises files
-// on disk; the CSS `.hero { aspect-ratio: 1200 / 630 }` rule keeps the
-// layout box stable regardless of the source's intrinsic dimensions.
-// `typeof === 'string'` is inlined at the JSX branch so TS narrows the
-// union — extracting it into a boolean const would lose the type guard.
-const heroImage = post.data.heroImage;
+const tocMinDepth = headings.length > 0 ? Math.min(...headings.map((heading) => heading.depth)) : 2;
+const tocHeadingCount = headings.filter(
+  (heading) => heading.depth >= tocMinDepth && heading.depth <= tocMinDepth + 2,
+).length;
+const hasToc = tocHeadingCount >= 2;
+const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
 ---
 <Base
   lang={lang}
@@ -91,75 +86,65 @@ const heroImage = post.data.heroImage;
       { label: post.data.title },
     ]}
   />
-  <article>
-    {/* Pagefind index hints. `data-pagefind-filter="tag:foo"` adds the post
-        to the "tag" filter group with value "foo"; multiple tags need
-        separate elements. The `style="display:none"` keeps them out of the
-        rendered article without removing them from the indexed HTML — Pagefind
-        scrapes the static markup, not the live DOM.
-        `year` lets readers narrow by publication year; Pagefind already
-        splits the index per `<html lang>` so an explicit `lang` filter
-        would just duplicate that boundary. */}
-    {post.data.tags?.map((tag) => (
-      <span data-pagefind-filter={`tag:${tag}`} style="display:none"></span>
-    ))}
-    <span data-pagefind-filter={`year:${post.data.pubDate.getFullYear()}`} style="display:none"></span>
-    {post.data.draft && <p class="draft">[{t(lang, 'posts.draft')}]</p>}
-    {typeof heroImage === 'string' ? (
-      <img
-        src={heroImage}
-        alt={post.data.heroImageAlt ?? ''}
-        class="hero"
-        loading="eager"
-      />
-    ) : heroImage ? (
-      <Image
-        src={heroImage}
-        alt={post.data.heroImageAlt ?? ''}
-        class="hero"
-        loading="eager"
-      />
-    ) : null}
-    <h1>{post.data.title}</h1>
-    {post.data.description && (
-      <p class="lede">{post.data.description}</p>
-    )}
-    <p class="muted">
-      {t(lang, 'posts.published')}: {formatDate(post.data.pubDate, lang)}
-      {post.data.updatedDate && (
-        <> · {t(lang, 'posts.updated')}: {formatDate(post.data.updatedDate, lang)}</>
-      )}
-      <> · {readingMinutes} {t(lang, 'posts.readingTime')}</>
-    </p>
-    {post.data.tags && (
-      <div class="tags">
-        {post.data.tags.map((tag) => (
-          <a class="tag tag-link" href={getRelativeLocaleUrl(lang, `/tags/${tag}`)}>#{tag}</a>
-        ))}
-      </div>
-    )}
+  <div class:list={['post-layout', { 'has-toc': hasToc }]}>
     <Toc headings={headings} lang={lang} />
-    {post.data.series && seriesPosts.length > 1 && (
-      <SeriesNav
-        series={post.data.series}
-        posts={seriesPosts}
-        currentId={post.id}
-        lang={lang}
-      />
-    )}
-    <div class="prose"><Content /></div>
-    <Backlinks lang={lang} citers={backlinks} />
-    <RelatedPosts posts={related} lang={lang} />
-    <Webmentions lang={lang} />
-    <Giscus lang={lang} />
-    <ShareButtons lang={lang} title={post.data.title} />
-    <PostNav prev={prev} next={next} lang={lang} />
-    <hr />
-    <p class="muted license">
-      {t(lang, 'posts.license.text')}
-      <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
-    </p>
-  </article>
+    <article>
+      {/* Pagefind index hints. `data-pagefind-filter="tag:foo"` adds the post
+          to the "tag" filter group with value "foo"; multiple tags need
+          separate elements. The `style="display:none"` keeps them out of the
+          rendered article without removing them from the indexed HTML — Pagefind
+          scrapes the static markup, not the live DOM.
+          `year` lets readers narrow by publication year; Pagefind already
+          splits the index per `<html lang>` so an explicit `lang` filter
+          would just duplicate that boundary. */}
+      {post.data.tags?.map((tag) => (
+        <span data-pagefind-filter={`tag:${tag}`} style="display:none"></span>
+      ))}
+      <span data-pagefind-filter={`year:${post.data.pubDate.getFullYear()}`} style="display:none"></span>
+      <header class="post-header" style={visualStyle}>
+        {post.data.draft && <p class="draft">[{t(lang, 'posts.draft')}]</p>}
+        <div class="post-emoji" aria-hidden="true">{post.data.emoji}</div>
+        <h1>{post.data.title}</h1>
+        {post.data.description && (
+          <p class="lede">{post.data.description}</p>
+        )}
+        <p class="muted">
+          {t(lang, 'posts.published')}: {formatDate(post.data.pubDate, lang)}
+          {post.data.updatedDate && (
+            <> · {t(lang, 'posts.updated')}: {formatDate(post.data.updatedDate, lang)}</>
+          )}
+          <> · {readingMinutes} {t(lang, 'posts.readingTime')}</>
+        </p>
+        {post.data.tags && (
+          <div class="tags">
+            {post.data.tags.map((tag) => (
+              <a class="tag tag-link" href={getRelativeLocaleUrl(lang, `/tags/${tag}`)}>#{tag}</a>
+            ))}
+          </div>
+        )}
+      </header>
+      {post.data.series && seriesPosts.length > 1 && (
+        <SeriesNav
+          series={post.data.series}
+          posts={seriesPosts}
+          currentId={post.id}
+          lang={lang}
+        />
+      )}
+      <div class="prose"><Content /></div>
+      <Backlinks lang={lang} citers={backlinks} />
+      <RelatedPosts posts={related} lang={lang} />
+      <Webmentions lang={lang} />
+      <Giscus lang={lang} />
+      <ShareButtons lang={lang} title={post.data.title} />
+      <PostNav prev={prev} next={next} lang={lang} />
+      <hr />
+      <p class="muted license">
+        {t(lang, 'posts.license.text')}
+        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
+      </p>
+    </article>
+  </div>
   {hasTweet && (
     <script
       is:inline
@@ -239,15 +224,37 @@ const heroImage = post.data.heroImage;
 </Base>
 
 <style>
+  .post-layout,
+  article {
+    min-width: 0;
+  }
   .draft { color: var(--color-warn); font-weight: 600; }
   .license { font-size: 0.85rem; }
-  .hero {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1200 / 630;
-    object-fit: cover;
+  .license a {
+    text-decoration: underline;
+    text-underline-offset: 0.14em;
+  }
+  .post-header {
+    margin-bottom: 2rem;
+  }
+  .post-emoji {
+    display: grid;
+    place-items: center;
+    width: 7.5rem;
+    aspect-ratio: 1;
+    margin: 0 auto 1.5rem;
     border-radius: var(--radius);
-    margin-bottom: 1rem;
+    background:
+      radial-gradient(circle at 75% 20%, rgba(255, 255, 255, 0.18), transparent 42%),
+      hsl(var(--post-visual-hue) 25% 36%);
+    font-size: 4.25rem;
+    line-height: 1;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.14));
+  }
+  :global(:root[data-theme="light"]) .post-emoji {
+    background:
+      radial-gradient(circle at 75% 20%, rgba(255, 255, 255, 0.6), transparent 42%),
+      hsl(var(--post-visual-hue) 38% 80%);
   }
   .lede {
     border-left: 3px solid var(--color-border);
@@ -255,5 +262,20 @@ const heroImage = post.data.heroImage;
     font-size: 1.05rem;
     color: var(--color-fg);
     margin: 0.5rem 0 1rem;
+  }
+  @media (min-width: 960px) {
+    .post-layout.has-toc {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 15rem;
+      grid-template-areas: 'article toc';
+      gap: 2rem;
+      align-items: start;
+    }
+    .post-layout.has-toc article {
+      grid-area: article;
+    }
+    .post-layout.has-toc > :global(.toc) {
+      grid-area: toc;
+    }
   }
 </style>

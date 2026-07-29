@@ -41,7 +41,6 @@ export async function buildTagOgRoute(lang: Lang) {
   );
 
   const og = await OGImageRoute({
-    param: 'tag',
     pages,
     getSlug: ogPngSlug,
     getImageOptions: (_path, page) => ({

@@ -7,8 +7,7 @@ tags:
   - claudecode
   - portfolio
 draft: false
-heroImage: ./assets/cddlab.jpg
-heroImageAlt: cddlab
+emoji: 🧑‍💻
 ---
 
 - 昔にも[ホームページ](https://github.com/th2ch-g/home)をRustで作っていたのですが、結局Rust内でhtmlぽいものを書く必要があったのと、こんなん誰が見んねんて感じだったので閉鎖してました
@@ -16,4 +15,3 @@ heroImageAlt: cddlab
 - 好き嫌いが激しくShell, Python, Rust以外は書いてこなかった（言語アレルギー、特にJavaとWeb系）のですが、レイアウトはAstroという一ミリも知らないフレームワークを使ってClaudeCodeにパパッと作ってもらいました(感動)
 - RustのWebフレームワークより出来ることが多くてアレコレ実装してもらいました😁
 - 画像は普段の研究室の様子です
-

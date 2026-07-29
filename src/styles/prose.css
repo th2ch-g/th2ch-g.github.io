@@ -10,6 +10,13 @@
   overflow-wrap: break-word;
 }
 
+/* Inline Markdown links need a non-color cue inside text blocks. Generated
+   cards and heading anchors carry classes and keep their component styles. */
+.prose :is(p, li) a:not([class]) {
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
 .prose img {
   max-width: 100%;
   height: auto;

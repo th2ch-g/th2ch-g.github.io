@@ -58,7 +58,7 @@ const allTags = collectTags(posts);
           <span class="sort-arrow" aria-hidden="true">↓</span>
         </button>
       </div>
-      <div class="post-list" data-post-list data-sort="desc">
+      <div class="post-grid" data-post-list data-sort="desc">
         {posts.map((post) => <PostEntry post={post} lang={lang} />)}
       </div>
       <p class="muted empty-msg" hidden data-empty-msg>{t(lang, 'list.empty.filter')}</p>
@@ -135,9 +135,5 @@ const allTags = collectTags(posts);
     color: var(--color-muted);
   }
   .archive-link:hover { color: var(--color-accent); }
-  /* Sort flip via flex-direction — no JS DOM reordering needed.
-     The post list is server-rendered in `desc` (newest first) order. */
-  .post-list { display: flex; flex-direction: column; }
-  .post-list[data-sort="asc"] { flex-direction: column-reverse; }
   .empty-msg { margin-top: 1rem; }
 </style>

@@ -23,33 +23,17 @@ export async function GET(context: APIContext) {
   for (const lang of ['ja', 'en'] as const) {
     const langPrefix = lang === 'en' ? '/en' : '';
 
-    // Posts: hero image (or per-post OG card) is the only first-class image.
+    // Posts: the generated per-post OG card is the first-class image.
     // Sort by pubDate so same-day entries stay in a stable order across
     // builds — otherwise the sitemap churns on every regeneration.
     const posts = sortByDateDesc(await getPublishedByLang('posts', lang), 'pubDate');
     for (const post of posts) {
       const slug = localeSlug(post.id);
       const url = new URL(`${langPrefix}/posts/${slug}/`, site).toString();
-      const images: Array<{ url: string; title?: string; caption?: string }> = [];
-      if (post.data.heroImage) {
-        // ImageMetadata's `src` is the bundled URL produced by Astro; a
-        // string is an absolute remote URL (already validated by `z.url()`
-        // at the schema layer) and is emitted as-is.
-        const heroUrl =
-          typeof post.data.heroImage === 'string'
-            ? post.data.heroImage
-            : new URL(post.data.heroImage.src, site).toString();
-        images.push({
-          url: heroUrl,
-          title: post.data.title,
-          caption: post.data.heroImageAlt ?? post.data.description ?? undefined,
-        });
-      } else {
-        images.push({
-          url: new URL(`${langPrefix}/og/${slug}.png`, site).toString(),
-          title: post.data.title,
-        });
-      }
+      const images = [{
+        url: new URL(`${langPrefix}/og/${slug}.png`, site).toString(),
+        title: post.data.title,
+      }];
       entries.push({ url, images });
     }
 

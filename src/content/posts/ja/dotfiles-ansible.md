@@ -7,8 +7,7 @@ tags:
   - ansible
   - twitter
 draft: false
-heroImage: ./assets/2026-04-20-dotfiles-ansible-twitter.png
-heroImageAlt: 2026-04-20-dotfiles-ansible-twitter
+emoji: ⚙️
 ---
 
 # 全然反応がなかった記事

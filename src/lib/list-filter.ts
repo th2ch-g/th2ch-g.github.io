@@ -20,9 +20,9 @@ export interface FacetConfig {
 }
 
 export interface SortConfig {
-  // The default direction the server-rendered HTML is in. The asc/desc flip
-  // is achieved purely via CSS `flex-direction: column-reverse` (no DOM
-  // reorder), so the list element's `data-sort` attribute is the toggle.
+  // The default direction of the server-rendered HTML. Sorting reverses the
+  // actual DOM nodes so visual, focus, and screen-reader order stay aligned
+  // in both flex and grid layouts.
   defaultDir: 'asc' | 'desc';
   labelAsc: string;
   labelDesc: string;
@@ -142,6 +142,11 @@ export function setupListFilter(config: ListFilterConfig): void {
 
     function applySort(dir: 'asc' | 'desc') {
       list!.dataset.sort = dir;
+      const ordered =
+        dir === config.sort!.defaultDir
+          ? Array.from(cards)
+          : Array.from(cards).reverse();
+      ordered.forEach((card) => list!.append(card));
       if (!sortBtn || !config.sort) return;
       const label = dir === 'desc' ? config.sort.labelDesc : config.sort.labelAsc;
       sortBtn.setAttribute('aria-label', label);

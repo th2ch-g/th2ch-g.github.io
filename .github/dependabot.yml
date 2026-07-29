@@ -10,12 +10,16 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     # Group minor + patch bumps into one PR per ecosystem to keep the
-    # review queue manageable; major bumps still get individual PRs so
-    # breaking changes are reviewed in isolation.
+    # review queue manageable.
     groups:
       npm-minor-patch:
         patterns: ['*']
         update-types: [minor, patch]
+    # @astrojs/check currently supports TypeScript 5 and 6. Ignore the next
+    # major until its language-server peer dependency adds TypeScript 7.
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /

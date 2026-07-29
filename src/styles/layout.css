@@ -141,6 +141,12 @@ ul.bare {
   border-color: var(--color-accent);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
 }
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+}
 /* Page navigation deliberately uses NO browser-native cross-document View
    Transitions. We previously opted in via `@view-transition { navigation:
    auto }` but every Chromium-side variation produced a brief white flash
@@ -152,53 +158,14 @@ ul.bare {
    <main> entrance animation: the new page swaps in instantly. Works the
    same in every browser (no VT support required). */
 
-/* IMPORTANT: keep these as a single `:is()` selector — do NOT rewrite as
-   `.card .thumb img, .card .img-wrap img`. The Vite CSS minifier groups
-   the comma-separated selectors and drops the leading `.card ` prefix
-   from the first one ("Restore card hover zoom" has been the recurring
-   fix; this is the third time we've hit it). `:is()` is a single selector
-   so the minifier can't apply that flattening optimization. Specificity
-   is preserved: `:is(.thumb, .img-wrap)` reports the highest of its args.
-   Equally important: keep ALL card hover-zoom rules in global.css rather
-   than scoped per-component CSS. With <ClientRouter />, scoped style
-   blocks can be skipped on SPA transitions if their hash already exists
-   in the new head — making hover-zoom appear "broken until reload".
-   Putting the rules here, behind a permanent <link rel="stylesheet">,
-   makes the behavior immune to SPA navigation. */
-.card :is(.thumb, .img-wrap) img {
-  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.card:hover :is(.thumb, .img-wrap) img {
-  transform: scale(1.08);
-}
-/* PostEntry-specific override: bigger zoom because its thumb column is
-   narrow (160px), where a small percentage barely registers. Declared
-   AFTER `.card:hover ... img` so equal specificity ties are won by source
-   order. */
-.post-card:hover :is(.thumb, .img-wrap) img {
-  transform: scale(1.18);
-}
-/* Honor `prefers-reduced-motion` by killing the transition (animation
-   between states) but keeping the end-state transform — the hover zoom
-   itself still happens, just instantly. WCAG 2.3.3 governs motion, not
-   final geometry, so this is consistent with the spec while keeping the
-   "hover gives feedback" UX intact. */
 @media (prefers-reduced-motion: reduce) {
-  .card,
-  .card :is(.thumb, .img-wrap) img { transition: none; }
+  .card { transition: none; }
 }
 
-/* Photo grid hover-zoom. `.photo-thumb` is HomePage's recent-photos rail;
-   `.photo-btn` is the gallery masonry tile. Each uses a different scale
-   factor for visual hierarchy, so they get separate single-selector rules
-   rather than `:is()` consolidation (the comma-flattening hazard above
-   doesn't apply here — there's no shared leading prefix to drop). Per
-   CLAUDE.md, all hover-zoom CSS lives in this file so scoped-CSS
-   specificity / SPA gotchas never bite. */
-.photo-thumb:hover img { transform: scale(1.08); }
+/* Gallery masonry keeps its own image feedback. Post cards no longer contain
+   images, so no global card-image hover selectors are needed. */
 .photo-btn:hover .photo { transform: scale(1.18); }
 @media (prefers-reduced-motion: reduce) {
-  .photo-thumb:hover img,
   .photo-btn:hover .photo { transform: none; }
 }
 

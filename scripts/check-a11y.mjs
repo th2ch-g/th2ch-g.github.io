@@ -1,7 +1,7 @@
 // Runs axe-core against representative pages of the built site. Fails the
 // process with a non-zero exit code if any violation is found, so the GH
 // Actions a11y job goes red on regressions.
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startStaticServer } from './lib/static-server.mjs';
@@ -22,6 +22,26 @@ function firstTagPath(localePrefix) {
   }
   const tag = entries.find((e) => e.isDirectory())?.name;
   return tag ? `${localePrefix}tags/${tag}` : null;
+}
+
+function firstPostWithTocPath() {
+  const dir = resolve(distDir, 'posts');
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name === 'archive') continue;
+    try {
+      const html = readFileSync(resolve(dir, entry.name, 'index.html'), 'utf8');
+      if (html.includes('data-toc-panel')) return `/posts/${entry.name}`;
+    } catch {
+      // Ignore incomplete route output and continue to the next post.
+    }
+  }
+  return null;
 }
 
 let chromium;
@@ -46,6 +66,7 @@ const pages = [
   '/en/',
   '/cv',
   '/posts',
+  firstPostWithTocPath(),
   '/photos',
   firstTagPath('/'),
   firstTagPath('/en/'),

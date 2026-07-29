@@ -10,8 +10,7 @@ tags:
   - claudecode
   - twitter
 draft: false
-heroImage: https://avatars.githubusercontent.com/u/178003195
-heroImageAlt: mogumi-chann
+emoji: 🪦
 ---
 
 # mogura: ClaudeCode無き時代にしこしこ作ったRust製Visualizer
@@ -220,5 +219,4 @@ ClaudeCodeが出てから呪術廻戦のナナミンのような気持ちです�
 人間に残されるのは手法開発、研究の方向付けとかでしょうか。
 
 ![それ、ClaudeCodeで良くないですか？](https://assets.st-note.com/production/uploads/images/49809432/picture_pc_625db7e3b3f67f3b4e75ed3233b2f84a.png?width=1200)
-
 

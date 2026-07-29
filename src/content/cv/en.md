@@ -19,6 +19,7 @@
    - \*Co-first authors
 1. **Hiroyuki Tanaka**, **<u>Tatsuki Hori</u>**, **Shohei Yamamoto**, **Atsushi Toyoda**, **Kentaro Yano**, **Kyoko Yamane**, **Takehiko Itoh**, [Haplotype-resolved chromosomal-level assembly of wasabi (Eutrema japonicum) genome](https://doi.org/10.1038/s41597-023-02356-z), *Scientific Data*, DOI:10.1038/s41597-023-02356-z, (2023).
 
+1. **Aiko Watanabe**, **Kai Kanematsu**, **Yohei Hizukuri**, **<u>Tatsuki Hori</u>**, **Shizuka Ogiwara**, **Tomohiko Okuno**, **Mirei Saito**, **Tomoya Ito**, **Chihiro Shibuya**, **Yoshinori Akiyama**, **Shinji Toyota**, **Yoshitaka Moriwaki**, **Koji Yamano**, **Fumika Koyano**, **Takashi Kajitani**, **Ryuichiro Ishitani**, **Masahiro Yamashina**, **Hidetaka Kosako**, **Noriyuki Matsuda**, [YhbO is a DJ-1 family glyoxalase and α-oxoaldehyde hydratase that confers resistance to reactive carbonyl stress](https://doi.org/10.1016/j.jbc.2026.113300), *Journal of Biological Chemistry*, DOI:10.1016/j.jbc.2026.113300, (2026).
 ## [Publications (preprints)](https://orcid.org/0009-0001-3991-8367)
 
 1. **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Tomohiro Doura**, **Shigeki Kiyonaka**, [Off-target-free chemogenetic platform that decodes physiological roles of target GPCRs](https://doi.org/10.64898/2026.05.24.727545), *bioRxiv*, DOI:10.64898/2026.05.24.727545, (2026).

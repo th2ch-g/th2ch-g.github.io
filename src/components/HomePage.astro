@@ -1,6 +1,4 @@
 ---
-import { Image } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
 import Base from '@/layouts/Base.astro';
 import PostEntry from './PostEntry.astro';
 import { t, type Lang } from '@/i18n/ui';
@@ -19,23 +17,6 @@ const recentPosts = sortByDateDesc(
   await getPublishedByLang('posts', lang),
   'pubDate',
 ).slice(0, 3);
-
-// Gallery images are loose files (no .md = no date) and we want a fresh
-// rotation on each deploy rather than a static "latest 3". Shuffle the
-// whole set with Fisher–Yates at build time, then take 4 — re-rolls per
-// build because Math.random() runs at build time, stays decisive within
-// a single deploy.
-const photoModules = import.meta.glob<{ default: ImageMetadata }>(
-  '/src/content/gallery/*.{jpg,jpeg,png,webp,avif,svg}',
-  { eager: true },
-);
-const photoEntries = Object.entries(photoModules);
-for (let i = photoEntries.length - 1; i > 0; i--) {
-  const j = Math.floor(Math.random() * (i + 1));
-  [photoEntries[i], photoEntries[j]] = [photoEntries[j], photoEntries[i]];
-}
-const recentPhotos = photoEntries.slice(0, 4).map(([, mod]) => mod.default);
-const galleryHref = getRelativeLocaleUrl(lang, '/photos');
 ---
 {/* Home page is titled with the site brand (meta.name), not "Home": this
     collapses `documentTitle` to just the brand and makes og:title /
@@ -71,7 +52,9 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
   {recentPosts.length > 0 && (
     <section>
       <h2>{t(lang, 'home.recent.posts')}</h2>
-      {recentPosts.map((post) => <PostEntry post={post} lang={lang} />)}
+      <div class="post-grid">
+        {recentPosts.map((post) => <PostEntry post={post} lang={lang} />)}
+      </div>
       <p class="see-all">
         <a href={getRelativeLocaleUrl(lang, '/posts')}>
           {t(lang, 'home.see.all')}
@@ -80,35 +63,7 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
       </p>
     </section>
   )}
-
-  {recentPhotos.length > 0 && (
-    <section>
-      <h2>{t(lang, 'home.recent.photos')}</h2>
-      <div class="photo-grid">
-        {recentPhotos.map((photo, i) => (
-          <button
-            type="button"
-            class="photo-thumb"
-            aria-label={`${t(lang, 'nav.photos')} ${i + 1}`}
-          >
-            <Image src={photo} alt="" loading="lazy" />
-          </button>
-        ))}
-      </div>
-      <p class="see-all">
-        <a href={galleryHref}>
-          {t(lang, 'home.see.all')}
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-      </p>
-    </section>
-  )}
 </Base>
-
-<script>
-  import { wirePhotoLightbox } from '@/lib/lightbox';
-  wirePhotoLightbox('.photo-thumb');
-</script>
 
 <style>
   /* Centred profile card. Stacking the hero as a flex column lets each
@@ -246,52 +201,6 @@ const galleryHref = getRelativeLocaleUrl(lang, '/photos');
     margin-left: 0.5rem;
     color: var(--color-border);
   }
-  .photo-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-  }
-  .photo-thumb {
-    /* `<button>` reset so it visually behaves like the previous `<a>`
-       wrapper. width:100% lets the grid track size drive the cell width;
-       padding/border/background reset clears the UA defaults. */
-    width: 100%;
-    padding: 0;
-    border: 0;
-    background: var(--color-border);
-    cursor: zoom-in;
-    display: block;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    border-radius: 14px;
-    transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 260ms ease;
-  }
-  .photo-thumb:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
-  }
-  .photo-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .photo-thumb:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
-    text-decoration: none;
-  }
-  /* Inner-img zoom on hover lives in src/styles/global.css per project
-     contract (see CLAUDE.md "CSS gotchas"). The transition declaration
-     above stays scoped because it targets the element directly. */
-  @media (prefers-reduced-motion: reduce) {
-    .photo-thumb,
-    .photo-thumb img { transition: none; }
-  }
-
   /* "See all" pill link at the bottom of each section. Pill-shaped to
      echo the social-icon row in the hero; sliding arrow on hover gives
      the affordance that this leads somewhere without yelling about it. */

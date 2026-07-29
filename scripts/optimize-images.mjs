@@ -14,7 +14,7 @@
 // Idempotent: an image whose longest edge is already <= MAX_DIM is left
 // untouched, so re-running never re-encodes an already-optimized file
 // (which would stack generational JPEG loss). The file extension is never
-// changed, so markdown `./assets/x.png` and `heroImage:` refs keep working.
+// changed, so markdown `./assets/x.png` references keep working.
 import { Jimp } from 'jimp';
 import { readdirSync, statSync, writeFileSync } from 'node:fs';
 import { resolve, extname, join, relative } from 'node:path';

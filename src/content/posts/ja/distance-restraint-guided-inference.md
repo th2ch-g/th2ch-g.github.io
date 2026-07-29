@@ -9,8 +9,7 @@ tags:
   - molecular-dynamics-simulation
   - twitter
 draft: false
-heroImage: ./assets/distance-restraint-guided-inference.jpg
-heroImageAlt: distance-restraint-guided-inference
+emoji: 🧲
 ---
 
 # 論文
@@ -29,4 +28,3 @@ https://x.com/cuemolnohito/status/2058825601021280557
 
 # チャッピーで適当に作らせたグラフィカルアブストラクトです😎
 ![脳汁溢れるグラフィカルアブストラクト](./assets/distance-restraint-guided-inference.jpg)
-
