@@ -5,7 +5,7 @@
 - 東京工業大学生命理工学院生命理工学系卒, 学士(理学), 2019/4/1-2023/3/31
   - [伊藤武彦 教授](https://researchmap.jp/read0149281)のもとで、ワサビのゲノム構築と解析について研究
 - 東京科学大学生命理工学院生命理工学系生命理工学コース修了, 修士(理学), 2023/4/1-2025/3/31
-  - [北尾彰朗 教授](https://www.kitao.bio.titech.ac.jp/kitao.html)のもとで、タンパク質の分子動力学計算について研究
+  - [北尾彰朗 教授](https://strdb.s.isct.ac.jp/html/100001770_ja.html)のもとで、タンパク質の分子動力学計算について研究
 - 東京科学大学医歯学総合研究科博士課程生命医療科学専攻計算創薬科学分野所属, 博士(理学), 2025/4/1-2028/3/31（予定）
   - [石谷隆一郎 教授](https://cddlab.io/member/ishitani.html)のもとで、計算創薬科学について研究
 
@@ -69,7 +69,6 @@
 - わさびゲノム
   - [東工大](https://www.titech.ac.jp/news/2023/067182)
   - [岐阜大](https://www.gifu-u.ac.jp/news/research/2019/10/entry09-7478.html)
-  - [明大](https://www.meiji.ac.jp/koho/press/6t5h7p00001t7hoc.html)
   - [日経](https://www.nikkei.com/article/DGXZQOUF083DD0Y3A101C2000000/)
   - [マイナビ](https://news.mynavi.jp/techplus/article/20230714-2727593/)
   - [日経バイオテク](https://bio.nikkeibp.co.jp/atcl/release/23/07/13/17200/)

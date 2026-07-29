@@ -5,7 +5,7 @@
 - B.Sc. (Science), Department of Life Science and Technology, School of Life Science and Technology, Tokyo Institute of Technology, 2019/4/1-2023/3/31
   - Research on the assembly and analysis of the wasabi genome under [Prof. Takehiko Itoh](https://researchmap.jp/read0149281)
 - M.Sc. (Science), Life Science and Technology Course, Department of Life Science and Technology, School of Life Science and Technology, Institute of Science Tokyo, 2023/4/1-2025/3/31
-  - Research on molecular dynamics simulations of proteins under [Prof. Akio Kitao](https://www.kitao.bio.titech.ac.jp/kitao.html)
+  - Research on molecular dynamics simulations of proteins under [Prof. Akio Kitao](https://strdb.s.isct.ac.jp/html/100001770_en.html)
 - Ph.D. (Science), Department of Computational Drug Discovery and Design, Department of Biomedical Sciences (Doctoral Program), Graduate School of Medical and Dental Sciences, Institute of Science Tokyo, 2025/4/1-2028/3/31 (expected)
   - Research on computational drug discovery and design under [Prof. Ryuichiro Ishitani](https://cddlab.io/member/ishitani.html)
 
@@ -71,7 +71,6 @@
 - Wasabi genome
   - [Tokyo Tech](https://www.titech.ac.jp/news/2023/067182)
   - [Gifu University](https://www.gifu-u.ac.jp/news/research/2019/10/entry09-7478.html)
-  - [Meiji University](https://www.meiji.ac.jp/koho/press/6t5h7p00001t7hoc.html)
   - [Nikkei](https://www.nikkei.com/article/DGXZQOUF083DD0Y3A101C2000000/)
   - [Mynavi](https://news.mynavi.jp/techplus/article/20230714-2727593/)
   - [Nikkei Biotech](https://bio.nikkeibp.co.jp/atcl/release/23/07/13/17200/)

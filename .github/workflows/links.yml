@@ -56,7 +56,7 @@ jobs:
           # this job, and GitHub Pages serves the root 404 route from 404.html.
           # External 401/403/429 responses commonly reject CI bots despite
           # being valid in a browser, so treat those statuses as reachable.
-          args: --no-progress --max-concurrency 4 --host-concurrency 2 --host-request-interval 250ms --accept '100..=103,200..=299,401,403,429' --root-dir dist --exclude 'cv\.pdf' --exclude '^https://th2ch-g\.github\.io/404/?$' './dist/**/*.html'
+          args: --no-progress --max-concurrency 4 --host-concurrency 2 --host-request-interval 250ms --accept '100..=103,200..=299,401,403,429' --root-dir dist --exclude 'cv\.pdf' --exclude '/404/?$' --exclude '^https://th2ch-g\.github\.io/404/?$' './dist/**/*.html'
           fail: false
 
       - name: File issue on broken links
