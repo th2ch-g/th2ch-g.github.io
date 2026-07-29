@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { t, type Lang } from '@/i18n/ui';
-import { localeSlug, formatDate, getProfileMeta } from '@/lib/content';
+import { localeSlug, formatDate } from '@/lib/content';
 import { getPostVisualHue } from '@/lib/post-visual';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 
@@ -12,10 +12,6 @@ interface Props {
 const { post, lang } = Astro.props;
 const slug = localeSlug(post.id);
 const href = getRelativeLocaleUrl(lang, `/posts/${slug}`);
-// If profile.yaml has no icon URL, /icon.png is not generated and the
-// byline renders without an avatar instead of pointing at a missing file.
-const meta = await getProfileMeta(lang);
-const firstTag = post.data.tags?.[0];
 const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
 ---
 <article
@@ -26,7 +22,6 @@ const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
 >
   <a href={href} class="post-link" aria-label={post.data.title}>
     <div class="visual">
-      {firstTag && <span class="category">{firstTag}</span>}
       <span class="emoji" aria-hidden="true">{post.data.emoji}</span>
     </div>
     <div class="body">
@@ -34,11 +29,12 @@ const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
         {post.data.title}
         {post.data.draft && <span class="draft-badge">{t(lang, 'posts.draft')}</span>}
       </h3>
-      <div class="byline">
-        {meta.icon && (
-          <img src="/icon.png" alt="" width="28" height="28" loading="lazy" />
-        )}
-        <span class="author">{meta.name}</span>
+      {post.data.tags && post.data.tags.length > 0 && (
+        <div class="card-tags">
+          {post.data.tags.map((tag) => <span class="card-tag">#{tag}</span>)}
+        </div>
+      )}
+      <div class="card-meta">
         <time class="muted" datetime={post.data.pubDate.toISOString()}>
           {formatDate(post.data.pubDate, lang)}
         </time>
@@ -75,22 +71,6 @@ const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
       radial-gradient(circle at 75% 20%, rgba(255, 255, 255, 0.6), transparent 42%),
       hsl(var(--post-visual-hue) 38% 80%);
   }
-  .category {
-    position: absolute;
-    top: 0.7rem;
-    left: 0.75rem;
-    max-width: calc(100% - 1.5rem);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 0.12rem 0.5rem;
-    border-radius: 999px;
-    background: #0969da;
-    color: #fff;
-    font-size: 0.65rem;
-    font-weight: 700;
-    line-height: 1.5;
-  }
   .emoji {
     font-size: 3.1rem;
     line-height: 1;
@@ -107,33 +87,33 @@ const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
-    margin: 0 0 1rem;
+    margin: 0 0 0.8rem;
     font-size: 1.05rem;
     line-height: 1.45;
   }
-  .byline {
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.9rem;
+  }
+  .card-tag {
+    padding: 0.08rem 0.42rem;
+    border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-accent));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+    color: var(--color-muted);
+    font-size: 0.64rem;
+    line-height: 1.45;
+  }
+  .card-meta {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
     margin-top: auto;
     min-width: 0;
     font-size: 0.78rem;
   }
-  .byline img {
-    flex: 0 0 auto;
-    width: 1.65rem;
-    height: 1.65rem;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid var(--color-border);
-  }
-  .author {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .byline time {
+  .card-meta time {
     margin-left: auto;
     flex: 0 0 auto;
     font-size: 0.72rem;
