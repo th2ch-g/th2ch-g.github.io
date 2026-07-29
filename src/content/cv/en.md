@@ -1,10 +1,6 @@
 ---
 ---
 
-## Interests
-- Structural Bioinformatics
-- Molecular Dynamics Simulation
-
 ## Education
 - B.Sc. (Science), Department of Life Science and Technology, School of Life Science and Technology, Tokyo Institute of Technology, 2019/4/1-2023/3/31
   - Research on the assembly and analysis of the wasabi genome under [Prof. Takehiko Itoh](https://researchmap.jp/read0149281)
@@ -51,7 +47,7 @@
    [The 143rd Meeting of the Japanese Society of Breeding](https://jsbreeding.jp/meeting/143/), Shizuoka University, March 17-18, 2023.
 
 
-## Symposium Presentations (non-peer-reviewed)
+## Others (non-peer-reviewed)
 
 ### Posters
 
