@@ -143,9 +143,11 @@ ul.bare {
 }
 .post-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19.5rem), 19.5rem));
+  grid-auto-rows: 19rem;
   gap: 1.25rem;
   align-items: stretch;
+  justify-content: start;
 }
 /* Page navigation deliberately uses NO browser-native cross-document View
    Transitions. We previously opted in via `@view-transition { navigation:
