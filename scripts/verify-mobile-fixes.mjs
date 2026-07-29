@@ -1,85 +1,99 @@
-// Verify two mobile fixes:
-//   1. Avatar `.link-tip` no longer overflows the viewport on small screens
-//   2. Opening the hamburger menu does NOT push the page content down
+import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
-import { resolve } from 'node:path';
 
 const distDir = resolve(import.meta.dirname, '../dist');
 const { url, close } = await startStaticServer(distDir);
-const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 393, height: 852 } });
+const browser = await chromium.launch({ headless: true });
 
-await page.goto(`${url}/`, { waitUntil: 'networkidle' });
-
-// 1. Avatar tooltip clipping check
-await page.locator('.avatar-wrap').first().hover();
-await page.waitForTimeout(200);
-const tipRect = await page.evaluate(() => {
-  const tip = document.querySelector('.avatar-wrap .link-tip');
-  if (!tip) return null;
-  const r = tip.getBoundingClientRect();
-  return { left: r.left, right: r.right, viewportWidth: window.innerWidth, opacity: getComputedStyle(tip).opacity };
-});
-console.log('avatar tooltip:', JSON.stringify(tipRect));
-const tipFits = tipRect && tipRect.left >= 0 && tipRect.right <= tipRect.viewportWidth;
-console.log(tipFits ? '✓ avatar tooltip fits within viewport' : '✗ avatar tooltip overflows!');
-
-// 1b. SNS link tooltips - check each one
-const linkCount = await page.locator('.links .link-item').count();
-let allLinksFit = true;
-for (let i = 0; i < linkCount; i++) {
-  const item = page.locator('.links .link-item').nth(i);
-  await item.hover();
-  await page.waitForTimeout(150);
-  const linkTip = await page.evaluate((idx) => {
-    const items = document.querySelectorAll('.links .link-item');
-    const tip = items[idx]?.querySelector('.link-tip');
-    if (!tip) return { skipped: true };
-    const r = tip.getBoundingClientRect();
-    return { left: r.left, right: r.right, viewportWidth: window.innerWidth, opacity: getComputedStyle(tip).opacity, text: tip.textContent };
-  }, i);
-  if (linkTip.skipped) {
-    console.log(`link[${i}]: no tooltip`);
-    continue;
-  }
-  const fits = linkTip.left >= 0 && linkTip.right <= linkTip.viewportWidth;
-  console.log(`link[${i}] "${linkTip.text}": left=${linkTip.left.toFixed(1)}, right=${linkTip.right.toFixed(1)} ${fits ? '✓' : '✗ OVERFLOWS'}`);
-  if (!fits) allLinksFit = false;
+async function newLocalPage(viewport) {
+  const page = await browser.newPage({ viewport });
+  const localOrigin = new URL(url).origin;
+  await page.route('**/*', (route) => {
+    const requestUrl = new URL(route.request().url());
+    return requestUrl.origin === localOrigin ? route.continue() : route.abort();
+  });
+  return page;
 }
-console.log(allLinksFit ? '✓ ALL SNS link tooltips fit within viewport' : '✗ some SNS link tooltips overflow');
-// Move pointer away to release any hover state before next test.
-await page.mouse.move(0, 0);
-await page.waitForTimeout(100);
 
-// 2. Hamburger overlay vs push-down check
-const heroTopBefore = await page.evaluate(() => {
-  const h = document.querySelector('.hero');
-  return h ? h.getBoundingClientRect().top : null;
-});
-await page.click('[data-nav-toggle]');
-await page.waitForTimeout(200);
-const heroTopAfter = await page.evaluate(() => {
-  const h = document.querySelector('.hero');
-  return h ? h.getBoundingClientRect().top : null;
-});
-const navOverlaysHero = await page.evaluate(() => {
-  const nav = document.querySelector('nav[data-nav]');
-  const hero = document.querySelector('.hero');
-  if (!nav || !hero) return null;
-  const navRect = nav.getBoundingClientRect();
-  const heroRect = hero.getBoundingClientRect();
-  return {
-    navBottom: navRect.bottom,
-    heroTop: heroRect.top,
-    overlap: navRect.bottom > heroRect.top,
-    navPosition: getComputedStyle(nav).position,
-  };
-});
-console.log(`hero top before: ${heroTopBefore}, after: ${heroTopAfter}`);
-console.log('nav overlay info:', JSON.stringify(navOverlaysHero));
-const heroStable = heroTopBefore === heroTopAfter;
-console.log(heroStable ? '✓ hero did NOT shift when menu opened' : '✗ hero shifted (menu pushed content down)');
+try {
+  const mobilePage = await newLocalPage({ width: 393, height: 852 });
+  await mobilePage.goto(`${url}/`, { waitUntil: 'networkidle' });
 
-await browser.close();
-await close();
+  await mobilePage.locator('.avatar-wrap').first().hover();
+  await mobilePage.waitForTimeout(200);
+  const tipRect = await mobilePage.locator('.avatar-tip').evaluate((tip) => {
+    const rect = tip.getBoundingClientRect();
+    return {
+      left: rect.left,
+      right: rect.right,
+      viewportWidth: window.innerWidth,
+      opacity: getComputedStyle(tip).opacity,
+    };
+  });
+  assert.ok(tipRect.left >= 0, 'Avatar tooltip overflows the left viewport edge');
+  assert.ok(
+    tipRect.right <= tipRect.viewportWidth,
+    'Avatar tooltip overflows the right viewport edge',
+  );
+  assert.equal(tipRect.opacity, '1', 'Avatar tooltip is not visible on hover');
+
+  await mobilePage.mouse.move(0, 0);
+  const heroTopBefore = await mobilePage.locator('.hero').evaluate(
+    (element) => element.getBoundingClientRect().top,
+  );
+  await mobilePage.click('[data-nav-toggle]');
+  await mobilePage.waitForTimeout(200);
+  const heroTopAfter = await mobilePage.locator('.hero').evaluate(
+    (element) => element.getBoundingClientRect().top,
+  );
+  assert.equal(heroTopAfter, heroTopBefore, 'Mobile navigation pushes page content down');
+  await mobilePage.close();
+
+  const cardPage = await newLocalPage({ width: 696, height: 900 });
+  await cardPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
+  const mobileCards = await cardPage.evaluate(() => {
+    const grid = document.querySelector('.post-grid');
+    const card = grid?.querySelector('.post-card');
+    if (!grid || !card) return null;
+    const gridRect = grid.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    return { gridWidth: gridRect.width, cardWidth: cardRect.width };
+  });
+  assert.ok(mobileCards, 'Post grid or card is missing at mobile width');
+  assert.ok(
+    Math.abs(mobileCards.cardWidth - mobileCards.gridWidth) < 1,
+    `Mobile card does not fill its grid (${mobileCards.cardWidth}px / ${mobileCards.gridWidth}px)`,
+  );
+  await cardPage.screenshot({ path: '/tmp/th2ch-mobile-posts.png', fullPage: true });
+  await cardPage.close();
+
+  const desktopPage = await newLocalPage({ width: 1280, height: 900 });
+  await desktopPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
+  const desktopLayout = await desktopPage.locator('.post-card').evaluateAll((cards) => {
+    const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return {
+      expectedCardWidth: 19.5 * rootFontSize,
+      cards: cards.slice(0, 2).map((card) => {
+        const rect = card.getBoundingClientRect();
+        return { left: rect.left, width: rect.width };
+      }),
+    };
+  });
+  assert.equal(desktopLayout.cards.length, 2, 'Expected at least two desktop post cards');
+  assert.ok(
+    Math.abs(desktopLayout.cards[0].width - desktopLayout.expectedCardWidth) < 1,
+    `Desktop card width changed (${desktopLayout.cards[0].width}px)`,
+  );
+  assert.ok(
+    desktopLayout.cards[1].left > desktopLayout.cards[0].left,
+    'Desktop post cards do not form multiple columns',
+  );
+  await desktopPage.close();
+
+  console.log('✓ mobile tooltip, navigation, and post-card layout checks passed');
+} finally {
+  await browser.close();
+  await close();
+}

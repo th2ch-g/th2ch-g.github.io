@@ -48,8 +48,14 @@ jobs:
       - name: Type check
         run: npm run check
 
+      - name: Security regression checks
+        run: npm run check:security
+
       - name: Build
         run: npm run build
+
+      - name: Mobile layout regression checks
+        run: npm run check:mobile
 
       # axe-core a11y audit against the built `dist/` via Playwright. Fails
       # the job on any WCAG 2 A/AA violation so regressions are caught at PR

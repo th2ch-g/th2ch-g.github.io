@@ -14,6 +14,8 @@ npm run build        # astro build → inject-sitemap-xsl → pagefind --site di
 npm run preview      # serve dist/
 npm run check        # astro check (TypeScript on .astro/.ts/.mts)
 npm run check:css    # custom CSS sanity check (scripts/check-css.mjs)
+npm run check:security # reject unsafe link-card URL targets
+npm run check:mobile # Playwright layout checks against an existing dist/
 npm run build-assets # rebuild public/icon.png + public/fonts/ + public/qr.png
 npm run sync-citations # refresh src/data/citations.json from CrossRef
 npm run sync-bibtex    # refresh src/data/bibtex.json from CrossRef

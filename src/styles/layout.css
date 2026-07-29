@@ -149,6 +149,11 @@ ul.bare {
   align-items: stretch;
   justify-content: start;
 }
+@media (max-width: 720px) {
+  .post-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 /* Page navigation deliberately uses NO browser-native cross-document View
    Transitions. We previously opted in via `@view-transition { navigation:
    auto }` but every Chromium-side variation produced a brief white flash
@@ -200,17 +205,4 @@ a.tag-link:focus-visible {
   color: var(--color-accent);
   border-color: var(--color-accent);
   text-decoration: none;
-}
-
-.meta-grid {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.25rem 1rem;
-  font-size: 0.95rem;
-}
-.meta-grid dt {
-  color: var(--color-muted);
-}
-.meta-grid dd {
-  margin: 0;
 }

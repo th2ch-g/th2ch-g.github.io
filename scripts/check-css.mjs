@@ -32,6 +32,15 @@ const WHITELIST = new Set([
   'twitter-tweet',
   // Mermaid renders these dynamically
   'mermaid',
+  // remark-callouts derives these from the callout kind at build time
+  'callout-note',
+  'callout-tip',
+  'callout-important',
+  'callout-warning',
+  'callout-caution',
+  // remark-gfm emits task-list classes from Markdown checkbox syntax
+  'contains-task-list',
+  'task-list-item',
 ]);
 
 async function safeRead(path) {

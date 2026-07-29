@@ -10,6 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { escapeHtml as esc } from './lib/escape.mjs';
+import { fetchPublicHttp, parsePublicHttpUrl } from './lib/public-http.mjs';
 import { replaceWithHtml } from './lib/replace.mjs';
 import { siteHost, readProfileShallow } from '../lib/profile-yaml.mjs';
 
@@ -131,7 +132,7 @@ function parseMeta(html, pageUrl) {
   let image = '';
   if (imageRaw) {
     try {
-      image = new URL(imageRaw, pageUrl).toString();
+      image = parsePublicHttpUrl(new URL(imageRaw, pageUrl).toString()).toString();
     } catch {
       image = '';
     }
@@ -142,7 +143,7 @@ function parseMeta(html, pageUrl) {
 }
 
 async function fetchMeta(url) {
-  const res = await fetch(url, {
+  const res = await fetchPublicHttp(url, {
     headers: {
       // Some sites serve a stripped-down page (or a 403) to obvious bots;
       // a plain browser-ish UA is a low-effort dodge that's polite enough.
@@ -308,14 +309,25 @@ function extractBareUrl(paragraph) {
   const child = children[0];
   if (child.type === 'text') {
     const t = child.value.trim();
-    return ANY_HTTP_URL.test(t) ? t : null;
+    if (!ANY_HTTP_URL.test(t)) return null;
+    try {
+      return parsePublicHttpUrl(t).toString();
+    } catch {
+      return null;
+    }
   }
   if (child.type === 'link' && ANY_HTTP_URL.test(child.url)) {
     const text = (child.children ?? [])
       .map((c) => (c.type === 'text' ? c.value : ''))
       .join('')
       .trim();
-    if (text === child.url) return child.url;
+    if (text === child.url) {
+      try {
+        return parsePublicHttpUrl(child.url).toString();
+      } catch {
+        return null;
+      }
+    }
   }
   return null;
 }
@@ -329,18 +341,32 @@ function hostnameOf(url) {
 }
 
 function renderCard(d) {
+  let cardUrl;
+  let imageUrl = '';
+  try {
+    cardUrl = parsePublicHttpUrl(d.url).toString();
+  } catch {
+    return '';
+  }
+  if (d.image) {
+    try {
+      imageUrl = parsePublicHttpUrl(d.image).toString();
+    } catch {
+      imageUrl = '';
+    }
+  }
   // Title falls back to the host so the card is never empty even when a
   // site ships no OG tags at all.
-  const host = hostnameOf(d.url);
-  const title = d.title || host || d.url;
+  const host = hostnameOf(cardUrl);
+  const title = d.title || host || cardUrl;
   const desc = d.description
     ? `<p class="link-card-desc">${esc(d.description)}</p>`
     : '';
   // Twitter-style summary_large_image layout: full-width hero image on top,
   // body (title / description / site row) stacked below. The `.link-card`
   // CSS handles the vertical layout; `--no-image` collapses the thumb slot.
-  const image = d.image
-    ? `<div class="link-card-thumb"><img src="${esc(d.image)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>`
+  const image = imageUrl
+    ? `<div class="link-card-thumb"><img src="${esc(imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>`
     : '';
   const site = esc(d.siteName || host);
   // Google's favicon service is a pragmatic source for a tiny site icon
@@ -350,7 +376,7 @@ function renderCard(d) {
     ? `<img class="link-card-favicon" src="https://www.google.com/s2/favicons?domain=${esc(host)}&sz=32" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
     : '';
   return (
-    `<a class="link-card${d.image ? '' : ' link-card--no-image'}" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">` +
+    `<a class="link-card${imageUrl ? '' : ' link-card--no-image'}" href="${esc(cardUrl)}" target="_blank" rel="noopener noreferrer">` +
     image +
     `<div class="link-card-body">` +
     `<p class="link-card-title">${esc(title)}</p>` +
@@ -402,7 +428,8 @@ export function remarkLinkCard() {
     );
     for (const { t, data } of resolved) {
       if (!data || !data.title) continue;
-      replaceWithHtml(t.parent, t.index, renderCard(data));
+      const card = renderCard(data);
+      if (card) replaceWithHtml(t.parent, t.index, card);
     }
   };
 }

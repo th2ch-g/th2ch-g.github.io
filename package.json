@@ -20,6 +20,8 @@
     "astro": "astro",
     "check": "astro check",
     "check:css": "node scripts/check-css.mjs",
+    "check:mobile": "node scripts/verify-mobile-fixes.mjs",
+    "check:security": "node scripts/check-public-http.mjs",
     "sync-citations": "node scripts/sync-citation-counts.mjs",
     "sync-bibtex": "node scripts/sync-bibtex.mjs"
   },

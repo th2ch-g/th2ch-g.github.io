@@ -23,74 +23,88 @@ const webmention = (await getProfileMeta(lang)).integrations.webmention;
       // Webmention payloads are user-supplied (anyone can webmention
       // anything), so we build DOM nodes with `textContent` rather than
       // `innerHTML` to neutralise any embedded HTML/script attempts.
-      const root = document.querySelector('[data-webmentions]');
-      if (root) {
+      (() => {
+        const root = document.querySelector('[data-webmentions]');
+        if (!root) return;
         const apiTarget = root.dataset.apiTarget;
         const list = root.querySelector('[data-list]');
         const empty = root.querySelector('[data-empty]');
-        if (apiTarget && list) {
-          const here = new URL(location.pathname, location.origin).toString();
-          const url = `https://webmention.io/api/mentions.jf2?target=${encodeURIComponent(here)}&per-page=20`;
-          const safeHttpUrl = (s) => {
-            try {
-              const u = new URL(String(s));
-              return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : '';
-            } catch {
-              return '';
-            }
-          };
-          fetch(url)
-            .then((r) => r.json())
-            .then((data) => {
-              const items = Array.isArray(data?.children) ? data.children : [];
-              if (items.length === 0) return;
-              empty?.setAttribute('hidden', '');
-              list.replaceChildren();
-              items.forEach((item) => {
-                const li = document.createElement('li');
-                li.className = 'row';
+        if (!apiTarget || !list) return;
 
-                const photoSrc = safeHttpUrl(item?.author?.photo);
-                if (photoSrc) {
-                  const img = document.createElement('img');
-                  img.className = 'avatar';
-                  // `referrerPolicy` keeps the current article URL out of the
-                  // outbound Referer header — webmention payloads are
-                  // attacker-influenced (anyone can publish a mention) and
-                  // the avatar host is therefore untrusted. `loading=lazy`
-                  // defers the fetch until the row scrolls into view, so an
-                  // unreachable host can't stall first paint.
-                  img.referrerPolicy = 'no-referrer';
-                  img.loading = 'lazy';
-                  img.decoding = 'async';
-                  img.src = photoSrc;
-                  img.alt = '';
-                  img.width = 24;
-                  img.height = 24;
-                  li.appendChild(img);
-                }
-
-                const link = document.createElement('a');
-                const href = safeHttpUrl(item?.url) || '#';
-                link.href = href;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.textContent = String(item?.author?.name ?? 'Anonymous');
-                li.appendChild(link);
-
-                const kind = document.createElement('span');
-                kind.className = 'kind muted';
-                kind.textContent = String(item?.['wm-property'] ?? 'mention');
-                li.appendChild(kind);
-
-                list.appendChild(li);
-              });
-            })
-            .catch(() => {
-              // Network error — leave the empty state visible.
-            });
+        let targetUrl;
+        try {
+          const targetBase = /^[a-z][a-z0-9+.-]*:/i.test(apiTarget)
+            ? apiTarget
+            : `https://${apiTarget}`;
+          targetUrl = new URL(targetBase);
+          if (targetUrl.protocol !== 'https:' && targetUrl.protocol !== 'http:') return;
+        } catch {
+          return;
         }
-      }
+        const here = new URL(location.pathname, targetUrl.origin).toString();
+        const url = `https://webmention.io/api/mentions.jf2?target=${encodeURIComponent(here)}&per-page=20`;
+        const safeHttpUrl = (s) => {
+          try {
+            const u = new URL(String(s));
+            return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : '';
+          } catch {
+            return '';
+          }
+        };
+        fetch(url, { signal: AbortSignal.timeout(10_000) })
+          .then((r) => {
+            if (!r.ok) throw new Error(`Webmention API returned ${r.status}`);
+            return r.json();
+          })
+          .then((data) => {
+            const items = Array.isArray(data?.children) ? data.children : [];
+            if (items.length === 0) return;
+            empty?.setAttribute('hidden', '');
+            list.replaceChildren();
+            items.forEach((item) => {
+              const li = document.createElement('li');
+              li.className = 'row';
+
+              const photoSrc = safeHttpUrl(item?.author?.photo);
+              if (photoSrc) {
+                const img = document.createElement('img');
+                img.className = 'avatar';
+                // `referrerPolicy` keeps the current article URL out of the
+                // outbound Referer header — webmention payloads are
+                // attacker-influenced (anyone can publish a mention) and
+                // the avatar host is therefore untrusted. `loading=lazy`
+                // defers the fetch until the row scrolls into view, so an
+                // unreachable host can't stall first paint.
+                img.referrerPolicy = 'no-referrer';
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.src = photoSrc;
+                img.alt = '';
+                img.width = 24;
+                img.height = 24;
+                li.appendChild(img);
+              }
+
+              const link = document.createElement('a');
+              const href = safeHttpUrl(item?.url) || '#';
+              link.href = href;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              link.textContent = String(item?.author?.name ?? 'Anonymous');
+              li.appendChild(link);
+
+              const kind = document.createElement('span');
+              kind.className = 'kind muted';
+              kind.textContent = String(item?.['wm-property'] ?? 'mention');
+              li.appendChild(kind);
+
+              list.appendChild(li);
+            });
+          })
+          .catch(() => {
+            // Network error — leave the empty state visible.
+          });
+      })();
     </script>
   </section>
 )}

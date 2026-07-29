@@ -31,6 +31,9 @@ jobs:
       - name: Type check
         run: npm run check
 
+      - name: Security regression checks
+        run: npm run check:security
+
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -47,6 +50,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Mobile layout regression checks
+        run: npm run check:mobile
 
       - name: Run axe checks
         run: node scripts/check-a11y.mjs

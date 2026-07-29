@@ -30,6 +30,18 @@ const sanitiseTags = (v: unknown) =>
 const nullable = <T extends z.ZodTypeAny>(inner: T) =>
   z.preprocess(blankToUndefined, inner.optional());
 
+// `z.url()` accepts any URL scheme supported by the platform URL parser,
+// including executable schemes such as `javascript:`. Every URL in profile
+// metadata is eventually rendered as an href/src or fetched at build time, so
+// restrict the shared schema to network URLs at the content boundary.
+const httpUrl = z.url().refine(
+  (value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === 'http:' || protocol === 'https:';
+  },
+  { message: 'URL protocol must be http or https' },
+);
+
 // Zod's emoji validator accepts a sequence containing multiple emoji.
 // Segment the value into Unicode grapheme clusters as a second guard so
 // combined emoji such as "🧑‍💻" remain valid while "🧬🚀" is rejected.
@@ -91,17 +103,17 @@ const profileMeta = defineCollection({
     // derives the site from `repo`'s owner (`https://<owner>.github.io`),
     // which is correct for GitHub User/Org Pages. Set this only when you
     // ship to a custom domain.
-    site: nullable(z.url()),
+    site: nullable(httpUrl),
     email: z.string().nullish(),
     // Contact-form URL (e.g. a Google Form). Drives the /contact page CTA
     // button and the "Contact" nav item. Validated as a URL only when
     // present; blank disables the button and shows a placeholder instead.
-    contactForm: nullable(z.url()),
+    contactForm: nullable(httpUrl),
     // Avatar source plus an optional per-locale hover tooltip. The URL is
     // also consumed by `scripts/build-icon.mjs` to bake `public/icon.png`.
     icon: z
       .object({
-        url: z.preprocess(blankToUndefined, z.url().nullish()),
+        url: z.preprocess(blankToUndefined, httpUrl.nullish()),
         comment: z
           .object({
             ja: z.string().nullish(),
@@ -120,7 +132,7 @@ const profileMeta = defineCollection({
       .array(
         z.object({
           label: z.string().nullish(),
-          url: z.preprocess(blankToUndefined, z.url().nullish()),
+          url: z.preprocess(blankToUndefined, httpUrl.nullish()),
         }),
       )
       .nullish(),
@@ -144,14 +156,14 @@ const profileMeta = defineCollection({
       .nullish(),
     webmention: z
       .object({
-        endpoint: nullable(z.url()),
-        pingback: nullable(z.url()),
+        endpoint: nullable(httpUrl),
+        pingback: nullable(httpUrl),
         apiTarget: nullable(z.string()),
       })
       .nullish(),
     analytics: z
       .object({
-        goatcounterEndpoint: nullable(z.url()),
+        goatcounterEndpoint: nullable(httpUrl),
         // GA4 measurement IDs are `G-` followed by 10 uppercase
         // alphanumerics. Validating the shape at build time catches
         // transposed / truncated values long before GA itself would

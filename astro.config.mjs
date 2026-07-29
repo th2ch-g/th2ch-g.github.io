@@ -2,6 +2,7 @@
 import { defineConfig, passthroughImageService } from 'astro/config';
 import { readFileSync } from 'node:fs';
 import sitemap from '@astrojs/sitemap';
+import { unified } from '@astrojs/markdown-remark';
 import rehypeExternalLinks from 'rehype-external-links';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
@@ -68,6 +69,41 @@ export default defineConfig({
     service: passthroughImageService(),
   },
   markdown: {
+    processor: unified({
+      remarkPlugins: [
+        remarkProfileVars,
+        remarkTwitterEmbed,
+        remarkGithubCard,
+        // Specific GitHub URLs must be claimed before the generic link card.
+        remarkGithubPermalink,
+        remarkLinkCard,
+        remarkFigureCaption,
+        remarkMermaidBlock,
+        remarkCallouts,
+        remarkMath,
+      ],
+      rehypePlugins: [
+        [
+          rehypeExternalLinks,
+          {
+            target: '_blank',
+            rel: ['noopener', 'noreferrer'],
+          },
+        ],
+        // Generate heading IDs before wrapping them with anchor links.
+        rehypeSlug,
+        [
+          rehypeAutolinkHeadings,
+          {
+            behavior: 'prepend',
+            properties: { class: 'heading-anchor', ariaHidden: 'true', tabIndex: -1 },
+            content: { type: 'text', value: '#' },
+          },
+        ],
+        // KaTeX renders nodes produced by the final remarkMath plugin above.
+        rehypeKatex,
+      ],
+    }),
     shikiConfig: {
       // Shiki transformers run on the produced HAST after highlighting.
       // We tag every `<pre>` with its source language so `global.css` can
@@ -108,34 +144,5 @@ export default defineConfig({
         },
       ],
     },
-    remarkPlugins: [remarkProfileVars, remarkTwitterEmbed, remarkGithubCard, remarkGithubPermalink, remarkLinkCard, remarkFigureCaption, remarkMermaidBlock, remarkCallouts, remarkMath],
-    rehypePlugins: [
-      [
-        rehypeExternalLinks,
-        {
-          target: '_blank',
-          rel: ['noopener', 'noreferrer'],
-        },
-      ],
-      // `rehype-slug` first generates `id="..."` from heading text;
-      // `rehype-autolink-headings` then wraps each heading in an
-      // anchor link. The `prepend` behavior puts the `#` glyph before
-      // the heading text and the CSS in `global.css` only reveals it
-      // on hover, mirroring the GitHub README convention. `aria-hidden`
-      // keeps the duplicate text out of the screen-reader output.
-      rehypeSlug,
-      [
-        rehypeAutolinkHeadings,
-        {
-          behavior: 'prepend',
-          properties: { class: 'heading-anchor', ariaHidden: 'true', tabIndex: -1 },
-          content: { type: 'text', value: '#' },
-        },
-      ],
-      // KaTeX renders math nodes from `remark-math` to HTML+MathML.
-      // The accompanying `katex.min.css` must be loaded by the page —
-      // see `Base.astro` for the `<link>` injection.
-      rehypeKatex,
-    ],
   },
 });
