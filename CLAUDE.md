@@ -99,9 +99,10 @@ Reading-time: English uses the `reading-time` package; Japanese uses a char-coun
 
 ## Project-local skills
 
-`.claude/skills/` ships two skills used in this repo:
+`.claude/skills/` ships three skills used in this repo:
 - `orcid-cv-sync` — pull new publications from ORCID into `src/content/cv/{ja,en}.md` (additive, never overwrites). Trigger when refreshing the publications list.
 - `translate-ja-md-to-en` — produce the `en/<slug>.md` mirror for any `src/content/<collection>/ja/<slug>.md`. Slug, frontmatter keys, code blocks, DOIs, and BibTeX are preserved verbatim.
+- `commit-push-monitor-ci` — validate completed changes, create a co-authored commit, push the current branch, and monitor every CI workflow for the pushed SHA to completion.
 
 Both are auto-discoverable; prefer them over hand-rolled equivalents.
 
