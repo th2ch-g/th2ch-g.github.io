@@ -41,16 +41,6 @@ const site = explicitSite
 export default defineConfig({
   site,
   trailingSlash: 'ignore',
-  redirects: {
-    '/photos': {
-      status: 301,
-      destination: '/gallery',
-    },
-    '/en/photos': {
-      status: 301,
-      destination: '/en/gallery',
-    },
-  },
   i18n: {
     defaultLocale: 'ja',
     locales: ['ja', 'en'],
