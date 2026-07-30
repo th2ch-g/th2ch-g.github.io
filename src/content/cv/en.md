@@ -7,7 +7,7 @@
 - M.Sc. (Science), Life Science and Technology Course, Department of Life Science and Technology, School of Life Science and Technology, Institute of Science Tokyo, 2023/4/1-2025/3/31
   - Research on molecular dynamics simulations of proteins under [Prof. Akio Kitao](https://strdb.s.isct.ac.jp/html/100001770_en.html)
 - Ph.D. (Science), Department of Computational Drug Discovery and Design, Department of Biomedical Sciences (Doctoral Program), Graduate School of Medical and Dental Sciences, Institute of Science Tokyo, 2025/4/1-2028/3/31 (expected)
-  - Research on computational drug discovery and design under [Prof. Ryuichiro Ishitani](https://cddlab.io/member/ishitani.html)
+  - Research on structural bioinformatics under [Prof. Ryuichiro Ishitani](https://cddlab.io/member/ishitani.html)
 
 ## Employment
 - [digzyme Inc.](https://www.digzyme.com/), 2023/10/1-2025/5/31, Student Intern
