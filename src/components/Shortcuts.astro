@@ -9,7 +9,7 @@ const { lang } = Astro.props;
 // need to read i18n state.
 const homeUrl = getRelativeLocaleUrl(lang, '/');
 const postsUrl = getRelativeLocaleUrl(lang, '/posts');
-const photosUrl = getRelativeLocaleUrl(lang, '/photos');
+const galleryUrl = getRelativeLocaleUrl(lang, '/gallery');
 const cvUrl = getRelativeLocaleUrl(lang, '/cv');
 ---
 <dialog class="shortcuts-dialog" data-shortcuts-dialog aria-label={t(lang, 'shortcuts.title')}>
@@ -29,7 +29,7 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
   </div>
 </dialog>
 
-<script is:inline define:vars={{ homeUrl, postsUrl, photosUrl, cvUrl }}>
+<script is:inline define:vars={{ homeUrl, postsUrl, galleryUrl, cvUrl }}>
   // Single-key + chord shortcut driver. Bound once per page load via a
   // window-level guard so re-execution (no ClientRouter on this site,
   // but defensive anyway) doesn't pile up listeners.
@@ -69,7 +69,7 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
       // First key of a chord: `g`. Latches a 1.2s window to receive the
       // second character. ESC or any non-mapped key clears the latch.
       if (pendingG) {
-        const map = { h: homeUrl, b: postsUrl, p: photosUrl, c: cvUrl };
+        const map = { h: homeUrl, b: postsUrl, p: galleryUrl, c: cvUrl };
         const dest = map[e.key.toLowerCase()];
         clearG();
         if (dest) {

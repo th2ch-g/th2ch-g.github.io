@@ -49,7 +49,7 @@ export async function GET(context: APIContext) {
     }));
     if (photoEntries.length > 0) {
       entries.push({
-        url: new URL(`${langPrefix}/photos/`, site).toString(),
+        url: new URL(`${langPrefix}/gallery/`, site).toString(),
         images: photoEntries,
       });
     }

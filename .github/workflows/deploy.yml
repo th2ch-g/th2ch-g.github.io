@@ -32,18 +32,18 @@ jobs:
         run: npm ci
 
       # Cache Playwright browser binaries so cold installs don't re-download
-      # ~150MB on every deploy. Keyed on package-lock so it invalidates with
+      # them on every deploy. Keyed on package-lock so it invalidates with
       # any Playwright version bump.
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-playwright-chromium-firefox-${{ hashFiles('package-lock.json') }}
 
-      - name: Install Playwright Chromium (for CV PDF generation)
+      - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox
 
       - name: Type check
         run: npm run check

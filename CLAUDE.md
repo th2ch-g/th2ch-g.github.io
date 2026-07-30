@@ -46,7 +46,7 @@ Defined in `src/content.config.ts`. Four collections:
 - `profileMeta` — single file `src/content/profile.yaml`. Per-locale fields use `{ ja, en }` sub-objects; shared values stay flat. Read via `getProfileMeta(lang)` (in `src/lib/content.ts`), which flattens to a per-locale plain object. Throws if the file is missing — fail loudly at build time rather than degrade silently.
 - `posts` — `src/content/posts/{ja,en}/<slug>.md` with optional co-located image files. Slug must match across locales (the language switcher and `getStaticPaths` rely on it). `entry.id` looks like `ja/<slug>` — `localeSlug(id)` strips the prefix.
 
-The gallery is **not** a collection — loose images under `src/content/gallery/` are loaded via `import.meta.glob` from `PhotosListPage.astro`.
+The gallery at `/gallery` is **not** a collection — loose images under `src/content/gallery/` are loaded via `import.meta.glob` from `PhotosListPage.astro`. The legacy `/photos` and `/en/photos` URLs are permanent redirects configured in `astro.config.mjs`.
 
 `getByLang(collection, lang)` filters by `id.startsWith('<lang>/')`. `getPublishedByLang('posts', lang, { includeDevDrafts })` adds draft filtering — drafts visible only in `npm run dev`. **Feeds, sitemaps, and OG endpoints must omit `includeDevDrafts`** so drafts never leak into syndication.
 

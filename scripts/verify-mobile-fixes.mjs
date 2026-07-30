@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
-import { chromium } from 'playwright';
+import { chromium, firefox } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
 
 const distDir = resolve(import.meta.dirname, '../dist');
@@ -51,12 +51,56 @@ async function assertTocAnchorClearsHeader(path) {
   await page.close();
 }
 
+async function assertFirefoxTouchAutoplay() {
+  const firefoxBrowser = await firefox.launch({ headless: true });
+  try {
+    const page = await firefoxBrowser.newPage({
+      viewport: { width: 393, height: 852 },
+      isMobile: true,
+      hasTouch: true,
+      reducedMotion: 'reduce',
+    });
+    const localOrigin = new URL(url).origin;
+    await page.route('**/*', (route) => {
+      const requestUrl = new URL(route.request().url());
+      return requestUrl.origin === localOrigin ? route.continue() : route.abort();
+    });
+    await page.goto(`${url}/gallery/`, { waitUntil: 'networkidle' });
+
+    const activeSlideIndex = () =>
+      page.locator('.photo-slideshow .slide').evaluateAll(
+        (slides) => slides.findIndex((slide) => slide.classList.contains('active')),
+      );
+    const before = await activeSlideIndex();
+
+    // A speed selection is an explicit autoplay request. Dispatch a touch
+    // boundary event after it to cover Firefox for Android's event order.
+    await page.locator('[data-speed="3000"]').tap();
+    await page.locator('.photo-slideshow').dispatchEvent('pointerenter', {
+      pointerId: 3,
+      isPrimary: true,
+      pointerType: 'touch',
+    });
+    await page.waitForTimeout(3300);
+
+    assert.notEqual(
+      await activeSlideIndex(),
+      before,
+      'Firefox mobile gallery autoplay stops after touch interaction',
+    );
+    await page.close();
+  } finally {
+    await firefoxBrowser.close();
+  }
+}
+
 try {
   await assertTocAnchorClearsHeader('/posts/dotfiles-2026-summer/');
   await assertTocAnchorClearsHeader('/cv/');
+  await assertFirefoxTouchAutoplay();
 
   const galleryPage = await newLocalPage({ width: 393, height: 852 });
-  await galleryPage.goto(`${url}/photos/`, { waitUntil: 'networkidle' });
+  await galleryPage.goto(`${url}/gallery/`, { waitUntil: 'networkidle' });
   const activeSlideIndex = () =>
     galleryPage.locator('.photo-slideshow .slide').evaluateAll(
       (slides) => slides.findIndex((slide) => slide.classList.contains('active')),
@@ -215,7 +259,7 @@ try {
   );
   await desktopPage.close();
 
-  console.log('✓ mobile gallery, TOC, tooltip, navigation, and post-card checks passed');
+  console.log('✓ Chromium/Firefox mobile gallery, TOC, navigation, and post-card checks passed');
 } finally {
   await browser.close();
   await close();

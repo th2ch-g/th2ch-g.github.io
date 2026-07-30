@@ -19,6 +19,10 @@ function initSlideshow(root: SlideshowEl) {
   let interval = Number(root.dataset.interval ?? 5000);
   let current = 0;
   let timer: number | undefined;
+  let autoplayEnabled = !reduceMotion;
+  let hoverPaused = false;
+  let focusPaused = false;
+  let keyboardMode = false;
   let swipeStart: { x: number; y: number; pointerId: number } | null = null;
 
   const show = (next: number) => {
@@ -36,16 +40,16 @@ function initSlideshow(root: SlideshowEl) {
     if (progressCurrent) progressCurrent.textContent = String(current + 1);
   };
 
-  const start = () => {
-    if (reduceMotion) return;
-    stop();
-    timer = window.setInterval(() => show(current + 1), interval);
-  };
   const stop = () => {
     if (timer !== undefined) {
       window.clearInterval(timer);
       timer = undefined;
     }
+  };
+  const start = () => {
+    stop();
+    if (!autoplayEnabled || document.hidden || hoverPaused || focusPaused) return;
+    timer = window.setInterval(() => show(current + 1), interval);
   };
 
   root.querySelectorAll<HTMLButtonElement>('.nav').forEach((btn) => {
@@ -89,6 +93,9 @@ function initSlideshow(root: SlideshowEl) {
       const next = Number(btn.dataset.speed);
       if (!Number.isFinite(next) || next <= 0) return;
       interval = next;
+      // Choosing a speed is an explicit autoplay request, including when
+      // the operating system initially reported reduced motion.
+      autoplayEnabled = true;
       speedBtns.forEach((b) => b.classList.toggle('active', b === btn));
       start();
     });
@@ -137,10 +144,41 @@ function initSlideshow(root: SlideshowEl) {
     if (document.fullscreenElement === root) root.focus();
   });
 
-  root.addEventListener('pointerenter', stop);
-  root.addEventListener('pointerleave', start);
-  root.addEventListener('focusin', stop);
-  root.addEventListener('focusout', start);
+  // `pointerenter` also fires after `pointerdown` on touch-only devices.
+  // Pausing for every pointer type can therefore leave autoplay stopped on
+  // Firefox for Android, where boundary-event ordering differs from desktop
+  // browsers. Only hover-capable pointers should control hover pausing.
+  root.addEventListener('pointerenter', (event) => {
+    if (event.pointerType === 'touch') return;
+    hoverPaused = true;
+    stop();
+  });
+  root.addEventListener('pointerleave', (event) => {
+    if (event.pointerType === 'touch') return;
+    hoverPaused = false;
+    start();
+  });
+
+  // Keep keyboard focus as a pause mechanism without treating persistent
+  // touch focus as a pause. Firefox for Android commonly leaves a tapped
+  // button focused after the synthetic click sequence.
+  document.addEventListener('keydown', () => {
+    keyboardMode = true;
+  }, true);
+  root.addEventListener('pointerdown', () => {
+    keyboardMode = false;
+    focusPaused = false;
+  }, true);
+  root.addEventListener('focusin', () => {
+    if (!keyboardMode) return;
+    focusPaused = true;
+    stop();
+  });
+  root.addEventListener('focusout', (event) => {
+    if (event.relatedTarget instanceof Node && root.contains(event.relatedTarget)) return;
+    focusPaused = false;
+    start();
+  });
 
   // Arrow-key navigation. Only triggers when this slideshow is the active
   // fullscreen element, or when focus is already inside it (e.g. after the

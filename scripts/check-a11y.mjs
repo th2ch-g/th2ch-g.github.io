@@ -67,7 +67,7 @@ const pages = [
   '/cv',
   '/posts',
   firstPostWithTocPath(),
-  '/photos',
+  '/gallery',
   firstTagPath('/'),
   firstTagPath('/en/'),
 ].filter(Boolean);
