@@ -17,7 +17,44 @@ async function newLocalPage(viewport) {
   return page;
 }
 
+async function assertTocAnchorClearsHeader(path) {
+  const page = await newLocalPage({ width: 393, height: 852 });
+  await page.goto(`${url}${path}`, { waitUntil: 'networkidle' });
+
+  const toggle = page.locator('[data-toc-toggle]');
+  assert.equal(await toggle.isVisible(), true, `TOC toggle is missing on ${path}`);
+  await toggle.click();
+
+  const firstLink = page.locator('[data-toc-link]').first();
+  const targetId = await firstLink.getAttribute('data-toc-link');
+  assert.ok(targetId, `TOC has no target on ${path}`);
+  await firstLink.click();
+  await page.waitForFunction(
+    (id) => decodeURIComponent(location.hash.slice(1)) === id,
+    targetId,
+  );
+
+  const anchorLayout = await page.evaluate((id) => {
+    const heading = document.getElementById(id);
+    const header = document.querySelector('.site-header');
+    if (!heading || !header) return null;
+    return {
+      headingTop: heading.getBoundingClientRect().top,
+      headerBottom: header.getBoundingClientRect().bottom,
+    };
+  }, targetId);
+  assert.ok(anchorLayout, `TOC target or navbar is missing on ${path}`);
+  assert.ok(
+    anchorLayout.headingTop > anchorLayout.headerBottom,
+    `TOC target is hidden by the navbar on ${path} (${anchorLayout.headingTop}px / ${anchorLayout.headerBottom}px)`,
+  );
+  await page.close();
+}
+
 try {
+  await assertTocAnchorClearsHeader('/posts/dotfiles-2026-summer/');
+  await assertTocAnchorClearsHeader('/cv/');
+
   const mobilePage = await newLocalPage({ width: 393, height: 852 });
   await mobilePage.goto(`${url}/`, { waitUntil: 'networkidle' });
 
@@ -118,7 +155,7 @@ try {
   );
   await desktopPage.close();
 
-  console.log('✓ mobile tooltip, navigation, and post-card layout checks passed');
+  console.log('✓ mobile TOC, tooltip, navigation, and post-card layout checks passed');
 } finally {
   await browser.close();
   await close();

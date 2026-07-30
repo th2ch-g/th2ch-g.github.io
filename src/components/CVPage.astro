@@ -5,6 +5,7 @@ import { getCv } from '@/lib/content';
 import { allCitations } from '@/lib/citations';
 import { allBibtex } from '@/lib/bibtex';
 import { render } from 'astro:content';
+import Toc from '@/components/Toc.astro';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -13,45 +14,55 @@ const cv = await getCv(lang);
 if (!cv) {
   throw new Error(`CV (${lang}) is missing. Add src/content/cv/${lang}.md`);
 }
-const { Content } = await render(cv);
+const { Content, headings } = await render(cv);
+const tocMinDepth = headings.length > 0 ? Math.min(...headings.map((heading) => heading.depth)) : 2;
+const tocHeadingCount = headings.filter(
+  (heading) => heading.depth >= tocMinDepth && heading.depth <= tocMinDepth + 2,
+).length;
+const hasToc = tocHeadingCount >= 2;
 ---
 <Base lang={lang} title={tEn('nav.cv')} image={lang === 'en' ? '/en/og/cv.png' : '/og/cv.png'}>
-  <div class="cv-header">
-    <h1>{t(lang, 'nav.cv')}</h1>
-    {/* Page-level toolbar. The three actions (copy all / open PDF / copy
-        .bib) are collapsed into one disclosure menu built client-side by
-        the script below — same affordance as the per-section copy menus.
-        This is just the mount point; labels + the PDF href ride along as
-        data-* so the script needn't re-derive the locale.
-        The PDF is generated post-build by `scripts/build-cv-pdf.mjs` and
-        opens in a new tab; the whole toolbar is hidden in the print
-        stylesheet so the menu doesn't recurse into the PDF. */}
-    <div
-      class="cv-header-actions"
-      data-cv-actions
-      data-pdf-href={lang === 'en' ? '/en/cv.pdf' : '/cv.pdf'}
-      data-label-all={t(lang, 'cv.copy.all')}
-      data-label-pdf={t(lang, 'cv.open.pdf')}
-      data-label-bib={t(lang, 'cv.copy.bib')}
-      data-menu-aria={t(lang, 'cv.actions.menu.aria')}
-    ></div>
+  <div class:list={['cv-layout', { 'has-toc': hasToc }]}>
+    <Toc headings={headings} lang={lang} />
+    <div class="cv-content">
+      <div class="cv-header">
+        <h1>{t(lang, 'nav.cv')}</h1>
+        {/* Page-level toolbar. The three actions (copy all / open PDF / copy
+            .bib) are collapsed into one disclosure menu built client-side by
+            the script below — same affordance as the per-section copy menus.
+            This is just the mount point; labels + the PDF href ride along as
+            data-* so the script needn't re-derive the locale.
+            The PDF is generated post-build by `scripts/build-cv-pdf.mjs` and
+            opens in a new tab; the whole toolbar is hidden in the print
+            stylesheet so the menu doesn't recurse into the PDF. */}
+        <div
+          class="cv-header-actions"
+          data-cv-actions
+          data-pdf-href={lang === 'en' ? '/en/cv.pdf' : '/cv.pdf'}
+          data-label-all={t(lang, 'cv.copy.all')}
+          data-label-pdf={t(lang, 'cv.open.pdf')}
+          data-label-bib={t(lang, 'cv.copy.bib')}
+          data-menu-aria={t(lang, 'cv.actions.menu.aria')}
+        ></div>
+      </div>
+      <div
+        class="prose cv-prose"
+        data-cv-lang={lang}
+        data-copy-label={t(lang, 'code.copy')}
+        data-citations={JSON.stringify(allCitations)}
+        data-citation-label={t(lang, 'citation.label')}
+        data-citation-source={t(lang, 'citation.source')}
+        data-bibtex={JSON.stringify(allBibtex)}
+        data-bibtex-label={t(lang, 'cv.copy.bibtex')}
+        data-bibtex-aria={t(lang, 'cv.copy.bibtex.aria')}
+        data-section-bibtex-label={t(lang, 'cv.copy.bibtex.section')}
+        data-section-copy-label={t(lang, 'cv.copy.section')}
+        data-section-menu-label={t(lang, 'cv.copy.section.menu')}
+        data-section-menu-aria={t(lang, 'cv.copy.section.menu.aria')}
+        data-item-text-label={t(lang, 'cv.copy.item.text')}
+      ><Content /></div>
+    </div>
   </div>
-  <div
-    class="prose cv-prose"
-    data-cv-lang={lang}
-    data-copy-label={t(lang, 'code.copy')}
-    data-citations={JSON.stringify(allCitations)}
-    data-citation-label={t(lang, 'citation.label')}
-    data-citation-source={t(lang, 'citation.source')}
-    data-bibtex={JSON.stringify(allBibtex)}
-    data-bibtex-label={t(lang, 'cv.copy.bibtex')}
-    data-bibtex-aria={t(lang, 'cv.copy.bibtex.aria')}
-    data-section-bibtex-label={t(lang, 'cv.copy.bibtex.section')}
-    data-section-copy-label={t(lang, 'cv.copy.section')}
-    data-section-menu-label={t(lang, 'cv.copy.section.menu')}
-    data-section-menu-aria={t(lang, 'cv.copy.section.menu.aria')}
-    data-item-text-label={t(lang, 'cv.copy.item.text')}
-  ><Content /></div>
 </Base>
 
 <script>
@@ -624,6 +635,10 @@ const { Content } = await render(cv);
 </script>
 
 <style>
+  .cv-layout,
+  .cv-content {
+    min-width: 0;
+  }
   .cv-header {
     display: flex;
     align-items: baseline;
@@ -1015,5 +1030,27 @@ const { Content } = await render(cv);
   }
   @media print {
     .cv-prose :global(.citation-badge) { display: none; }
+  }
+
+  /* Keep the CV column at its existing width on wide screens and place the
+     desktop TOC in the otherwise unused right viewport gutter. */
+  @media (min-width: 90rem) {
+    .cv-layout.has-toc {
+      --toc-space: min(16rem, calc((100vw - var(--max-width)) / 2));
+      display: grid;
+      grid-template-columns:
+        calc(100% - var(--toc-space))
+        calc(var(--toc-space) - 1rem);
+      grid-template-areas: 'content toc';
+      gap: 1rem;
+      align-items: start;
+      width: calc(100% + var(--toc-space));
+    }
+    .cv-layout.has-toc .cv-content {
+      grid-area: content;
+    }
+    .cv-layout.has-toc > :global(.toc) {
+      grid-area: toc;
+    }
   }
 </style>
