@@ -55,6 +55,66 @@ try {
   await assertTocAnchorClearsHeader('/posts/dotfiles-2026-summer/');
   await assertTocAnchorClearsHeader('/cv/');
 
+  const galleryPage = await newLocalPage({ width: 393, height: 852 });
+  await galleryPage.goto(`${url}/photos/`, { waitUntil: 'networkidle' });
+  const activeSlideIndex = () =>
+    galleryPage.locator('.photo-slideshow .slide').evaluateAll(
+      (slides) => slides.findIndex((slide) => slide.classList.contains('active')),
+    );
+  const slideBeforeSwipe = await activeSlideIndex();
+  await galleryPage.locator('.photo-slideshow .slides').dispatchEvent('pointerdown', {
+    pointerId: 1,
+    isPrimary: true,
+    pointerType: 'touch',
+    clientX: 320,
+    clientY: 180,
+  });
+  await galleryPage.locator('.photo-slideshow .slides').dispatchEvent('pointerup', {
+    pointerId: 1,
+    isPrimary: true,
+    pointerType: 'touch',
+    clientX: 80,
+    clientY: 185,
+  });
+  assert.notEqual(
+    await activeSlideIndex(),
+    slideBeforeSwipe,
+    'Mobile gallery slideshow does not respond to horizontal swipes',
+  );
+
+  await galleryPage.locator('.photo-btn').first().click();
+  const lightbox = galleryPage.locator('#lightbox');
+  await lightbox.waitFor({ state: 'visible' });
+  const lightboxImage = lightbox.locator('.lightbox-img');
+  const firstLightboxSrc = await lightboxImage.getAttribute('src');
+  await lightbox.locator('.lightbox-next').click();
+  assert.notEqual(
+    await lightboxImage.getAttribute('src'),
+    firstLightboxSrc,
+    'Mobile gallery lightbox next button does not change the image',
+  );
+  const secondLightboxSrc = await lightboxImage.getAttribute('src');
+  await lightboxImage.dispatchEvent('pointerdown', {
+    pointerId: 2,
+    isPrimary: true,
+    pointerType: 'touch',
+    clientX: 320,
+    clientY: 420,
+  });
+  await lightboxImage.dispatchEvent('pointerup', {
+    pointerId: 2,
+    isPrimary: true,
+    pointerType: 'touch',
+    clientX: 80,
+    clientY: 425,
+  });
+  assert.notEqual(
+    await lightboxImage.getAttribute('src'),
+    secondLightboxSrc,
+    'Mobile gallery lightbox does not respond to horizontal swipes',
+  );
+  await galleryPage.close();
+
   const mobilePage = await newLocalPage({ width: 393, height: 852 });
   await mobilePage.goto(`${url}/`, { waitUntil: 'networkidle' });
 
@@ -155,7 +215,7 @@ try {
   );
   await desktopPage.close();
 
-  console.log('✓ mobile TOC, tooltip, navigation, and post-card layout checks passed');
+  console.log('✓ mobile gallery, TOC, tooltip, navigation, and post-card checks passed');
 } finally {
   await browser.close();
   await close();

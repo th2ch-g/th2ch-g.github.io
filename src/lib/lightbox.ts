@@ -1,17 +1,24 @@
 import { onReady } from './dom-ready';
 
 // Wire every button matching `selector` to dispatch a `lightbox:open`
-// CustomEvent carrying the inner <img>'s effective src + alt. Used by
-// HomePage and PhotosListPage; the listener lives in Lightbox.astro.
+// CustomEvent carrying the complete image set and selected index. The
+// listener lives in Lightbox.astro and provides next/previous navigation.
 export function wirePhotoLightbox(selector: string): void {
   onReady(() => {
-    document.querySelectorAll<HTMLButtonElement>(selector).forEach((btn) => {
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(selector));
+    const items = buttons.flatMap((btn) => {
+      const img = btn.querySelector('img');
+      return img
+        ? [{ src: img.currentSrc || img.src, alt: img.alt }]
+        : [];
+    });
+
+    buttons.forEach((btn, index) => {
       btn.addEventListener('click', () => {
-        const img = btn.querySelector('img');
-        if (!img) return;
+        if (!items[index]) return;
         document.dispatchEvent(
           new CustomEvent('lightbox:open', {
-            detail: { src: img.currentSrc || img.src, alt: img.alt },
+            detail: { items, index },
           }),
         );
       });

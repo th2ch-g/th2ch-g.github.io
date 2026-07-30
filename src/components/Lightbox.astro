@@ -1,6 +1,6 @@
 ---
 // Global image preview overlay. Gallery controls open it through a custom
-// event; click anywhere on the overlay or press Escape to close.
+// event; the overlay supports buttons, arrow keys, and horizontal swipes.
 ---
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview" hidden>
   {/* `src` is intentionally omitted on the initial render. The empty-string
@@ -9,6 +9,17 @@
       open, which creates the attribute lazily. */}
   <img class="lightbox-img" alt="" />
   <button class="lightbox-close" type="button" aria-label="Close preview">&times;</button>
+  <button class="lightbox-nav lightbox-prev" type="button" aria-label="Previous image" hidden>
+    <span aria-hidden="true">‹</span>
+  </button>
+  <button class="lightbox-nav lightbox-next" type="button" aria-label="Next image" hidden>
+    <span aria-hidden="true">›</span>
+  </button>
+  <div class="lightbox-count" aria-live="polite" hidden>
+    <span class="lightbox-current">1</span>
+    <span aria-hidden="true"> / </span>
+    <span class="lightbox-total">1</span>
+  </div>
 </div>
 
 <style>
@@ -33,6 +44,7 @@
     transform: scale(0.92);
     transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
     background: #fff;
+    touch-action: pan-y;
   }
   .lightbox.open .lightbox-img { transform: scale(1); }
   .lightbox-close {
@@ -57,8 +69,50 @@
     outline: 2px solid #fff;
     outline-offset: 2px;
   }
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 2.25rem;
+    line-height: 1;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transform: translateY(-50%);
+    transition: background 150ms ease, transform 150ms ease;
+  }
+  .lightbox-nav[hidden] { display: none; }
+  .lightbox-prev { left: max(0.75rem, env(safe-area-inset-left)); }
+  .lightbox-next { right: max(0.75rem, env(safe-area-inset-right)); }
+  .lightbox-nav:hover { background: rgba(0, 0, 0, 0.85); }
+  .lightbox-nav:active { transform: translateY(-50%) scale(0.92); }
+  .lightbox-nav:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+  .lightbox-count {
+    position: absolute;
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+  .lightbox-count[hidden] { display: none; }
+  :global(body.lightbox-open) { overflow: hidden; }
   @media (prefers-reduced-motion: reduce) {
-    .lightbox, .lightbox-img { transition: none; }
+    .lightbox, .lightbox-img, .lightbox-nav { transition: none; }
   }
 </style>
 

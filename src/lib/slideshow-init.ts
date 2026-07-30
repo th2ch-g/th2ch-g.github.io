@@ -1,9 +1,9 @@
 // Wires every `.photo-slideshow` element on the page. Auto-advances to
 // the next slide every `data-interval` ms (defaults to 5s), stops while
 // the user hovers / focuses inside the carousel, and resumes on leave.
-// Listens for a custom `photoslideshow:goto` event so the masonry grid
-// in PhotosListPage can act as a lightbox: dispatch `{ index, fullscreen }`
-// to jump to a slide and optionally request browser fullscreen.
+// Listens for a custom `photoslideshow:goto` event so external controls can
+// dispatch `{ index, fullscreen }` to jump to a slide and optionally request
+// browser fullscreen.
 
 type SlideshowEl = HTMLElement & { __cleanup?: () => void };
 
@@ -19,6 +19,7 @@ function initSlideshow(root: SlideshowEl) {
   let interval = Number(root.dataset.interval ?? 5000);
   let current = 0;
   let timer: number | undefined;
+  let swipeStart: { x: number; y: number; pointerId: number } | null = null;
 
   const show = (next: number) => {
     slides[current].classList.remove('active');
@@ -53,6 +54,31 @@ function initSlideshow(root: SlideshowEl) {
       show(current + dir);
       start();
     });
+  });
+
+  const swipeSurface = root.querySelector<HTMLElement>('.slides');
+  swipeSurface?.addEventListener('pointerdown', (event) => {
+    if (!event.isPrimary) return;
+    swipeStart = {
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+    };
+    stop();
+  });
+  swipeSurface?.addEventListener('pointerup', (event) => {
+    if (!swipeStart || event.pointerId !== swipeStart.pointerId) return;
+    const deltaX = event.clientX - swipeStart.x;
+    const deltaY = event.clientY - swipeStart.y;
+    swipeStart = null;
+    if (Math.abs(deltaX) >= 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      show(current + (deltaX < 0 ? 1 : -1));
+    }
+    start();
+  });
+  swipeSurface?.addEventListener('pointercancel', () => {
+    swipeStart = null;
+    start();
   });
 
   const speedBtns = Array.from(
