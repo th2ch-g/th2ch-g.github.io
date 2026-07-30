@@ -21,6 +21,32 @@ try {
   const mobilePage = await newLocalPage({ width: 393, height: 852 });
   await mobilePage.goto(`${url}/`, { waitUntil: 'networkidle' });
 
+  const headerLayout = await mobilePage.locator('.site-header .inner').evaluate((header) => {
+    const controls = [
+      header.querySelector('.brand'),
+      header.querySelector('.search-trigger'),
+      header.querySelector('.theme-toggle'),
+      header.querySelector('.lang-switch'),
+      header.querySelector('.nav-toggle'),
+    ];
+    const rects = controls.map((control) => control?.getBoundingClientRect());
+    return {
+      centerYs: rects.map((rect) => rect && rect.top + rect.height / 2),
+      rightEdge: Math.max(...rects.map((rect) => rect?.right ?? 0)),
+      viewportWidth: window.innerWidth,
+    };
+  });
+  const headerCenterRange =
+    Math.max(...headerLayout.centerYs) - Math.min(...headerLayout.centerYs);
+  assert.ok(
+    headerCenterRange < 1,
+    `Mobile navigation controls wrap onto multiple rows (${headerLayout.centerYs.join(', ')})`,
+  );
+  assert.ok(
+    headerLayout.rightEdge <= headerLayout.viewportWidth,
+    'Mobile navigation controls overflow the viewport',
+  );
+
   await mobilePage.locator('.avatar-wrap').first().hover();
   await mobilePage.waitForTimeout(200);
   const tipRect = await mobilePage.locator('.avatar-tip').evaluate((tip) => {

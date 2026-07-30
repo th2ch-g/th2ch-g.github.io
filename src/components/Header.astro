@@ -250,9 +250,13 @@ function isActive(href: string, match: 'exact' | 'prefix'): boolean {
   @media (max-width: 720px) {
     .inner {
       position: relative;
+      flex-wrap: nowrap;
+      gap: 0.5rem;
+      padding-inline: 0.75rem;
     }
     .brand {
       flex: 1;
+      min-width: 0;
     }
     .nav-toggle {
       display: inline-flex;
