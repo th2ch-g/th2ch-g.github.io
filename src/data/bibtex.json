@@ -1,26 +1,22 @@
 {
   "10.1016/j.jbc.2026.113300": {
     "bibtex": "@article{watanabe2026yhbo,\n  title={YhbO is a DJ-1 family glyoxalase and α-oxoaldehyde hydratase that confers resistance to reactive carbonyl stress},\n  author={Watanabe, Aiko and Kanematsu, Kai and Hizukuri, Yohei and Hori, Tatsuki and Ogiwara, Shizuka and Okuno, Tomohiko and Saito, Mirei and Ito, Tomoya and Shibuya, Chihiro and Akiyama, Yoshinori and Toyota, Shinji and Moriwaki, Yoshitaka and Yamano, Koji and Koyano, Fumika and Kajitani, Takashi and Ishitani, Ryuichiro and Yamashina, Masahiro and Kosako, Hidetaka and Matsuda, Noriyuki},\n  journal={Journal of Biological Chemistry},\n  year={2026},\n  publisher={Elsevier BV},\n  doi={10.1016/j.jbc.2026.113300}\n}",
-    "fetchedAt": "2026-08-02T08:09:49.215Z"
+    "fetchedAt": "2026-08-02T14:49:41.667Z"
   },
   "10.1021/acs.jctc.6c00199": {
     "bibtex": "@article{hori2026distance,\n  title={Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways},\n  author={Hori, Tatsuki and Moriwaki, Yoshitaka and Ishitani, Ryuichiro},\n  journal={Journal of Chemical Theory and Computation},\n  year={2026},\n  publisher={ACS Publications},\n  doi={10.1021/acs.jctc.6c00199}\n}",
-    "fetchedAt": "2026-08-02T08:09:49.215Z"
+    "fetchedAt": "2026-08-02T14:49:41.667Z"
   },
   "10.1021/acs.jpcb.4c01271": {
     "bibtex": "@article{ikizawa2024pacs,\n  title={PaCS-Toolkit: Optimized Software Utilities for Parallel Cascade Selection Molecular Dynamics (PaCS-MD) Simulations and Subsequent Analyses},\n  author={Ikizawa, Shinji and Hori, Tatsuki and Wijaya, Tegar Nurwahyu and Kono, Hiroshi and Bai, Zhen and Kimizono, Tatsuhiro and Lu, Wenbo and Tran, Duy Phuoc and Kitao, Akio},\n  journal={The Journal of Physical Chemistry B},\n  year={2024},\n  publisher={ACS Publications},\n  doi={10.1021/acs.jpcb.4c01271}\n}",
-    "fetchedAt": "2026-08-02T08:09:49.215Z"
+    "fetchedAt": "2026-08-02T14:49:41.667Z"
   },
   "10.1038/s41597-023-02356-z": {
     "bibtex": "@article{tanaka2023haplotype,\n  title={Haplotype-resolved chromosomal-level assembly of wasabi (Eutrema japonicum) genome},\n  author={Tanaka, Hiroyuki and Hori, Tatsuki and Yamamoto, Shohei and Toyoda, Atsushi and Yano, Kentaro and Yamane, Kyoko and Itoh, Takehiko},\n  journal={Scientific Data},\n  year={2023},\n  publisher={Springer Nature},\n  doi={10.1038/s41597-023-02356-z}\n}",
-    "fetchedAt": "2026-08-02T08:09:49.215Z"
-  },
-  "10.64898/2026.01.30.702714": {
-    "bibtex": "@article{hori2026distance,\n  title={Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways},\n  author={Hori, Tatsuki and Moriwaki, Yoshitaka and Ishitani, Ryuichiro},\n  year={2026},\n  publisher={bioRxiv},\n  doi={10.64898/2026.01.30.702714}\n}",
-    "fetchedAt": "2026-08-02T08:09:49.215Z"
+    "fetchedAt": "2026-08-02T14:49:41.667Z"
   },
   "10.64898/2026.05.24.727545": {
     "bibtex": "@article{matsuoka2026off,\n  title={Off-target-free chemogenetic platform that decodes physiological roles of target GPCRs},\n  author={Matsuoka, Yuma and Inoue, Hajime and Hori, Tatsuki and Tran, Duy Phuoc and Kitao, Akio and Doura, Tomohiro and Kiyonaka, Shigeki},\n  year={2026},\n  publisher={bioRxiv},\n  doi={10.64898/2026.05.24.727545}\n}",
-    "fetchedAt": "2026-08-02T08:09:49.215Z"
+    "fetchedAt": "2026-08-02T14:49:41.667Z"
   }
 }

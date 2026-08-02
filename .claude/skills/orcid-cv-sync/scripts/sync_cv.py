@@ -20,14 +20,22 @@ endpoint) is wrapped in ``<u>...</u>`` to match the existing CV style.
 CrossRef lookup failures fall back to a ``[authors — TODO]`` placeholder
 so a network blip never breaks the script.
 
-Strictly additive: existing entries are never modified or removed. The script
-emits a unified diff in dry-run mode (default); pass ``--apply`` to write.
+Additive for new works, with exactly one deletion rule: a preprint entry is
+removed once its peer-reviewed version is listed in the CV's ``peer-reviewed``
+section. Nothing else is ever modified or removed. Because the prune runs on
+the post-insertion content, it also covers the case where ORCID hands us the
+preprint and the journal article in the same batch — the preprint is inserted
+and immediately pruned, so it never reaches the diff.
+
+The script emits a unified diff in dry-run mode (default); pass ``--apply``
+to write.
 
 Usage:
     uv run scripts/sync_cv.py            # dry-run
     uv run scripts/sync_cv.py --apply    # write changes
     uv run scripts/sync_cv.py --orcid 0000-0000-0000-0000   # override ORCID iD
     uv run scripts/sync_cv.py --no-crossref   # skip CrossRef, use [authors — TODO]
+    uv run scripts/sync_cv.py --keep-published-preprints    # disable the prune
 
 Zero third-party dependencies — Python 3.9+ stdlib only.
 """
@@ -41,6 +49,7 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import NamedTuple
 
 # Preprint-server DOI prefixes. Used as a fallback when ORCID's `type`
 # field doesn't say "preprint" (which it sometimes doesn't, even for
@@ -55,6 +64,11 @@ PREPRINT_PREFIXES = {
 
 DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+", re.IGNORECASE)
 NORMALIZE_RE = re.compile(r"[^a-z0-9]")
+
+# Shortest normalized title we'll trust for fuzzy matching. Below this the
+# false-positive risk dominates — a title like "Introduction" would match
+# almost anything.
+MIN_TITLE_MATCH_LEN = 20
 
 # CV frontmatter. Scalars only (`key: value`), which is all the CV declares,
 # so a real YAML parser isn't worth a third-party dependency here. The
@@ -84,6 +98,18 @@ ANY_SECTION_START_RE = re.compile(
 )
 SECTION_END_RE = re.compile(r"^[ \t]*<!--\s*/cv:section\s*-->[ \t]*$", re.MULTILINE)
 
+# One CV entry starts at a list marker in the outermost column. CommonMark
+# lets a top-level item carry up to 3 leading spaces, but a *continuation*
+# line must be indented to its parent's content column — 3 spaces for the
+# `1. ` marker this CV uses. Allowing 0-2 spaces therefore matches every
+# sibling entry while leaving nested footnotes (`   - \*Co-first authors`)
+# attached to the entry above them. Matching `[ \t]*` instead would treat
+# those footnotes as entries of their own and orphan them on removal.
+ITEM_START_RE = re.compile(r"^ {0,2}(?:\d+[.)]|[-*+])\s")
+# The paper title is the only Markdown link in an entry — `[authors — TODO]`
+# has no `(` after it, so requiring `](` skips the placeholder.
+LINK_TITLE_RE = re.compile(r"\[([^\]]+)\]\(")
+
 
 def normalize(s: str) -> str:
     """Strip everything but a-z 0-9 and lowercase. Used for fuzzy title
@@ -94,13 +120,15 @@ def normalize(s: str) -> str:
 
 def title_already_present(title: str | None, *texts: str) -> bool:
     """Return True if the normalized title is a substring of any of `texts`.
-    Skip very short titles (< 20 chars after normalization) since the false-
-    positive risk dominates — generic titles like "Introduction" would match
-    too aggressively."""
+
+    Used for the POSSIBLE DUPLICATE warning, where `texts` is deliberately
+    both whole file bodies. Do NOT reuse this call shape for the preprint
+    prune — see `prune_published_preprints`.
+    """
     if not title:
         return False
     norm_t = normalize(title)
-    if len(norm_t) < 20:
+    if len(norm_t) < MIN_TITLE_MATCH_LEN:
         return False
     for text in texts:
         if norm_t in normalize(text):
@@ -187,13 +215,23 @@ def fetch_orcid_self_name(orcid_id: str) -> tuple[str, str] | None:
     return None
 
 
-def fetch_crossref_authors(doi: str) -> list[dict] | None:
-    """Return ``[{given, family}, ...]`` from CrossRef, or ``None`` on failure.
+# One CrossRef record per DOI serves both the author list and the
+# preprint→journal relation, so cache the whole `message` rather than
+# fetching the same URL twice for the two consumers.
+_crossref_cache: dict[str, dict | None] = {}
+_crossref_failures = 0
 
-    A failure here is non-fatal — the caller falls back to the
-    ``[authors — TODO]`` placeholder so the user can fill the line in by
-    hand later.
+
+def fetch_crossref_work(doi: str) -> dict | None:
+    """Return CrossRef's ``message`` object for ``doi``, or ``None`` on failure.
+
+    A failure here is non-fatal — author lookups fall back to the
+    ``[authors — TODO]`` placeholder, and the preprint prune falls back to
+    title matching.
     """
+    global _crossref_failures
+    if doi in _crossref_cache:
+        return _crossref_cache[doi]
     url = f"https://api.crossref.org/works/{urllib.request.quote(doi, safe='/')}"
     req = urllib.request.Request(url, headers={"User-Agent": CROSSREF_UA})
     try:
@@ -204,15 +242,44 @@ def fetch_crossref_authors(doi: str) -> list[dict] | None:
             f"[orcid-cv-sync] WARN: CrossRef lookup failed for {doi}: {e}",
             file=sys.stderr,
         )
+        _crossref_failures += 1
+        _crossref_cache[doi] = None
         return None
-    raw_authors = data.get("message", {}).get("author") or []
+    message = data.get("message") or None
+    _crossref_cache[doi] = message
+    return message
+
+
+def crossref_authors(doi: str) -> list[dict] | None:
+    """Return ``[{given, family}, ...]`` from CrossRef, or ``None`` on failure."""
+    message = fetch_crossref_work(doi)
+    if not message:
+        return None
     out: list[dict] = []
-    for a in raw_authors:
+    for a in message.get("author") or []:
         given = (a.get("given") or "").strip()
         family = (a.get("family") or "").strip()
         if family:
             out.append({"given": given, "family": family})
     return out or None
+
+
+def crossref_published_dois(doi: str) -> set[str]:
+    """DOIs of the peer-reviewed article(s) this preprint turned into.
+
+    CrossRef records the link on the **preprint** side only
+    (``relation["is-preprint-of"]``); the journal article's own record
+    carries an empty ``relation``. So this is only ever worth calling with
+    a preprint DOI.
+    """
+    message = fetch_crossref_work(doi)
+    if not message:
+        return set()
+    out: set[str] = set()
+    for rel in (message.get("relation") or {}).get("is-preprint-of", []):
+        if rel.get("id-type") == "doi" and rel.get("id"):
+            out.add(rel["id"].strip().lower())
+    return out
 
 
 def existing_dois(text: str) -> set[str]:
@@ -378,6 +445,74 @@ def validate_markers(label: str, content: str) -> None:
         )
 
 
+def section_span(content: str, kind: str) -> tuple[int, int] | None:
+    """Line-index range ``[start, end)`` of the body wrapped by section ``kind``.
+
+    ``start`` is the line right after ``<!-- cv:section <kind> -->`` and
+    ``end`` is the index of the matching ``<!-- /cv:section -->`` line, so
+    the slice holds the list and nothing else.
+
+    Returns ``None`` when the section marker is absent (or, defensively,
+    when its closing partner is — ``validate_markers`` aborts the run on
+    unbalanced markers long before we get here).
+    """
+    start_re = re.compile(SECTION_START_TMPL.format(kind=re.escape(kind)))
+    lines = content.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if start_re.search(line):
+            for j in range(i + 1, len(lines)):
+                if SECTION_END_RE.search(lines[j]):
+                    return (i + 1, j)
+            return None
+    return None
+
+
+def section_body(content: str, kind: str) -> str:
+    """Text between the ``kind`` markers, or ``''`` when the section is absent."""
+    span = section_span(content, kind)
+    if span is None:
+        return ""
+    lines = content.splitlines(keepends=True)
+    return "".join(lines[span[0]:span[1]])
+
+
+class Entry(NamedTuple):
+    """One list item inside a ``cv:section`` block."""
+
+    start: int          # first line index, inclusive
+    end: int            # one past the last line, trailing blanks trimmed
+    text: str
+    dois: set[str]
+    title: str | None
+
+
+def parse_section_entries(content: str, kind: str) -> list[Entry]:
+    """Split section ``kind`` into its list items.
+
+    An item runs from its list marker to just before the next one, minus any
+    trailing blank lines, so an indented footnote (``   - \\*Co-first
+    authors``) travels with the entry it annotates instead of being mistaken
+    for one — see ``ITEM_START_RE``.
+    """
+    span = section_span(content, kind)
+    if span is None:
+        return []
+    start, end = span
+    lines = content.splitlines(keepends=True)
+    starts = [i for i in range(start, end) if ITEM_START_RE.match(lines[i])]
+    entries: list[Entry] = []
+    for n, first in enumerate(starts):
+        last = starts[n + 1] if n + 1 < len(starts) else end
+        while last > first + 1 and not lines[last - 1].strip():
+            last -= 1
+        text = "".join(lines[first:last])
+        m = LINK_TITLE_RE.search(text)
+        entries.append(
+            Entry(first, last, text, existing_dois(text), m.group(1) if m else None),
+        )
+    return entries
+
+
 def section_insert_index(content: str, kind: str) -> int | None:
     """Line index where a new entry belongs for section ``kind``.
 
@@ -390,15 +525,15 @@ def section_insert_index(content: str, kind: str) -> int | None:
 
     Returns ``None`` when the section marker is absent.
     """
-    start_re = re.compile(SECTION_START_TMPL.format(kind=re.escape(kind)))
+    span = section_span(content, kind)
+    if span is None:
+        return None
+    start, end = span
     lines = content.splitlines(keepends=True)
-    for i, line in enumerate(lines):
-        if start_re.search(line):
-            j = i + 1
-            while j < len(lines) and not lines[j].strip():
-                j += 1
-            return j
-    return None
+    j = start
+    while j < end and not lines[j].strip():
+        j += 1
+    return j
 
 
 def insert_into_section(
@@ -425,6 +560,85 @@ def insert_into_section(
     lines = content.splitlines(keepends=True)
     block = "\n".join(entries) + "\n"
     return "".join(lines[:insert_at]) + block + "".join(lines[insert_at:])
+
+
+def drop_entries(content: str, kind: str, doomed: list[Entry]) -> str:
+    """Remove ``doomed`` items from section ``kind``, blank lines included.
+
+    Each removal also swallows the blank line that separated the item from
+    its neighbour. Leaving it behind would put two blanks in a row, which
+    CommonMark reads as the end of the list — every surviving entry would
+    then restart at "1.".
+    """
+    span = section_span(content, kind)
+    if span is None or not doomed:
+        return content
+    sec_start, sec_end = span
+    lines = content.splitlines(keepends=True)
+    first_start = min(e.start for e in parse_section_entries(content, kind))
+    drop: set[int] = set()
+    for entry in doomed:
+        drop.update(range(entry.start, entry.end))
+        if entry.start > first_start:
+            if entry.start - 1 >= sec_start and not lines[entry.start - 1].strip():
+                drop.add(entry.start - 1)
+        elif entry.end < sec_end and not lines[entry.end].strip():
+            drop.add(entry.end)
+    return "".join(line for i, line in enumerate(lines) if i not in drop)
+
+
+def prune_published_preprints(
+    content: str,
+    use_crossref: bool = True,
+) -> tuple[str, list[tuple[Entry, str | None, str | None, str]]]:
+    """Drop preprint entries whose peer-reviewed version is already listed.
+
+    Returns the new content plus ``(entry, preprint_doi, published_doi, via)``
+    per removal.
+
+    Two signals, in order of trust:
+
+    1. CrossRef ``relation["is-preprint-of"]`` on the preprint's own DOI. The
+       link is asserted on the preprint side only — the journal article's
+       record carries an empty ``relation`` — so we always query the preprint.
+    2. Normalized title equality, for servers that assert no relation.
+
+    Matching is scoped to THIS file's ``peer-reviewed`` section. Comparing a
+    preprint's title against the whole file (the way the POSSIBLE DUPLICATE
+    warning does) would match the preprint's own line and wipe the section.
+    """
+    entries = parse_section_entries(content, "preprints")
+    if not entries:
+        return content, []
+    journal_body = section_body(content, "peer-reviewed")
+    journal_dois = existing_dois(journal_body)
+    journal_norm = normalize(journal_body)
+    if not journal_dois and not journal_norm:
+        return content, []
+
+    removals: list[tuple[Entry, str | None, str | None, str]] = []
+    for entry in entries:
+        # Skip DOIs already listed as peer-reviewed: those are the hand-written
+        # "published as …" annotation, and journal records carry no relation.
+        own_dois = sorted(entry.dois - journal_dois)
+        source: str | None = own_dois[0] if own_dois else None
+        published: str | None = None
+        via: str | None = None
+        if use_crossref:
+            for doi in own_dois:
+                hit = crossref_published_dois(doi) & journal_dois
+                if hit:
+                    source, published, via = doi, sorted(hit)[0], "is-preprint-of"
+                    break
+        if via is None and entry.title:
+            norm_title = normalize(entry.title)
+            if len(norm_title) >= MIN_TITLE_MATCH_LEN and norm_title in journal_norm:
+                via = "title match"
+        if via:
+            removals.append((entry, source, published, via))
+    if not removals:
+        return content, []
+    return drop_entries(content, "preprints", [r[0] for r in removals]), removals
 
 
 def show_diff(label: str, old: str, new: str) -> bool:
@@ -457,6 +671,11 @@ def main() -> int:
         "--no-crossref",
         action="store_true",
         help="Skip CrossRef author lookup; emit [authors — TODO] placeholder",
+    )
+    ap.add_argument(
+        "--keep-published-preprints",
+        action="store_true",
+        help="Keep preprint entries whose peer-reviewed version is already listed",
     )
     args = ap.parse_args()
 
@@ -495,33 +714,29 @@ def main() -> int:
     # per-file which side actually needs the addition.
     new_works = [w for w in works if w["doi"] not in ja_known or w["doi"] not in en_known]
     if not new_works:
-        print("[orcid-cv-sync] no new publications — CV is up to date.")
-        return 0
+        print(
+            "[orcid-cv-sync] no new publications from ORCID; "
+            "checking for superseded preprints.",
+            file=sys.stderr,
+        )
 
     # Self-name lookup once up front. Only used to wrap the user's own
     # author entry in <u>...</u>; if it fails, every name is just bold.
-    self_name = None if args.no_crossref else fetch_orcid_self_name(orcid_id)
+    # Skipped when there's nothing to render.
+    self_name = (
+        None if args.no_crossref or not new_works else fetch_orcid_self_name(orcid_id)
+    )
     if self_name:
         print(
             f"[orcid-cv-sync] self-name resolved: {self_name[0]} {self_name[1]}",
             file=sys.stderr,
         )
 
-    # Build entries per file. CrossRef lookup is cached per-DOI so we don't
-    # double-fetch when the same paper is missing from both files.
-    crossref_cache: dict[str, list[dict] | None] = {}
-    crossref_failures = 0
-
     def authors_for(doi: str) -> list[dict] | None:
-        nonlocal crossref_failures
-        if args.no_crossref:
-            return None
-        if doi not in crossref_cache:
-            res = fetch_crossref_authors(doi)
-            if res is None:
-                crossref_failures += 1
-            crossref_cache[doi] = res
-        return crossref_cache[doi]
+        # `fetch_crossref_work` caches per DOI, so a paper missing from both
+        # files costs one request — and the prune's `is-preprint-of` lookup
+        # reuses the record the author lookup already pulled.
+        return None if args.no_crossref else crossref_authors(doi)
 
     def build_entries_for(known: set[str]) -> tuple[list[str], list[str], int]:
         """Returns (journal_lines, preprint_lines, duplicate_warnings) for
@@ -555,12 +770,6 @@ def main() -> int:
     en_journal, en_preprint, en_dups = build_entries_for(en_known)
     duplicate_warning_count = ja_dups + en_dups
 
-    if crossref_failures:
-        print(
-            f"[orcid-cv-sync] {crossref_failures} CrossRef lookup(s) failed; "
-            f"those entries have [authors — TODO] placeholders.",
-            file=sys.stderr,
-        )
     if duplicate_warning_count:
         print(
             f"[orcid-cv-sync] {duplicate_warning_count} entries flagged as POSSIBLE DUPLICATE "
@@ -585,14 +794,40 @@ def main() -> int:
     new_en = insert_into_section("en.md", en_text, "peer-reviewed", en_journal)
     new_en = insert_into_section("en.md", new_en, "preprints", en_preprint)
 
+    # Prune AFTER inserting, and per file. Running last means one mechanism
+    # covers both cases: a preprint already in the CV whose journal version
+    # just landed, and a preprint ORCID hands us in the same batch as its
+    # journal version (inserted, then pruned, so it never reaches the diff).
+    # Per file because ja and en keep independent known-DOI sets — matching a
+    # ja preprint against en's peer-reviewed list would delete on the wrong
+    # side's evidence.
+    if not args.keep_published_preprints:
+        new_ja, ja_removed = prune_published_preprints(new_ja, not args.no_crossref)
+        new_en, en_removed = prune_published_preprints(new_en, not args.no_crossref)
+        for label, removed in (("ja.md", ja_removed), ("en.md", en_removed)):
+            for _entry, source, published, via in removed:
+                target = f" → {published}" if published else ""
+                print(
+                    f"[orcid-cv-sync] prune: {label} drops preprint "
+                    f"{source or '(no DOI)'}{target} (via {via})",
+                    file=sys.stderr,
+                )
+
+    # Reported after the prune, which issues CrossRef lookups of its own —
+    # tallying before it would under-count.
+    if _crossref_failures:
+        print(
+            f"[orcid-cv-sync] {_crossref_failures} CrossRef lookup(s) failed; "
+            f"affected entries have [authors — TODO] placeholders, and any "
+            f"preprint whose record we couldn't read was matched by title only.",
+            file=sys.stderr,
+        )
+
     changed_ja = show_diff("src/content/cv/ja.md", ja_text, new_ja)
     changed_en = show_diff("src/content/cv/en.md", en_text, new_en)
 
     if not (changed_ja or changed_en):
-        print(
-            "[orcid-cv-sync] nothing to apply (unexpected — already up to date).",
-            file=sys.stderr,
-        )
+        print("[orcid-cv-sync] no changes — CV is up to date.")
         return 0
 
     if args.apply:

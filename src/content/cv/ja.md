@@ -29,8 +29,6 @@ orcid: 0009-0001-3991-8367
 ## プレプリント
 <!-- cv:section preprints -->
 1. **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Tomohiro Doura**, **Shigeki Kiyonaka**, [Off-target-free chemogenetic platform that decodes physiological roles of target GPCRs](https://doi.org/10.64898/2026.05.24.727545), *bioRxiv*, DOI:10.64898/2026.05.24.727545, (2026).
-
-1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.64898/2026.01.30.702714), *bioRxiv*, DOI:10.64898/2026.01.30.702714, (2026) (掲載誌: *Journal of Chemical Theory and Computation*, DOI:10.1021/acs.jctc.6c00199).
 <!-- /cv:section -->
 
 ## 学会発表（査読無し）
