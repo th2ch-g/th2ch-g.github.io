@@ -41,7 +41,7 @@ UI strings are in `src/i18n/ui.ts`. All keys must exist in both `ja` and `en`. U
 
 Defined in `src/content.config.ts`. Four collections:
 
-- `cv` — body-only Markdown at `src/content/cv/{ja,en}.md`. No frontmatter schema.
+- `cv` — `src/content/cv/{ja,en}.md`. The only frontmatter is `orcid` (the iD the `orcid-cv-sync` skill pulls from; both locales must declare the same one). Publication / presentation lists are wrapped in `<!-- cv:section <kind> -->` … `<!-- /cv:section -->` markers, `kind` ∈ `peer-reviewed` / `preprints` / `presentations`. Those markers are the **only** contract for "which list is what": `remark-cv-sections` turns them into `data-cv-section` attributes that `CVPage.astro` reads, and the sync script inserts new entries right after the matching start marker. Heading text is free-form — renaming or translating a heading changes nothing.
 - `legal` — `src/content/legal/{ja,en}/<slug>.md` with `title` / `description` / `updatedDate` frontmatter. The slug after the locale becomes the URL (`/<slug>` and `/en/<slug>`), so keep it short and stable.
 - `profileMeta` — single file `src/content/profile.yaml`. Per-locale fields use `{ ja, en }` sub-objects; shared values stay flat. Read via `getProfileMeta(lang)` (in `src/lib/content.ts`), which flattens to a per-locale plain object. Throws if the file is missing — fail loudly at build time rather than degrade silently.
 - `posts` — `src/content/posts/{ja,en}/<slug>.md` with optional co-located image files. Slug must match across locales (the language switcher and `getStaticPaths` rely on it). `entry.id` looks like `ja/<slug>` — `localeSlug(id)` strips the prefix.
@@ -78,6 +78,7 @@ Custom remark plugins in `src/plugins/`:
 - `remark-mermaid-block` — `mermaid` code fence → client-rendered diagram
 - `remark-callouts` — GitHub-style `> [!NOTE]` blockquotes → `<aside class="callout-…">`
 - `remark-profile-vars` — `@profile.<key>` token → value from `profile.yaml` (so MD content can reference site identity without hardcoding)
+- `remark-cv-sections` — consumes the CV's `<!-- cv:section … -->` markers and stamps `data-cv-section` on the lists they wrap; no-op for every other collection
 
 Plus rehype: KaTeX, slug, autolink-headings (prepend `#`), external-links (`target=_blank`). The Shiki transformer in `astro.config.mjs` projects `data-language` and optional `data-filename` (from code-fence meta `title="…"`) onto every `<pre>`, surfaced by `global.css`.
 
@@ -90,11 +91,13 @@ Reading-time: English uses the `reading-time` package; Japanese uses a char-coun
 3. **Do NOT add `@view-transition`** in CSS. Cross-document VT caused an unfixable white flash on this site. Page transitions rely on paint-holding only — there is no `<main>` entrance animation (the fade-in/slide keyframe was removed by user request). See user memory `project_view_transitions_color_scheme.md`.
 4. **`getStaticPaths` must be `export async function`,** not `export const … = async () => …`.
 5. **Image service is `passthroughImageService()`** to avoid sharp's native deps in CI. Don't switch to the default service without first confirming CI compatibility.
-6. **`profile.yaml` is the source of truth for site identity** (name, links, icon, bio). The icon URL is also consumed by `build-icon.mjs` at build time — changing it requires a rebuild before the new icon appears.
+6. **`profile.yaml` is the source of truth for site identity** (name, links, icon, bio). The icon URL is also consumed by `build-icon.mjs` at build time — changing it requires a rebuild before the new icon appears. The ORCID entry in `links` is display-only (homepage button, JSON-LD `sameAs`, `/resume.json`); the publication sync reads the CV's own `orcid` frontmatter instead.
+7. **Never put an HTML comment on its own line between CV list items.** CommonMark ends the list at the comment and starts a new one, so every entry re-renders as "1." on the page and in the PDF. `cv:section` markers therefore wrap a list from outside; per-entry metadata must use a trailing inline comment or an indented continuation line (that's also why the sync script's missing-author placeholder is plain `[authors — TODO]` text).
 
 ## Editing policy
 
 - **Don't mirror ORCID / GitHub.** No `papers`, `works`, or `publications` routes — link out instead. Publications live only in `src/content/cv/{ja,en}.md` (synced via the `orcid-cv-sync` skill).
+- **The CV is self-contained.** Everything that decides how the CV is synced and rendered — the ORCID iD, which lists are publications, which are presentations — is declared inside `src/content/cv/{ja,en}.md`. Don't reintroduce heading-text matching (`/論文|Publication/`-style regexes) anywhere; add or move a `cv:section` marker instead.
 - **Keep the site forkable.** Editing files under `src/content/` (especially `profile.yaml`) should be enough for anyone to reuse this repo as their own portfolio. Do NOT hardcode personal identity (name, handles, ORCID id, email, GitHub URL, affiliation) in components, scripts, or pages — read from `profile.yaml` via `getProfileMeta(lang)` instead.
 
 ## Project-local skills

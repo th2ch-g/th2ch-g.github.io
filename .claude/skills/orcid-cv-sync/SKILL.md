@@ -15,11 +15,11 @@ Trigger on phrases like:
 - "新しい論文を入れて" / "publications をアップデート"
 - "論文一覧を最新に"
 
-The user may not say "ORCID" explicitly. If they ask to refresh the publications list and the repo has an ORCID iD in `profile.yaml`, this skill is the right tool.
+The user may not say "ORCID" explicitly. If they ask to refresh the publications list and `src/content/cv/ja.md` declares an `orcid:` key, this skill is the right tool.
 
 ## Workflow
 
-1. Confirm the ORCID iD is in `src/content/profile.yaml` (look for an entry in `links` whose `url` contains `orcid.org/`). The script auto-detects it.
+1. Confirm `src/content/cv/ja.md` declares `orcid:` in its frontmatter and that the publication lists are wrapped in `<!-- cv:section … -->` markers (see "Where the config lives" below). The script auto-detects both; it does **not** read `profile.yaml`.
 2. Run a dry-run first to show the user what will change:
    ```bash
    uv run scripts/sync_cv.py
@@ -36,7 +36,7 @@ The user may not say "ORCID" explicitly. If they ask to refresh the publications
 
 `scripts/sync_cv.py` does the following, in order:
 
-1. Reads `src/content/profile.yaml` and extracts the ORCID iD via regex (matches `https://orcid.org/<iD>`)
+1. Reads the `orcid:` frontmatter key from `src/content/cv/ja.md` (falling back to `en.md`; a mismatch between the two is a hard error)
 2. Fetches `https://pub.orcid.org/v3.0/<iD>/works` with `Accept: application/json` — **no authentication required**, the ORCID Public API is anonymous-readable
 3. Fetches `https://pub.orcid.org/v3.0/<iD>/person` once to resolve the record holder's display name. Used only to wrap the user's own author entry in `<u>...</u>` so it stands out visually (matches the existing CV style). If this call fails, every author is just bold.
 4. Reads `ja.md` and `en.md` and extracts every existing DOI via regex `10\.\d{4,9}/[-._;()/:A-Za-z0-9]+`. **The two files have independent "known" sets** so a paper missing from only one side gets added to that side. (Earlier versions unioned them and silently lost coverage on `en.md` whenever a DOI was already in `ja.md`.)
@@ -46,8 +46,8 @@ The user may not say "ORCID" explicitly. If they ask to refresh the publications
    - ORCID `type == "preprint"`, OR
    - DOI prefix in the known preprint-server list: `10.1101` (bioRxiv), `10.48550` (arXiv), `10.31219` (OSF/medRxiv), `10.20944` (Preprints.org), `10.64898` (ChemRxiv)
    - otherwise → peer-reviewed (journal article)
-7. For each new work, queries `https://api.crossref.org/works/<DOI>` to fetch the author list (ORCID itself does not return authors). Each author is rendered as **bold name**; the user's own name (matched on family name + first given-name token) is wrapped in `<u>...</u>`. CrossRef failure is non-fatal — that entry falls back to the `[authors — TODO]` placeholder for manual filling later. The HTTP request includes a `User-Agent` with a contact email per CrossRef's "polite pool" convention so requests get a faster queue without auth.
-8. Sorts new works by their ORCID publication date in descending order, formats each entry as a numbered list item (using the `1.` marker — CommonMark auto-numbers them, mirroring the conference-presentations sections), and inserts them at the top of the matching section in both `ja.md` and `en.md`. If a section header doesn't exist (typical for `en.md`, which is mostly empty), it creates the header.
+7. For each new work, queries `https://api.crossref.org/works/<DOI>` to fetch the author list (ORCID itself does not return authors). Each author is rendered as **bold name**; the user's own name (matched on family name + first given-name token) is wrapped in `<u>...</u>`. CrossRef failure is non-fatal — that entry falls back to the `[authors — TODO]` placeholder for manual filling later. The request identifies itself with a plain `orcid-cv-sync/1.0` User-Agent — no contact address, so it uses CrossRef's public pool rather than the "polite pool" (slightly slower queue, no auth, no signup).
+8. Sorts new works by their ORCID publication date in descending order, formats each entry as a numbered list item (using the `1.` marker — CommonMark auto-numbers them, mirroring the conference-presentations sections), and inserts them directly after the matching `<!-- cv:section … -->` marker in both `ja.md` and `en.md` (blank lines right after the marker are skipped so a tight list stays tight). **A missing marker is a hard error** — the script never invents a heading or guesses a location.
 
 ## Output format
 
@@ -65,15 +65,31 @@ Notes on this format:
 - If `journal-title` is missing in ORCID, that part is omitted; the same goes for `year`.
 - The `POSSIBLE DUPLICATE` warning, when emitted, is appended to the **end** of the line as an HTML comment. Trailing inline comments are safe — only leading ones break the parser.
 
-## Section headers
+## Where the config lives
 
-The script looks for these existing headers:
-- **ja.md peer-reviewed**: `## [論文(査読付き)](...)` (the link target is ignored, only the leading `## 論文(査読付き)` text is matched)
-- **ja.md preprint**: `## [プレプリント(査読無し)](...)` (the legacy `論文(プレプリント, 査読無し)` form is also accepted)
-- **en.md peer-reviewed**: `## Publications (peer-reviewed)` (created on first run if missing)
-- **en.md preprint**: `## Publications (preprints)` (created on first run if missing)
+Everything the sync needs is stated by the CV files themselves — heading text carries no meaning, so sections can be renamed or translated freely without touching this skill.
 
-If the user later renames a section, the regex needs updating — but that's rare; manual override is fine for one-off edits.
+Frontmatter (both locales; validated by the `cv` schema in `src/content.config.ts`):
+
+```yaml
+---
+orcid: 0009-0001-3991-8367
+---
+```
+
+Body markers, wrapping each publication list:
+
+```markdown
+## 論文(査読付き)
+<!-- cv:section peer-reviewed -->
+1. ...
+<!-- /cv:section -->
+```
+
+- `kind` vocabulary is locale-independent and identical in `ja.md` / `en.md`: `peer-reviewed`, `preprints`, `presentations`. The script writes only into the first two; `presentations` exists for the CV page.
+- `src/plugins/remark-cv-sections.mjs` consumes the markers at build time and stamps `data-cv-section="<kind>"` on each wrapped list, which is how `CVPage.astro` decides where the BibTeX button goes and which clipboard font to use. Marker names are therefore a contract shared by the skill and the site — don't rename one side alone.
+- **Markers must sit outside the list.** A comment line between two list items splits the `<ol>`, restarting CommonMark's auto-numbering so every entry renders as "1.".
+- Unbalanced markers (`cv:section` without `/cv:section`) abort the run before anything is fetched.
 
 ## Authors note
 
@@ -99,6 +115,8 @@ Pass `--no-crossref` to opt out of CrossRef explicitly — useful for offline ru
 - **Existing CV entry has no DOI**: e.g. the user originally wrote a paper into `ja.md` by hand without including the DOI link, and ORCID has now picked it up. DOI-based comparison can't catch this, but the **title-substring check** will, and the new entry will be marked `<!-- POSSIBLE DUPLICATE -->` in the diff. The user should review and either delete the new line (real duplicate) or backfill a `DOI:` link into the existing manual entry so the next sync recognizes it.
 - **Same paper as preprint and journal article** (different DOIs, same title): both will be added. The journal version gets a `<!-- POSSIBLE DUPLICATE -->` marker because its title matches the preprint entry already in the CV. The user removes the marker (it's intentionally a separate entry) and optionally deletes the preprint line.
 - **DOI in ja.md uses non-standard formatting** (e.g. `DOI:10.xxx` without a URL): the regex still matches the DOI substring, so it counts as known.
+- **Section renamed / translated**: no effect. Placement follows the `cv:section` markers, so `## 論文(査読付き)` can become `## Peer-reviewed papers` freely.
+- **Marker missing for a section that has new entries**: the script aborts with the exact marker it wanted (`<!-- cv:section preprints -->`) and writes nothing. Add the marker pair around the list and re-run.
 - **ORCID returns no works**: script exits cleanly with "no new publications — CV is up to date."
 - **Network failure**: script raises and exits non-zero; user can re-run later.
 

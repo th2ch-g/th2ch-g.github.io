@@ -77,27 +77,20 @@ const hasToc = tocHeadingCount >= 2;
   const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 
-  // h2 sections whose <li>s are presentation-style entries that should be
-  // copied with MS Mincho instead of Times New Roman. Matched against
-  // <h2> textContent only; h3 sub-headings (口頭発表 / ポスター発表) are
-  // walked past until the section's h2 is found.
-  const PRESENTATION_H2 = /学会発表|シンポジウム発表|招待講演|口頭発表|ポスター発表/;
+  // Which entries are publications (peer-reviewed papers and preprints) and
+  // which are presentations is declared in the CV markdown itself, via
+  // `<!-- cv:section <kind> -->` markers that src/plugins/remark-cv-sections.mjs
+  // turns into `data-cv-section` on each list at build time. Heading text is
+  // therefore free-form — renaming or translating a heading can't silently
+  // drop the BibTeX button or flip the clipboard font, which is exactly what
+  // the previous heading-regex approach did.
+  const sectionKind = (list: Element | null | undefined): string =>
+    list?.getAttribute('data-cv-section') ?? '';
 
-  // h2 sections whose <li>s are publication entries (peer-reviewed papers
-  // and preprints). Only these get a "BibTeX" copy button — presentations,
-  // education, awards etc. don't have a canonical BibTeX form.
-  const PUBLICATION_H2 = /論文|プレプリント|Publication/i;
-
-  function findSectionH2(li: Element): Element | null {
-    const list = li.parentElement;
-    if (!list) return null;
-    let cur: Element | null = list.previousElementSibling;
-    while (cur) {
-      if (cur.tagName === 'H2') return cur;
-      cur = cur.previousElementSibling;
-    }
-    return null;
-  }
+  // Only publications have a canonical BibTeX form — presentations,
+  // education, awards etc. don't get the button.
+  const isPublicationKind = (kind: string): boolean =>
+    kind === 'peer-reviewed' || kind === 'preprints';
 
   function fontFamilyFor(lang: 'ja' | 'en', isPresentation: boolean): string {
     if (lang !== 'ja') return `'Times New Roman', serif`;
@@ -204,7 +197,7 @@ const hasToc = tocHeadingCount >= 2;
     }
   }
 
-  // Walk .prose top-level children, partition by <h2> boundaries, and
+  // Walk .prose top-level children, partition on heading boundaries, and
   // wrap each partition with the appropriate font-family. This is the
   // only way to mix MS Mincho (presentation sections) and Times New
   // Roman (everything else) in a single clipboard payload while keeping
@@ -221,18 +214,21 @@ const hasToc = tocHeadingCount >= 2;
     }
 
     const blocks: string[] = [];
-    let currentH2Text = '';
+    let currentKind = '';
     let buffer = '';
     const flush = () => {
       if (!buffer) return;
-      const isPres = PRESENTATION_H2.test(currentH2Text);
+      const isPres = currentKind === 'presentations';
       blocks.push(wrapForClipboard(buffer, fontFamilyFor('ja', isPres)));
       buffer = '';
     };
     Array.from(clone.children).forEach((el) => {
-      if (el.tagName === 'H2') {
+      if (isHeading(el)) {
         flush();
-        currentH2Text = el.textContent ?? '';
+        // The kind lives on the section's list, so look ahead from the
+        // heading rather than reading the heading's own text. Any heading
+        // level starts a new block — the CV is free to use `#` or `###`.
+        currentKind = sectionKind(getSectionList(el));
       }
       buffer += el.outerHTML;
     });
@@ -279,7 +275,7 @@ const hasToc = tocHeadingCount >= 2;
     const lines: string[] = [];
     Array.from(clone.children).forEach((el) => {
       const tag = el.tagName;
-      if (tag === 'H1' || tag === 'H2' || tag === 'H3') {
+      if (isHeading(el)) {
         lines.push('', normWs(el.textContent), '');
       } else if (tag === 'OL' || tag === 'UL') {
         renderListLines(el, 0, lines);
@@ -295,13 +291,25 @@ const hasToc = tocHeadingCount >= 2;
     return writeClipboard(buildFullHtml(prose, lang), buildFullPlainText(prose));
   }
 
-  // Find the first <ol> / <ul> following an <h2> within the same section
-  // (i.e. before the next <h2>). Returns null when the section has no list
-  // — that section then has no entries to bulk-copy.
-  function getSectionList(h2: Element): Element | null {
-    let cur = h2.nextElementSibling;
-    while (cur && cur.tagName !== 'H2') {
-      if (cur.tagName === 'OL' || cur.tagName === 'UL') return cur;
+  const isHeading = (el: Element): boolean => /^H[1-6]$/.test(el.tagName);
+  const headingLevel = (el: Element): number => Number(el.tagName.slice(1));
+
+  // Find the first <ol> / <ul> belonging to a heading: scan forward until a
+  // heading of the SAME OR HIGHER rank ends the section. Levels are compared
+  // relatively, never against a hard-coded <h2>, so the CV may promote or
+  // demote its headings (`## 論文` → `# 論文` → `### 論文`) without losing the
+  // section buttons. Sub-headings (### ポスター発表 under ## 学会発表) don't
+  // terminate the scan, which is why the relative comparison matters.
+  // Returns null when the section has no list — nothing to bulk-copy then.
+  function getSectionList(heading: Element): Element | null {
+    const level = headingLevel(heading);
+    let cur = heading.nextElementSibling;
+    while (cur) {
+      if (isHeading(cur)) {
+        if (headingLevel(cur) <= level) return null;
+      } else if (cur.tagName === 'OL' || cur.tagName === 'UL') {
+        return cur;
+      }
       cur = cur.nextElementSibling;
     }
     return null;
@@ -310,8 +318,8 @@ const hasToc = tocHeadingCount >= 2;
   // Section title with the runtime-appended action chips and the rehype
   // anchor # stripped out, so it's safe to embed as a heading line in
   // copied output without leaking UI affordances.
-  function getSectionTitle(h2: Element): string {
-    const clone = h2.cloneNode(true) as HTMLElement;
+  function getSectionTitle(heading: Element): string {
+    const clone = heading.cloneNode(true) as HTMLElement;
     clone.querySelectorAll('.cv-section-actions, .heading-anchor').forEach((b) => b.remove());
     return normWs(clone.textContent);
   }
@@ -322,7 +330,7 @@ const hasToc = tocHeadingCount >= 2;
   // any text outside `@type{...}` entries, so the `#` line is harmless.
   // Skips entries whose DOI isn't in the snapshot. Returns null if nothing
   // was collected.
-  function collectSectionBibtex(h2: Element, list: Element, entries: Record<string, BibtexEntry>): string | null {
+  function collectSectionBibtex(heading: Element, list: Element, entries: Record<string, BibtexEntry>): string | null {
     const out: string[] = [];
     list.querySelectorAll<HTMLElement>(':scope > li').forEach((li) => {
       const doi = extractDoi(li);
@@ -330,41 +338,41 @@ const hasToc = tocHeadingCount >= 2;
       if (bib) out.push(bib);
     });
     if (out.length === 0) return null;
-    const title = getSectionTitle(h2);
+    const title = getSectionTitle(heading);
     return `# ${title}\n\n${out.join('\n\n')}`;
   }
 
-  // Heading cloned from the actual <h2> rather than recreated, so any
+  // Heading cloned from the actual element rather than recreated, so any
   // inline formatting (sub/sup, em, etc.) survives into the Word paste.
   // The .cv-section-actions chip group and the heading-anchor `#` are
   // stripped so they don't leak into the copied document.
-  function cloneH2ForClipboard(h2: Element): HTMLElement {
-    const clone = h2.cloneNode(true) as HTMLElement;
+  function cloneHeadingForClipboard(heading: Element): HTMLElement {
+    const clone = heading.cloneNode(true) as HTMLElement;
     clone.querySelectorAll('.cv-section-actions, .heading-anchor').forEach((b) => b.remove());
     unwrapAnchors(clone);
     return clone;
   }
 
-  function buildSectionHtml(h2: Element, list: Element, fontFamily: string): string {
-    const h2Clone = cloneH2ForClipboard(h2);
+  function buildSectionHtml(heading: Element, list: Element, fontFamily: string): string {
+    const headingClone = cloneHeadingForClipboard(heading);
     const listClone = list.cloneNode(true) as HTMLElement;
     listClone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge').forEach((b) => b.remove());
     unwrapAnchors(listClone);
-    stripUnsafeForClipboard(h2Clone);
+    stripUnsafeForClipboard(headingClone);
     stripUnsafeForClipboard(listClone);
-    return wrapForClipboard(h2Clone.outerHTML + listClone.outerHTML, fontFamily);
+    return wrapForClipboard(headingClone.outerHTML + listClone.outerHTML, fontFamily);
   }
 
-  function buildSectionPlainText(h2: Element, list: Element): string {
+  function buildSectionPlainText(heading: Element, list: Element): string {
     const clone = list.cloneNode(true) as HTMLElement;
     clone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge, .heading-anchor').forEach((b) => b.remove());
-    const lines: string[] = [getSectionTitle(h2), ''];
+    const lines: string[] = [getSectionTitle(heading), ''];
     renderListLines(clone, 0, lines);
     return lines.join('\n');
   }
 
-  async function copySection(h2: Element, list: Element, fontFamily: string): Promise<boolean> {
-    return writeClipboard(buildSectionHtml(h2, list, fontFamily), buildSectionPlainText(h2, list));
+  async function copySection(heading: Element, list: Element, fontFamily: string): Promise<boolean> {
+    return writeClipboard(buildSectionHtml(heading, list, fontFamily), buildSectionPlainText(heading, list));
   }
 
   onReady(() => {
@@ -480,10 +488,10 @@ const hasToc = tocHeadingCount >= 2;
     );
 
     items.forEach((li) => {
-      const sectionH2 = findSectionH2(li);
-      const sectionText = sectionH2?.textContent ?? '';
-      const isPres = lang === 'ja' && PRESENTATION_H2.test(sectionText);
-      const isPub = PUBLICATION_H2.test(sectionText);
+      // These are top-level <li>s, so the parent is the marked list itself.
+      const kind = sectionKind(li.parentElement);
+      const isPres = lang === 'ja' && kind === 'presentations';
+      const isPub = isPublicationKind(kind);
       const ff = fontFamilyFor(lang, isPres);
 
       const actions = document.createElement('div');
@@ -529,16 +537,26 @@ const hasToc = tocHeadingCount >= 2;
       li.appendChild(actions);
     });
 
-    // Section-level bulk-copy buttons on every <h2> whose section contains
-    // a list. The Copy-list button is universal (works off the DOM only);
-    // the BibTeX button is gated on (a) publication section heading + (b)
-    // at least one entry in the snapshot.
-    prose.querySelectorAll<HTMLHeadingElement>('h2').forEach((h2) => {
-      const text = h2.textContent ?? '';
-      const list = getSectionList(h2);
-      if (!list) return;
-      const isPub = PUBLICATION_H2.test(text);
-      const isPres = lang === 'ja' && PRESENTATION_H2.test(text);
+    // Section-level bulk-copy buttons on every heading that owns a list. The
+    // Copy-list button is universal (works off the DOM only); the BibTeX
+    // button is gated on (a) a publication-marked list + (b) at least one
+    // entry in the snapshot.
+    //
+    // Any heading level qualifies, so the CV can use `#`/`##`/`###` however
+    // it likes. Headings are visited in document order and each list is
+    // claimed once, so when a section heading and a sub-heading both resolve
+    // to the same list the outer one keeps the button — no duplicate chips.
+    const claimedLists = new Set<Element>();
+    const headings = prose.querySelectorAll<HTMLHeadingElement>(
+      'h1, h2, h3, h4, h5, h6',
+    );
+    headings.forEach((heading) => {
+      const list = getSectionList(heading);
+      if (!list || claimedLists.has(list)) return;
+      claimedLists.add(list);
+      const kind = sectionKind(list);
+      const isPub = isPublicationKind(kind);
+      const isPres = lang === 'ja' && kind === 'presentations';
       const ff = fontFamilyFor(lang, isPres);
 
       const actions = document.createElement('span');
@@ -548,14 +566,14 @@ const hasToc = tocHeadingCount >= 2;
       // list and the section's BibTeX bundle. `collectSectionBibtex` is null
       // when no entry in the section is in the snapshot (then there's only
       // one action, even for a publication heading).
-      const bulkBibtex = isPub ? collectSectionBibtex(h2, list, bibtexEntries) : null;
+      const bulkBibtex = isPub ? collectSectionBibtex(heading, list, bibtexEntries) : null;
 
       if (bulkBibtex) {
         // Two actions → one disclosure menu so the heading carries a single
         // chip instead of two side-by-side buttons.
         actions.appendChild(
           buildCopyMenu(sectionMenuAria, 'cv-section-btn', [
-            { label: sectionCopyLabel, run: () => copySection(h2, list, ff) },
+            { label: sectionCopyLabel, run: () => copySection(heading, list, ff) },
             { label: sectionBibtexLabel, run: () => copyBibtex(bulkBibtex) },
           ]),
         );
@@ -571,7 +589,7 @@ const hasToc = tocHeadingCount >= 2;
         copyBtn.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const ok = await copySection(h2, list, ff);
+          const ok = await copySection(heading, list, ff);
           copyBtn.innerHTML = ok ? CHECK_ICON : COPY_ICON;
           copyBtn.classList.toggle('is-copied', ok);
           copyBtn.classList.toggle('is-failed', !ok);
@@ -583,8 +601,8 @@ const hasToc = tocHeadingCount >= 2;
         actions.appendChild(copyBtn);
       }
 
-      h2.classList.add('cv-section-h2');
-      h2.appendChild(actions);
+      heading.classList.add('cv-section-heading');
+      heading.appendChild(actions);
     });
 
     // Native <details> stays open until its own summary is clicked again —
@@ -829,16 +847,20 @@ const hasToc = tocHeadingCount >= 2;
      strategy as `li.cv-copyable` above. One trigger/button is narrow, so a
      single reservation suffices; zeroed in print further down so the PDF
      headings don't carry phantom right padding. */
-  .cv-prose :global(h2.cv-section-h2) {
+  .cv-prose :global(.cv-section-heading) {
     padding-right: 4rem;
+    /* prose.css only sets `position: relative` on h2/h3/h4 (for the
+       heading-anchor #). The class lands on whatever heading level the CV
+       uses, so anchor it here too — an h1 section heading would otherwise
+       let the actions escape to the nearest positioned ancestor. */
+    position: relative;
   }
 
-  /* Section-level bulk-copy buttons appended inside every <h2> that has a
-     following list. `.prose :is(h2,h3,h4)` is already `position: relative`
-     (see prose.css for the heading-anchor #), so the actions group can be
-     absolutely anchored to the heading's right edge without flexing the
-     heading itself — keeping the heading's normal block flow intact and
-     avoiding empty-row reflow on narrow viewports.
+  /* Section-level bulk-copy buttons appended inside every heading that owns a
+     following list. The heading is `position: relative` (see above), so the
+     actions group can be absolutely anchored to its right edge without
+     flexing the heading itself — keeping the heading's normal block flow
+     intact and avoiding empty-row reflow on narrow viewports.
 
      Buttons stay invisible until the heading is hovered/focused, matching
      the per-item button affordance. `is-copied` / `is-failed` keep the
@@ -871,8 +893,8 @@ const hasToc = tocHeadingCount >= 2;
     opacity: 0;
     transition: opacity 160ms ease, border-color 160ms ease, color 160ms ease;
   }
-  .cv-prose :global(h2.cv-section-h2:hover .cv-section-btn),
-  .cv-prose :global(h2.cv-section-h2:focus-within .cv-section-btn),
+  .cv-prose :global(.cv-section-heading:hover .cv-section-btn),
+  .cv-prose :global(.cv-section-heading:focus-within .cv-section-btn),
   .cv-prose :global(.cv-section-btn:focus-visible),
   .cv-prose :global(.cv-section-btn.is-copied),
   .cv-prose :global(.cv-section-btn.is-failed),
@@ -1006,7 +1028,7 @@ const hasToc = tocHeadingCount >= 2;
     .cv-prose :global(.cv-section-btn) { opacity: 0.55; }
   }
   @media print {
-    .cv-prose :global(h2.cv-section-h2) { padding-right: 0; }
+    .cv-prose :global(.cv-section-heading) { padding-right: 0; }
     .cv-prose :global(.cv-section-actions) { display: none; }
   }
 

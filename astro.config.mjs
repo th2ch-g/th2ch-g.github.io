@@ -16,6 +16,7 @@ import { remarkGithubPermalink } from './src/plugins/remark-github-permalink.mjs
 import { remarkLinkCard } from './src/plugins/remark-link-card.mjs';
 import { remarkFigureCaption } from './src/plugins/remark-figure-caption.mjs';
 import { remarkProfileVars } from './src/plugins/remark-profile-vars.mjs';
+import { remarkCvSections } from './src/plugins/remark-cv-sections.mjs';
 
 // Resolve the deployment URL from src/content/profile.yaml so a fork only
 // has to edit profile.yaml — never this file. We keep this inline (rather
@@ -80,6 +81,9 @@ export default defineConfig({
         remarkFigureCaption,
         remarkMermaidBlock,
         remarkCallouts,
+        // Consumes the CV's `<!-- cv:section ... -->` markers and stamps
+        // `data-cv-section` onto the lists they wrap. No-op everywhere else.
+        remarkCvSections,
         remarkMath,
       ],
       rehypePlugins: [

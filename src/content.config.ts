@@ -51,11 +51,21 @@ const singleEmoji = z.emoji().refine(
   { message: 'emoji must contain exactly one grapheme cluster' },
 );
 
-// Body-only collection: per-locale CV prose lives in cv/<lang>.md.
-// All structured metadata moved to profile.yaml at the content root.
+// Per-locale CV prose lives in cv/<lang>.md. Site-wide identity lives in
+// profile.yaml; the only frontmatter here is the publication-sync config
+// read by the `orcid-cv-sync` skill, so the CV stays self-contained: the
+// iD it syncs from and the sections it may write into (the latter declared
+// in the body as `<!-- cv:section … -->` markers) are both stated by the
+// CV file itself, never by heading text or an external file.
 const cv = defineCollection({
   loader: glob({ pattern: '*.md', base: './src/content/cv' }),
-  schema: z.object({}),
+  schema: z.object({
+    // ORCID iD (`0000-0000-0000-0000`, final character may be X). Declared
+    // per locale and expected to match across them — the sync script
+    // refuses to run on a mismatch. Validating the shape here turns a typo
+    // into a build error instead of a 404 from pub.orcid.org.
+    orcid: nullable(z.string().regex(/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/)),
+  }),
 });
 
 // Legal documents (privacy policy, terms of service, ...). One entry per

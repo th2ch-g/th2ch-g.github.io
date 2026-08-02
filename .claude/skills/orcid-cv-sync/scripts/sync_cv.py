@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 """Sync new publications from the ORCID Public API into the bilingual CV.
 
-Reads ORCID iD from ``src/content/profile.yaml`` (the link with a URL
-under ``orcid.org``), fetches works from ``pub.orcid.org`` (no authentication
-required), and inserts any DOIs not already present in ``ja.md`` / ``en.md``
-at the top of the matching section in reverse chronological order.
+Everything this script needs lives in the CV markdown itself — it never
+reads ``profile.yaml``. ``src/content/cv/{ja,en}.md`` declare their ORCID
+iD as an ``orcid:`` frontmatter key and mark each publication list with
+``<!-- cv:section peer-reviewed -->`` … ``<!-- /cv:section -->``.
+Heading text is therefore free-form: renaming or translating a section
+heading cannot break this script (the previous version matched headings
+by regex and did break).
+
+Works are fetched from ``pub.orcid.org`` (no authentication required);
+any DOI not already present in ``ja.md`` / ``en.md`` is inserted directly
+after the matching section's start marker, in reverse chronological order.
 
 For each new work, also queries the CrossRef API by DOI to fetch the author
 list (ORCID itself does not return authors). Each author is rendered as a
@@ -47,8 +54,35 @@ PREPRINT_PREFIXES = {
 }
 
 DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+", re.IGNORECASE)
-ORCID_RE = re.compile(r"https?://orcid\.org/(\d{4}-\d{4}-\d{4}-\d{3}[\dX])")
 NORMALIZE_RE = re.compile(r"[^a-z0-9]")
+
+# CV frontmatter. Scalars only (`key: value`), which is all the CV declares,
+# so a real YAML parser isn't worth a third-party dependency here. The
+# schema in src/content.config.ts validates the same fields at build time.
+FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
+FM_ORCID_RE = re.compile(
+    r"^orcid:\s*(\d{4}-\d{4}-\d{4}-\d{3}[\dX])\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+# CrossRef asks callers to identify themselves; a contact address would move
+# requests onto its faster "polite pool", but that is a convention rather
+# than a requirement and the CV deliberately carries no email, so send a
+# plain tool identifier. See https://api.crossref.org/swagger-ui/index.html
+CROSSREF_UA = "orcid-cv-sync/1.0"
+
+# Section markers. `kind` is locale-independent so ja.md and en.md use the
+# exact same strings — see src/plugins/remark-cv-sections.mjs, which turns
+# these into `data-cv-section` attributes for the CV page at build time.
+# The marker must own its whole line, exactly as the remark plugin requires:
+# accepting a looser form here would let the script insert into a "section"
+# the plugin refuses to recognise, silently dropping the BibTeX buttons.
+SECTION_START_TMPL = r"^[ \t]*<!--\s*cv:section\s+{kind}\s*-->[ \t]*$"
+ANY_SECTION_START_RE = re.compile(
+    SECTION_START_TMPL.format(kind=r"[a-z][a-z0-9-]*"),
+    re.MULTILINE,
+)
+SECTION_END_RE = re.compile(r"^[ \t]*<!--\s*/cv:section\s*-->[ \t]*$", re.MULTILINE)
 
 
 def normalize(s: str) -> str:
@@ -75,10 +109,10 @@ def title_already_present(title: str | None, *texts: str) -> bool:
 
 
 def find_repo_root() -> Path:
-    """Walk up from cwd until we find ``src/content/profile.yaml``."""
+    """Walk up from cwd until we find ``src/content/cv/ja.md``."""
     p = Path.cwd().resolve()
     while True:
-        if (p / "src" / "content" / "profile.yaml").exists():
+        if (p / "src" / "content" / "cv" / "ja.md").exists():
             return p
         if p == p.parent:
             raise SystemExit(
@@ -87,15 +121,33 @@ def find_repo_root() -> Path:
         p = p.parent
 
 
-def read_orcid_id(profile_yaml: Path) -> str:
-    text = profile_yaml.read_text(encoding="utf-8")
-    m = ORCID_RE.search(text)
-    if not m:
+def frontmatter(text: str) -> str:
+    """Return the raw frontmatter block, or '' when the file has none."""
+    m = FRONTMATTER_RE.match(text)
+    return m.group(1) if m else ""
+
+
+def read_orcid_id(ja_text: str, en_text: str) -> str:
+    """Read the `orcid:` frontmatter key from the CV markdown.
+
+    Both locales declare it so either file stands on its own; a mismatch is
+    a hard error rather than a silent pick, since syncing the wrong record
+    into one locale is worse than refusing to run.
+    """
+    ja = FM_ORCID_RE.search(frontmatter(ja_text))
+    en = FM_ORCID_RE.search(frontmatter(en_text))
+    if ja and en and ja.group(1).upper() != en.group(1).upper():
         raise SystemExit(
-            "ORCID iD not found in profile.yaml — expected an "
-            "https://orcid.org/<iD> URL among the links.",
+            f"ORCID iD mismatch: ja.md declares {ja.group(1)} but en.md "
+            f"declares {en.group(1)}. Fix one of them before syncing.",
         )
-    return m.group(1)
+    found = ja or en
+    if not found:
+        raise SystemExit(
+            "ORCID iD not found — add `orcid: 0000-0000-0000-0000` to the "
+            "frontmatter of src/content/cv/ja.md (or pass --orcid).",
+        )
+    return found.group(1)
 
 
 def fetch_orcid_works(orcid_id: str) -> dict:
@@ -135,46 +187,7 @@ def fetch_orcid_self_name(orcid_id: str) -> tuple[str, str] | None:
     return None
 
 
-# Patterns for pulling siteHandle / repo / site out of profile.yaml without
-# a real YAML parser (the script declares zero third-party deps above).
-SITEHANDLE_RE = re.compile(r"^siteHandle:\s*(\S+)\s*$", re.MULTILINE)
-REPO_RE = re.compile(r"^repo:\s*(\S+)\s*$", re.MULTILINE)
-SITE_RE = re.compile(r"^site:\s*(\S+)\s*$", re.MULTILINE)
-
-
-def build_crossref_ua(profile_yaml: Path) -> str:
-    """Construct a CrossRef "polite pool" User-Agent from profile.yaml.
-
-    Including a contact in the User-Agent gets requests onto a faster,
-    less-throttled queue. Pure cooperative convention — no auth or signup
-    needed. See https://api.crossref.org/swagger-ui/index.html
-    """
-    text = profile_yaml.read_text(encoding="utf-8")
-    handle_m = SITEHANDLE_RE.search(text)
-    repo_m = REPO_RE.search(text)
-    site_m = SITE_RE.search(text)
-    if not (handle_m and repo_m and site_m):
-        raise SystemExit(
-            "Could not extract siteHandle / repo / site from profile.yaml "
-            "(needed to build the CrossRef polite-pool User-Agent).",
-        )
-    handle = handle_m.group(1).strip()
-    repo_slug = repo_m.group(1).strip()
-    host = (
-        site_m.group(1)
-        .strip()
-        .removeprefix("https://")
-        .removeprefix("http://")
-        .rstrip("/")
-    )
-    return (
-        f"{handle}-portfolio-orcid-cv-sync/1.0 "
-        f"(+https://github.com/{repo_slug}; "
-        f"mailto:noreply@{host})"
-    )
-
-
-def fetch_crossref_authors(doi: str, crossref_ua: str) -> list[dict] | None:
+def fetch_crossref_authors(doi: str) -> list[dict] | None:
     """Return ``[{given, family}, ...]`` from CrossRef, or ``None`` on failure.
 
     A failure here is non-fatal — the caller falls back to the
@@ -182,7 +195,7 @@ def fetch_crossref_authors(doi: str, crossref_ua: str) -> list[dict] | None:
     hand later.
     """
     url = f"https://api.crossref.org/works/{urllib.request.quote(doi, safe='/')}"
-    req = urllib.request.Request(url, headers={"User-Agent": crossref_ua})
+    req = urllib.request.Request(url, headers={"User-Agent": CROSSREF_UA})
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             data = json.load(resp)
@@ -349,44 +362,68 @@ def extract_works(orcid_data: dict) -> list[dict]:
     return out
 
 
-def section_span(content: str, header_pattern: str) -> tuple[int, int] | None:
-    """Locate a section by header. Returns (header_idx, next_section_or_eof)
-    in line indices, or None if the header isn't present."""
+def validate_markers(label: str, content: str) -> None:
+    """Fail loudly on unbalanced ``cv:section`` markers.
+
+    A missing ``<!-- /cv:section -->`` doesn't raise anywhere else — the
+    remark plugin would just keep stamping the following lists with the
+    previous section's kind — so catch it here, where a human is watching.
+    """
+    starts = len(ANY_SECTION_START_RE.findall(content))
+    ends = len(SECTION_END_RE.findall(content))
+    if starts != ends:
+        raise SystemExit(
+            f"{label}: unbalanced section markers "
+            f"({starts} `cv:section`, {ends} `/cv:section`).",
+        )
+
+
+def section_insert_index(content: str, kind: str) -> int | None:
+    """Line index where a new entry belongs for section ``kind``.
+
+    That's the first non-blank line after the ``<!-- cv:section <kind> -->``
+    marker — i.e. the top of the list, or the closing marker when the
+    section is still empty. Blank lines are skipped so a locale that puts
+    one after the marker (en.md does, ja.md doesn't) keeps its list tight;
+    a blank line between items would turn the whole list loose and change
+    its spacing.
+
+    Returns ``None`` when the section marker is absent.
+    """
+    start_re = re.compile(SECTION_START_TMPL.format(kind=re.escape(kind)))
     lines = content.splitlines(keepends=True)
-    pattern = re.compile(header_pattern)
-    start = None
     for i, line in enumerate(lines):
-        if pattern.match(line.rstrip("\n")):
-            start = i
-            break
-    if start is None:
-        return None
-    for j in range(start + 1, len(lines)):
-        if lines[j].startswith("## "):
-            return (start, j)
-    return (start, len(lines))
+        if start_re.search(line):
+            j = i + 1
+            while j < len(lines) and not lines[j].strip():
+                j += 1
+            return j
+    return None
 
 
 def insert_into_section(
+    label: str,
     content: str,
-    header_pattern: str,
-    fallback_header: str,
+    kind: str,
     entries: list[str],
 ) -> str:
-    """Prepend `entries` to the section matching `header_pattern`. If absent,
-    append a new section using `fallback_header` at the end of the file."""
+    """Insert `entries` at the top of the ``kind`` section.
+
+    Unlike earlier versions, a missing marker is a hard error rather than a
+    cue to invent a heading — guessing where a publication belongs would
+    violate the additive-only contract.
+    """
     if not entries:
         return content
-    block = "\n".join(entries) + "\n"
-    span = section_span(content, header_pattern)
-    if span is None:
-        sep = "" if content.endswith("\n") else "\n"
-        return f"{content}{sep}\n{fallback_header}\n\n{block}"
-    start, end = span
+    insert_at = section_insert_index(content, kind)
+    if insert_at is None:
+        raise SystemExit(
+            f"{label}: `<!-- cv:section {kind} -->` marker not found, so "
+            f"there is nowhere to add {len(entries)} entry/entries. Add the "
+            f"marker (and its `<!-- /cv:section -->`) around that list.",
+        )
     lines = content.splitlines(keepends=True)
-    insert_at = start + 1
-    while insert_at < end and not lines[insert_at].strip():
-        insert_at += 1
+    block = "\n".join(entries) + "\n"
     return "".join(lines[:insert_at]) + block + "".join(lines[insert_at:])
 
 
@@ -414,7 +451,7 @@ def main() -> int:
     )
     ap.add_argument(
         "--orcid",
-        help="Override ORCID iD (otherwise read from profile.yaml)",
+        help="Override ORCID iD (otherwise read from the CV's `orcid:` frontmatter)",
     )
     ap.add_argument(
         "--no-crossref",
@@ -424,12 +461,15 @@ def main() -> int:
     args = ap.parse_args()
 
     repo = find_repo_root()
-    profile_yaml = repo / "src/content/profile.yaml"
     ja_md = repo / "src/content/cv/ja.md"
     en_md = repo / "src/content/cv/en.md"
 
-    orcid_id = args.orcid or read_orcid_id(profile_yaml)
-    crossref_ua = build_crossref_ua(profile_yaml)
+    ja_text = ja_md.read_text(encoding="utf-8")
+    en_text = en_md.read_text(encoding="utf-8") if en_md.exists() else ""
+    validate_markers("ja.md", ja_text)
+    validate_markers("en.md", en_text)
+
+    orcid_id = args.orcid or read_orcid_id(ja_text, en_text)
     print(f"[orcid-cv-sync] ORCID iD: {orcid_id}", file=sys.stderr)
 
     data = fetch_orcid_works(orcid_id)
@@ -438,9 +478,6 @@ def main() -> int:
         f"[orcid-cv-sync] ORCID returned {len(works)} unique DOI-bearing works",
         file=sys.stderr,
     )
-
-    ja_text = ja_md.read_text(encoding="utf-8")
-    en_text = en_md.read_text(encoding="utf-8") if en_md.exists() else ""
 
     # Track ja and en DOI sets independently. The two locales may legitimately
     # diverge (e.g. the user only updates ja.md by hand sometimes), and a
@@ -480,7 +517,7 @@ def main() -> int:
         if args.no_crossref:
             return None
         if doi not in crossref_cache:
-            res = fetch_crossref_authors(doi, crossref_ua)
+            res = fetch_crossref_authors(doi)
             if res is None:
                 crossref_failures += 1
             crossref_cache[doi] = res
@@ -540,40 +577,13 @@ def main() -> int:
         file=sys.stderr,
     )
 
-    # When we have to *create* a section header from scratch (typical for an
-    # empty en.md), mirror the ja.md style by linking the heading to the
-    # ORCID profile URL. This way the rendered ja and en CV pages have the
-    # same visual structure: a clickable section title that takes the
-    # reader to the canonical publication list. The detection regex is
-    # tolerant of the link wrapper (`\[?...\]?`) so the same skill run can
-    # update existing files whether they're written with or without the link.
-    orcid_url = f"https://orcid.org/{orcid_id}"
+    # Placement is decided purely by the `cv:section` markers, so the two
+    # locales share the same kind vocabulary and heading text is irrelevant.
+    new_ja = insert_into_section("ja.md", ja_text, "peer-reviewed", ja_journal)
+    new_ja = insert_into_section("ja.md", new_ja, "preprints", ja_preprint)
 
-    new_ja = insert_into_section(
-        ja_text,
-        r"^## \[?論文\(査読付き\)\]?",
-        f"## [論文(査読付き)]({orcid_url})",
-        ja_journal,
-    )
-    new_ja = insert_into_section(
-        new_ja,
-        r"^## \[?(?:論文\(プレプリント|プレプリント\(査読無し\))",
-        f"## [プレプリント(査読無し)]({orcid_url})",
-        ja_preprint,
-    )
-
-    new_en = insert_into_section(
-        en_text,
-        r"^## \[?Publications \(peer-reviewed\)\]?",
-        f"## [Publications (peer-reviewed)]({orcid_url})",
-        en_journal,
-    )
-    new_en = insert_into_section(
-        new_en,
-        r"^## \[?Publications \(preprints\)\]?",
-        f"## [Publications (preprints)]({orcid_url})",
-        en_preprint,
-    )
+    new_en = insert_into_section("en.md", en_text, "peer-reviewed", en_journal)
+    new_en = insert_into_section("en.md", new_en, "preprints", en_preprint)
 
     changed_ja = show_diff("src/content/cv/ja.md", ja_text, new_ja)
     changed_en = show_diff("src/content/cv/en.md", en_text, new_en)

@@ -1,4 +1,9 @@
 ---
+# Publication-sync config for the orcid-cv-sync skill: the record it pulls
+# from. Which lists it may write into is declared by the
+# `<!-- cv:section … -->` markers in the body, never by heading text, so
+# headings can be renamed or translated freely.
+orcid: 0009-0001-3991-8367
 ---
 
 ## 学歴
@@ -12,19 +17,24 @@
 ## 職歴
 - [株式会社digzyme](https://www.digzyme.com/), 2023/10/1-2025/5/31, 学生インターン
 
-## [論文(査読付き)](https://orcid.org/0009-0001-3991-8367)
+## 査読付き論文
+<!-- cv:section peer-reviewed -->
 1. **Aiko Watanabe**, **Kai Kanematsu**, **Yohei Hizukuri**, **<u>Tatsuki Hori</u>**, **Shizuka Ogiwara**, **Tomohiko Okuno**, **Mirei Saito**, **Tomoya Ito**, **Chihiro Shibuya**, **Yoshinori Akiyama**, **Shinji Toyota**, **Yoshitaka Moriwaki**, **Koji Yamano**, **Fumika Koyano**, **Takashi Kajitani**, **Ryuichiro Ishitani**, **Masahiro Yamashina**, **Hidetaka Kosako**, **Noriyuki Matsuda**, [YhbO is a DJ-1 family glyoxalase and α-oxoaldehyde hydratase that confers resistance to reactive carbonyl stress](https://doi.org/10.1016/j.jbc.2026.113300), *Journal of Biological Chemistry*, DOI:10.1016/j.jbc.2026.113300, (2026).
 1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.1021/acs.jctc.6c00199), *Journal of Chemical Theory and Computation*, DOI:10.1021/acs.jctc.6c00199, (2026).
 1. **Shinji Ikizawa\***, **<u>Tatsuki Hori\*</u>**, **Tegar Nurwahyu Wijaya\***, **Hiroshi Kono**, **Zhen Bai**, **Tatsuhiro Kimizono**, **Wenbo Lu**, **Duy Phuoc Tran**, **Akio Kitao**, [PaCS-Toolkit: Optimized Software Utilities for Parallel Cascade Selection Molecular Dynamics (PaCS-MD) Simulations and Subsequent Analyses](https://doi.org/10.1021/acs.jpcb.4c01271), *The Journal of Physical Chemistry B*, DOI:10.1021/acs.jpcb.4c01271, (2024).
    - \*共同筆頭著者
 1. **Hiroyuki Tanaka**, **<u>Tatsuki Hori</u>**, **Shohei Yamamoto**, **Atsushi Toyoda**, **Kentaro Yano**, **Kyoko Yamane**, **Takehiko Itoh**, [Haplotype-resolved chromosomal-level assembly of wasabi (Eutrema japonicum) genome](https://doi.org/10.1038/s41597-023-02356-z), *Scientific Data*, DOI:10.1038/s41597-023-02356-z, (2023).
+<!-- /cv:section -->
 
-## [プレプリント(査読無し)](https://orcid.org/0009-0001-3991-8367)
+## プレプリント
+<!-- cv:section preprints -->
 1. **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Tomohiro Doura**, **Shigeki Kiyonaka**, [Off-target-free chemogenetic platform that decodes physiological roles of target GPCRs](https://doi.org/10.64898/2026.05.24.727545), *bioRxiv*, DOI:10.64898/2026.05.24.727545, (2026).
 
 1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.64898/2026.01.30.702714), *bioRxiv*, DOI:10.64898/2026.01.30.702714, (2026) (掲載誌: *Journal of Chemical Theory and Computation*, DOI:10.1021/acs.jctc.6c00199).
+<!-- /cv:section -->
 
 ## 学会発表（査読無し）
+<!-- cv:section presentations -->
 
 ### ポスター発表
 
@@ -44,7 +54,7 @@
 1. ◯ **田中裕之**, **<u>堀立樹</u>**, **山本祥平**, **豊田敦**, **矢野健太郎**, **山根京子**, **伊藤武彦**.
    「[ワサビゲノム解読の現状](https://jsbreeding.jp/meeting/143/pdf/143program.pdf)」
    [日本育種学会第143回講演会](https://jsbreeding.jp/meeting/143/), 静岡大学, 2023年3月17–18日.
-
+<!-- /cv:section -->
 
 ## その他（査読無し）
 
