@@ -15,24 +15,21 @@ interface Props {
 const { lang, availableLocales } = Astro.props;
 
 const meta = await getProfileMeta(lang);
-// Brand text in the navbar: prefer the human display name (e.g. "th"),
-// not the site handle. The site handle still surfaces in the footer
-// copyright line and RSS feed titles.
-const brand = meta.name;
 
 // Navigation labels are intentionally English in both locales (per user preference).
 // Per-section page H1s still use the localized `t(lang, 'nav.xxx')` keys.
-// `match: 'exact'` for Home (otherwise its `/` prefix would match every path);
-// other entries use prefix matching so that detail routes like /posts/foo
-// keep the parent section highlighted. `external: true` items live off-site
-// (none currently); these open in a new tab and never receive an active state
-// since their href is on a different origin.
+// Entries use prefix matching so that detail routes like /posts/foo keep the
+// parent section highlighted. `match: 'exact'` stays available for any future
+// entry whose href would otherwise prefix-match unrelated paths (notably `/`,
+// which is why Home is not listed here — the brand link covers it).
+// `external: true` items live off-site (none currently); these open in a new
+// tab and never receive an active state since their href is on a different
+// origin.
 type NavItem =
   | { href: string; label: string; match: 'exact' | 'prefix'; external?: false }
   | { href: string; label: string; external: true };
 
 const items: NavItem[] = [
-  { href: getRelativeLocaleUrl(lang, '/'), label: 'Home', match: 'exact' },
   { href: getRelativeLocaleUrl(lang, '/posts'), label: 'Posts', match: 'prefix' },
   { href: getRelativeLocaleUrl(lang, '/gallery'), label: 'Gallery', match: 'prefix' },
   { href: getRelativeLocaleUrl(lang, '/cv'), label: 'CV', match: 'prefix' },
@@ -46,10 +43,21 @@ function isActive(href: string, match: 'exact' | 'prefix'): boolean {
   const target = withSlash(href);
   return match === 'exact' ? current === target : current === target || current.startsWith(target);
 }
+
+// The brand is the only Home affordance in the header (there is no "Home" nav
+// item), so it carries the accessible name and the `aria-current` marker that
+// the nav list would otherwise provide for `/`.
+const homeHref = getRelativeLocaleUrl(lang, '/');
+const atHome = current === withSlash(homeHref);
 ---
 <header class="site-header">
   <div class="inner">
-    <a class="brand" href={getRelativeLocaleUrl(lang, '/')}>
+    {/* Icon-only brand. The image is decorative (`alt=""` + `aria-hidden`), so
+        the link would have no accessible name on its own — `aria-label` supplies
+        it and keeps axe's `link-name` (wcag2a) satisfied. Unlike the visible nav
+        labels, which stay English in both locales, a screen-reader-only name is
+        localized. */}
+    <a class="brand" href={homeHref} aria-label={t(lang, 'nav.home')} aria-current={atHome ? 'page' : undefined}>
       {meta.icon && (
         <img
           class="brand-icon"
@@ -62,7 +70,6 @@ function isActive(href: string, match: 'exact' | 'prefix'): boolean {
           aria-hidden="true"
         />
       )}
-      <span>{brand}</span>
     </a>
     <nav id="primary-nav" data-nav data-open="false" aria-label="Primary">
       <ul class="bare nav-list">
@@ -141,8 +148,6 @@ function isActive(href: string, match: 'exact' | 'prefix'): boolean {
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-weight: 700;
     color: var(--color-fg);
   }
   .brand-icon {
@@ -254,6 +259,10 @@ function isActive(href: string, match: 'exact' | 'prefix'): boolean {
       gap: 0.5rem;
       padding-inline: 0.75rem;
     }
+    /* With `nav` pulled out of the flex flow (absolute, below), the brand is
+       the only flexible child left — `flex: 1` makes it absorb the free space
+       so the search / theme / language / hamburger controls stay pinned to the
+       right edge. */
     .brand {
       flex: 1;
       min-width: 0;
