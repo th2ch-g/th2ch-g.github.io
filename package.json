@@ -31,7 +31,7 @@
     "@astrojs/sitemap": "^3.7.3",
     "@types/markdown-it": "^14.1.2",
     "@types/sanitize-html": "^2.16.1",
-    "astro": "^7.1.5",
+    "astro": "^7.1.6",
     "katex": "^0.18.1",
     "markdown-it": "^14.3.0",
     "mermaid": "^11.16.0",
@@ -42,7 +42,7 @@
     "rehype-slug": "6.0.0",
     "remark-math": "^6.0.0",
     "sanitize-html": "^2.17.6",
-    "shiki": "^4.3.1",
+    "shiki": "^4.4.1",
     "simple-icons": "^16.27.1",
     "undici": "^7.29.0",
     "unist-util-visit": "^5.1.0"
@@ -54,7 +54,7 @@
     "astro-og-canvas": "^0.13.0",
     "jimp": "^1.6.1",
     "pagefind": "^1.5.2",
-    "playwright": "^1.62.0",
+    "playwright": "^1.62.1",
     "qrcode": "^1.5.4",
     "typescript": "^6.0.3"
   },
