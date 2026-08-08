@@ -1,9 +1,12 @@
 ---
-# Publication-sync config for the orcid-cv-sync skill: the record it pulls
-# from. Which lists it may write into is declared by the
+# CV metadata: ORCID identifies the sync record; the profile URLs render in
+# the CV header. Which lists the sync may write into is declared by the
 # `<!-- cv:section … -->` markers in the body, never by heading text, so
 # headings can be renamed or translated freely.
 orcid: 0009-0001-3991-8367
+github: https://github.com/th2ch-g
+kaggle: https://www.kaggle.com/lst1923
+huggingface: https://huggingface.co/wasarou
 ---
 
 ## 学歴
@@ -16,6 +19,11 @@ orcid: 0009-0001-3991-8367
 
 ## 職歴
 - [株式会社digzyme](https://www.digzyme.com/), 2023/10/1-2025/5/31, 学生インターン
+
+## 助成
+<!-- cv:section funding -->
+- [JST Science Tokyo BOOST](https://www.tmd.ac.jp/campuslife/boost/), JST, 課題番号: JPMJBS2430, 2025/4–2028/3. <!-- orcid-funding:grant-number:jpmjbs2430 -->
+<!-- /cv:section -->
 
 ## 査読付き論文
 <!-- cv:section peer-reviewed -->

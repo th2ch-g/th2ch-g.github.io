@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Sync new publications from the ORCID Public API into the bilingual CV.
+"""Sync new publications and funding from ORCID into the bilingual CV.
 
 Everything this script needs lives in the CV markdown itself — it never
 reads ``profile.yaml``. ``src/content/cv/{ja,en}.md`` declare their ORCID
-iD as an ``orcid:`` frontmatter key and mark each publication list with
-``<!-- cv:section peer-reviewed -->`` … ``<!-- /cv:section -->``.
+iD as an ``orcid:`` frontmatter key and mark managed lists with
+``<!-- cv:section <kind> -->`` … ``<!-- /cv:section -->``.
 Heading text is therefore free-form: renaming or translating a section
 heading cannot break this script (the previous version matched headings
 by regex and did break).
@@ -12,6 +12,9 @@ by regex and did break).
 Works are fetched from ``pub.orcid.org`` (no authentication required);
 any DOI not already present in ``ja.md`` / ``en.md`` is inserted directly
 after the matching section's start marker, in reverse chronological order.
+Funding summaries are fetched from the same API and inserted into the
+``funding`` section when their normalized external ID is not already present.
+The ORCID put-code is the fallback identity when a record has no external ID.
 
 For each new work, also queries the CrossRef API by DOI to fetch the author
 list (ORCID itself does not return authors). Each author is rendered as a
@@ -20,12 +23,12 @@ endpoint) is wrapped in ``<u>...</u>`` to match the existing CV style.
 CrossRef lookup failures fall back to a ``[authors — TODO]`` placeholder
 so a network blip never breaks the script.
 
-Additive for new works, with exactly one deletion rule: a preprint entry is
-removed once its peer-reviewed version is listed in the CV's ``peer-reviewed``
-section. Nothing else is ever modified or removed. Because the prune runs on
-the post-insertion content, it also covers the case where ORCID hands us the
-preprint and the journal article in the same batch — the preprint is inserted
-and immediately pruned, so it never reaches the diff.
+Additive for new works and funding, with exactly one deletion rule: a preprint
+entry is removed once its peer-reviewed version is listed in the CV's
+``peer-reviewed`` section. Nothing else is ever modified or removed. Because
+the prune runs on the post-insertion content, it also covers the case where
+ORCID hands us the preprint and the journal article in the same batch — the
+preprint is inserted and immediately pruned, so it never reaches the diff.
 
 The script emits a unified diff in dry-run mode (default); pass ``--apply``
 to write.
@@ -64,6 +67,27 @@ PREPRINT_PREFIXES = {
 
 DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+", re.IGNORECASE)
 NORMALIZE_RE = re.compile(r"[^a-z0-9]")
+FUNDING_MARKER_RE = re.compile(
+    r"<!--\s*orcid-funding:([a-z0-9][a-z0-9._:-]*)\s*-->",
+    re.IGNORECASE,
+)
+FUNDING_KEY_TOKEN_RE = re.compile(r"[^a-z0-9]+")
+
+MONTH_NAMES = (
+    "",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
 
 # Shortest normalized title we'll trust for fuzzy matching. Below this the
 # false-positive risk dominates — a title like "Introduction" would match
@@ -178,14 +202,23 @@ def read_orcid_id(ja_text: str, en_text: str) -> str:
     return found.group(1)
 
 
-def fetch_orcid_works(orcid_id: str) -> dict:
-    url = f"https://pub.orcid.org/v3.0/{orcid_id}/works"
+def fetch_orcid_section(orcid_id: str, section: str) -> dict:
+    """Fetch one public ORCID record section as JSON."""
+    url = f"https://pub.orcid.org/v3.0/{orcid_id}/{section}"
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.load(resp)
     except urllib.error.URLError as e:
-        raise SystemExit(f"ORCID API request failed: {e}") from e
+        raise SystemExit(f"ORCID API request failed for /{section}: {e}") from e
+
+
+def fetch_orcid_works(orcid_id: str) -> dict:
+    return fetch_orcid_section(orcid_id, "works")
+
+
+def fetch_orcid_fundings(orcid_id: str) -> dict:
+    return fetch_orcid_section(orcid_id, "fundings")
 
 
 def fetch_orcid_self_name(orcid_id: str) -> tuple[str, str] | None:
@@ -429,6 +462,167 @@ def extract_works(orcid_data: dict) -> list[dict]:
     return out
 
 
+def normalize_external_id_type(value: str) -> str:
+    """Normalize ORCID external-ID type spelling for comparisons."""
+    return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
+
+
+def funding_marker_key(
+    external_id_type: str | None,
+    external_id_value: str | None,
+    put_code: int | str | None,
+) -> str:
+    """Build a stable, HTML-comment-safe identity for one funding record."""
+    if external_id_type and external_id_value:
+        kind = FUNDING_KEY_TOKEN_RE.sub("-", external_id_type.lower()).strip("-")
+        value = FUNDING_KEY_TOKEN_RE.sub("-", external_id_value.lower()).strip("-")
+        if kind and value:
+            return f"{kind}:{value}"
+    return f"put-code:{put_code}"
+
+
+def extract_fundings(orcid_data: dict) -> list[dict]:
+    """Flatten ORCID funding groups into one record per stable identity."""
+    out: list[dict] = []
+    seen: set[str] = set()
+    for group in orcid_data.get("group", []):
+        summaries = group.get("funding-summary", [])
+        if not summaries:
+            continue
+        summary = summaries[0]
+        title_obj = summary.get("title") or {}
+        primary_title = ((title_obj.get("title") or {}).get("value") or "").strip()
+        translated = title_obj.get("translated-title") or {}
+
+        external_ids = (summary.get("external-ids") or {}).get("external-id", [])
+        if not external_ids:
+            external_ids = (group.get("external-ids") or {}).get("external-id", [])
+        cleaned_ids: list[tuple[str, str]] = []
+        for external_id in external_ids:
+            kind = normalize_external_id_type(
+                str(external_id.get("external-id-type") or ""),
+            )
+            value = str(external_id.get("external-id-value") or "").strip()
+            if kind and value:
+                cleaned_ids.append((kind, value))
+        preferred_id = next(
+            (item for item in cleaned_ids if item[0] == "grant_number"),
+            cleaned_ids[0] if cleaned_ids else None,
+        )
+        put_code = summary.get("put-code")
+        key = funding_marker_key(
+            preferred_id[0] if preferred_id else None,
+            preferred_id[1] if preferred_id else None,
+            put_code,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+
+        organization = summary.get("organization") or {}
+        url = ((summary.get("url") or {}).get("value") or "").strip()
+        if not re.match(r"^https?://", url, re.IGNORECASE):
+            url = ""
+        out.append(
+            {
+                "key": key,
+                "title": primary_title,
+                "translated_title": (translated.get("value") or "").strip(),
+                "translated_language": (
+                    translated.get("language-code") or ""
+                ).strip().lower(),
+                "organization": (organization.get("name") or "").strip(),
+                "url": url,
+                "start_date": summary.get("start-date") or {},
+                "end_date": summary.get("end-date") or {},
+                "external_id_type": preferred_id[0] if preferred_id else "",
+                "external_id_value": preferred_id[1] if preferred_id else "",
+            },
+        )
+
+    def sort_key(funding: dict) -> tuple[int, int, int]:
+        date = funding["start_date"]
+
+        def part(name: str) -> int:
+            raw = (date.get(name) or {}).get("value")
+            try:
+                return int(raw or 0)
+            except (TypeError, ValueError):
+                return 0
+
+        return (part("year"), part("month"), part("day"))
+
+    out.sort(key=sort_key, reverse=True)
+    return out
+
+
+def funding_title(funding: dict, lang: str) -> str:
+    """Pick a locale-matching translated title when ORCID provides one."""
+    translated_language = funding.get("translated_language", "")
+    if translated_language == lang or translated_language.startswith(f"{lang}-"):
+        translated = funding.get("translated_title", "")
+        if translated:
+            return translated
+    primary = funding.get("title", "")
+    if primary:
+        return primary
+    return "（名称未登録）" if lang == "ja" else "(untitled funding)"
+
+
+def format_orcid_date(date: dict, lang: str) -> str:
+    """Format an ORCID partial date without inventing missing precision."""
+    year = str((date.get("year") or {}).get("value") or "").strip()
+    month_raw = str((date.get("month") or {}).get("value") or "").strip()
+    day_raw = str((date.get("day") or {}).get("value") or "").strip()
+    if not year:
+        return ""
+    try:
+        month = int(month_raw) if month_raw else 0
+    except ValueError:
+        month = 0
+    try:
+        day = int(day_raw) if day_raw else 0
+    except ValueError:
+        day = 0
+    if not 1 <= month <= 12:
+        return year
+    if lang == "ja":
+        return f"{year}/{month}/{day}" if day > 0 else f"{year}/{month}"
+    month_name = MONTH_NAMES[month]
+    return f"{month_name} {day}, {year}" if day > 0 else f"{month_name} {year}"
+
+
+def format_funding_entry(
+    funding: dict,
+    lang: str,
+    possible_duplicate: bool = False,
+) -> str:
+    """Render one funding summary as an unordered Markdown list item."""
+    title = funding_title(funding, lang)
+    url = funding.get("url", "")
+    parts = [f"[{title}]({url})" if url else title]
+    if funding.get("organization"):
+        parts.append(funding["organization"])
+    external_id = funding.get("external_id_value", "")
+    if external_id:
+        if funding.get("external_id_type") == "grant_number":
+            label = "課題番号" if lang == "ja" else "Grant No."
+            separator = ": " if lang == "ja" else " "
+            parts.append(f"{label}{separator}{external_id}")
+        else:
+            parts.append(external_id)
+    start = format_orcid_date(funding.get("start_date", {}), lang)
+    end = format_orcid_date(funding.get("end_date", {}), lang)
+    if start and end:
+        parts.append(f"{start}–{end}")
+    elif start or end:
+        parts.append(start or end)
+    body = f"- {', '.join(parts)}."
+    if possible_duplicate:
+        body += " <!-- POSSIBLE DUPLICATE: funding title matches this CV -->"
+    return f"{body} <!-- orcid-funding:{funding['key']} -->"
+
+
 def validate_markers(label: str, content: str) -> None:
     """Fail loudly on unbalanced ``cv:section`` markers.
 
@@ -474,6 +668,42 @@ def section_body(content: str, kind: str) -> str:
         return ""
     lines = content.splitlines(keepends=True)
     return "".join(lines[span[0]:span[1]])
+
+
+def existing_funding_keys(content: str) -> set[str]:
+    """Read script-owned funding identities from the funding section."""
+    body = section_body(content, "funding")
+    return {match.group(1).lower() for match in FUNDING_MARKER_RE.finditer(body)}
+
+
+def build_funding_entries_for(
+    fundings: list[dict],
+    content: str,
+    lang: str,
+) -> tuple[list[str], int]:
+    """Build missing funding lines for one locale without rewriting entries."""
+    body = section_body(content, "funding")
+    body_lower = body.lower()
+    known = existing_funding_keys(content)
+    entries: list[str] = []
+    duplicate_warnings = 0
+    for funding in fundings:
+        key = funding["key"].lower()
+        external_id = funding.get("external_id_value", "").strip().lower()
+        if key in known or (external_id and external_id in body_lower):
+            continue
+        title = funding_title(funding, lang)
+        possible_duplicate = title_already_present(title, body)
+        if possible_duplicate:
+            duplicate_warnings += 1
+        entries.append(
+            format_funding_entry(
+                funding,
+                lang,
+                possible_duplicate=possible_duplicate,
+            ),
+        )
+    return entries, duplicate_warnings
 
 
 class Entry(NamedTuple):
@@ -656,7 +886,7 @@ def show_diff(label: str, old: str, new: str) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="Sync new ORCID publications into the CV",
+        description="Sync new ORCID publications and funding into the CV",
     )
     ap.add_argument(
         "--apply",
@@ -695,6 +925,12 @@ def main() -> int:
     works = extract_works(data)
     print(
         f"[orcid-cv-sync] ORCID returned {len(works)} unique DOI-bearing works",
+        file=sys.stderr,
+    )
+    funding_data = fetch_orcid_fundings(orcid_id)
+    fundings = extract_fundings(funding_data)
+    print(
+        f"[orcid-cv-sync] ORCID returned {len(fundings)} unique funding records",
         file=sys.stderr,
     )
 
@@ -768,7 +1004,11 @@ def main() -> int:
 
     ja_journal, ja_preprint, ja_dups = build_entries_for(ja_known)
     en_journal, en_preprint, en_dups = build_entries_for(en_known)
-    duplicate_warning_count = ja_dups + en_dups
+    ja_funding, ja_funding_dups = build_funding_entries_for(fundings, ja_text, "ja")
+    en_funding, en_funding_dups = build_funding_entries_for(fundings, en_text, "en")
+    duplicate_warning_count = (
+        ja_dups + en_dups + ja_funding_dups + en_funding_dups
+    )
 
     if duplicate_warning_count:
         print(
@@ -785,13 +1025,20 @@ def main() -> int:
         f"en={en_added} ({len(en_journal)} peer-reviewed, {len(en_preprint)} preprints)",
         file=sys.stderr,
     )
+    print(
+        f"[orcid-cv-sync] funding to add: ja={len(ja_funding)}, "
+        f"en={len(en_funding)}",
+        file=sys.stderr,
+    )
 
     # Placement is decided purely by the `cv:section` markers, so the two
     # locales share the same kind vocabulary and heading text is irrelevant.
-    new_ja = insert_into_section("ja.md", ja_text, "peer-reviewed", ja_journal)
+    new_ja = insert_into_section("ja.md", ja_text, "funding", ja_funding)
+    new_ja = insert_into_section("ja.md", new_ja, "peer-reviewed", ja_journal)
     new_ja = insert_into_section("ja.md", new_ja, "preprints", ja_preprint)
 
-    new_en = insert_into_section("en.md", en_text, "peer-reviewed", en_journal)
+    new_en = insert_into_section("en.md", en_text, "funding", en_funding)
+    new_en = insert_into_section("en.md", new_en, "peer-reviewed", en_journal)
     new_en = insert_into_section("en.md", new_en, "preprints", en_preprint)
 
     # Prune AFTER inserting, and per file. Running last means one mechanism

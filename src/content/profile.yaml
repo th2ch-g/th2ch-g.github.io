@@ -24,16 +24,6 @@ icon:
   comment:
     ja: わさびゲノムのCircos plotです😃
     en: Circos plot of the wasabi genome 😃
-links:
-  - label: GitHub
-    url: https://github.com/th2ch-g
-  - label: ORCID
-    url: https://orcid.org/0009-0001-3991-8367
-  - label: Kaggle
-    url: https://www.kaggle.com/lst1923
-  - label: Huggingface
-    url: https://huggingface.co/wasarou
-
 # Contact form URL (e.g. a Google Form). Embedded as an <iframe> on the
 # /contact page (with a "open in a new tab" fallback link) and drives the
 # "Contact" nav item. Leave blank to show a placeholder message instead —

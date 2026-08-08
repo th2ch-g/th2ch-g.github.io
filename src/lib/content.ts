@@ -107,8 +107,6 @@ export async function getLegalByLang(lang: Lang) {
 //     back to the other so callers always have *something* to render.
 //   - All other strings: undefined when blank/missing, so callers can
 //     `meta.foo && ...` without juggling '', null, undefined.
-//   - `links`: entries missing a label or url are dropped, so renderers
-//     never produce empty `<a href="">` elements.
 export async function getProfileMeta(lang: Lang): Promise<ProfileMeta> {
   const all = await getCollection('profileMeta');
   const meta = all[0];
@@ -145,16 +143,6 @@ function buildProfileMeta(data: ProfileData, lang: Lang) {
     icon: blank(data.icon?.url),
     iconComment: blank(data.icon?.comment?.[lang]),
     bio: blank(data.bio?.[lang]),
-    links: (data.links ?? [])
-      .map((l) => ({
-        label: blank(l.label),
-        url: blank(l.url),
-      }))
-      // Drop entries that lack the basics — an `<a href>` with no label
-      // is invisible and an icon with no url is broken.
-      .filter((l): l is { label: string; url: string } =>
-        Boolean(l.label && l.url),
-      ),
     integrations: buildIntegrations(data),
   };
 }

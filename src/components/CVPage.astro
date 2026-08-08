@@ -20,6 +20,16 @@ const tocHeadingCount = headings.filter(
   (heading) => heading.depth >= tocMinDepth && heading.depth <= tocMinDepth + 2,
 ).length;
 const hasToc = tocHeadingCount >= 2;
+const cvLinks = [
+  cv.data.orcid
+    ? { label: 'ORCID', url: `https://orcid.org/${cv.data.orcid}` }
+    : undefined,
+  cv.data.github ? { label: 'GitHub', url: cv.data.github } : undefined,
+  cv.data.kaggle ? { label: 'Kaggle', url: cv.data.kaggle } : undefined,
+  cv.data.huggingface
+    ? { label: 'Hugging Face', url: cv.data.huggingface }
+    : undefined,
+].filter((link): link is { label: string; url: string } => Boolean(link));
 ---
 <Base lang={lang} title={tEn('nav.cv')} image={lang === 'en' ? '/en/og/cv.png' : '/og/cv.png'}>
   <div class:list={['cv-layout', { 'has-toc': hasToc }]}>
@@ -45,6 +55,19 @@ const hasToc = tocHeadingCount >= 2;
           data-menu-aria={t(lang, 'cv.actions.menu.aria')}
         ></div>
       </div>
+      {cvLinks.length > 0 && (
+        <nav aria-label={lang === 'ja' ? 'プロフィールリンク' : 'Profile links'}>
+          <ul class="cv-profile-links">
+            {cvLinks.map((link) => (
+              <li>
+                <a href={link.url} target="_blank" rel="noopener noreferrer">
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
       <div
         class="prose cv-prose"
         data-cv-lang={lang}
@@ -669,6 +692,29 @@ const hasToc = tocHeadingCount >= 2;
     align-items: center;
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+  .cv-profile-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.5rem 0 1.5rem;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9rem;
+  }
+  .cv-profile-links a {
+    color: var(--color-fg);
+    text-underline-offset: 0.15em;
+  }
+  .cv-profile-links a:hover,
+  .cv-profile-links a:focus-visible {
+    color: var(--color-accent);
+  }
+  .cv-profile-links li:not(:last-child)::after {
+    content: '|';
+    margin-left: 0.4rem;
+    color: var(--color-border);
   }
   /* Page-level toolbar menu (copy all / open PDF / copy .bib). Built
      client-side and appended into `.cv-header-actions`, which is OUTSIDE

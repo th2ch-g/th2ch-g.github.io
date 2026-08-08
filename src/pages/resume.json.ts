@@ -15,14 +15,6 @@ export async function GET(_context: APIContext) {
       label: meta.bio,
       image: meta.icon,
       email: meta.email,
-      profiles: meta.links.map((l) => ({
-        network: l.label,
-        url: l.url,
-        // JSON Resume's `username` is best-effort; we extract the trailing
-        // path segment which works for github.com/user, orcid.org/0000-...,
-        // huggingface.co/user, etc. Empty when the URL has no useful tail.
-        username: new URL(l.url).pathname.replace(/^\/+|\/+$/g, '').split('/').pop() || undefined,
-      })),
     },
   };
   return new Response(JSON.stringify(resume, null, 2), {

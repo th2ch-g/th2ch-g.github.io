@@ -28,7 +28,7 @@ const SECTION_END = /^<!--\s*\/cv:section\s*-->$/;
 // Kinds CVPage.astro knows how to act on. Anything else is almost
 // certainly a typo, and a silent typo means the BibTeX button quietly
 // disappears — warn at build time instead.
-const KNOWN_KINDS = new Set(['peer-reviewed', 'preprints', 'presentations']);
+const KNOWN_KINDS = new Set(['funding', 'peer-reviewed', 'preprints', 'presentations']);
 
 export function remarkCvSections() {
   return (tree) => {

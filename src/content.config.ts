@@ -51,12 +51,10 @@ const singleEmoji = z.emoji().refine(
   { message: 'emoji must contain exactly one grapheme cluster' },
 );
 
-// Per-locale CV prose lives in cv/<lang>.md. Site-wide identity lives in
-// profile.yaml; the only frontmatter here is the publication-sync config
-// read by the `orcid-cv-sync` skill, so the CV stays self-contained: the
-// iD it syncs from and the sections it may write into (the latter declared
-// in the body as `<!-- cv:section … -->` markers) are both stated by the
-// CV file itself, never by heading text or an external file.
+// Per-locale CV prose lives in cv/<lang>.md. The frontmatter keeps the ORCID
+// sync identity and CV-only profile links beside the document they describe.
+// Sync destinations remain declared in the body as `<!-- cv:section … -->`
+// markers, never by heading text or an external file.
 const cv = defineCollection({
   loader: glob({ pattern: '*.md', base: './src/content/cv' }),
   schema: z.object({
@@ -65,6 +63,9 @@ const cv = defineCollection({
     // refuses to run on a mismatch. Validating the shape here turns a typo
     // into a build error instead of a 404 from pub.orcid.org.
     orcid: nullable(z.string().regex(/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/)),
+    github: nullable(httpUrl),
+    kaggle: nullable(httpUrl),
+    huggingface: nullable(httpUrl),
   }),
 });
 
@@ -137,14 +138,6 @@ const profileMeta = defineCollection({
         ja: z.string().nullish(),
         en: z.string().nullish(),
       })
-      .nullish(),
-    links: z
-      .array(
-        z.object({
-          label: z.string().nullish(),
-          url: z.preprocess(blankToUndefined, httpUrl.nullish()),
-        }),
-      )
       .nullish(),
     // Third-party integration config. Each block is independently optional;
     // any blank value (`key:`, `key: ""`, `key: null`) disables the matching

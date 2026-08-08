@@ -36,17 +36,6 @@ const recentPosts = sortByDateDesc(
       <h1>{meta.name}</h1>
     </div>
     {meta.bio && <p class="bio">{meta.bio}</p>}
-    {meta.links.length > 0 && (
-      <ul class="bare links">
-        {meta.links.map((link) => (
-          <li class="link-item">
-            <a href={link.url} target="_blank" rel="noopener noreferrer">
-              {link.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    )}
   </section>
 
   {recentPosts.length > 0 && (
@@ -67,10 +56,9 @@ const recentPosts = sortByDateDesc(
 
 <style>
   /* Centred profile card. Stacking the hero as a flex column lets each
-     row (avatar+name, bio, links) auto-shrink to its
-     content width and centre as a unit, instead of left-aligning to
-     main's padding edge. `text-align: center` propagates so multi-line
-     paragraphs (e.g. a long bio that wraps) stay centred too. */
+     row auto-shrink to its content width and centre as a unit, instead of
+     left-aligning to main's padding edge. `text-align: center` propagates
+     so multi-line paragraphs stay centred too. */
   .hero {
     display: flex;
     flex-direction: column;
@@ -171,36 +159,6 @@ const recentPosts = sortByDateDesc(
     .avatar-tip { max-width: calc(100vw - 2rem); }
   }
   .bio { font-size: 1.1rem; color: var(--color-muted); margin: 0.25rem 0 0.5rem; }
-  /* SNS links as a centred, wrapping row of plain-text links separated by
-     literal "|" dividers (no trailing bar). Replaces the former icon pills. */
-  .links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin: 0.75rem 0;
-    font-size: 0.95rem;
-  }
-  .links a {
-    color: var(--color-fg);
-    transition: color 160ms ease;
-  }
-  .links a:hover {
-    color: var(--color-accent);
-    text-decoration: underline;
-  }
-  .links a:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-  /* Pipe divider after every item but the last. The left 0.5rem margin pairs
-     with the flex gap on the right so the bar is evenly spaced on both sides. */
-  .link-item:not(:last-child)::after {
-    content: '|';
-    margin-left: 0.5rem;
-    color: var(--color-border);
-  }
   /* "See all" pill link at the bottom of each section. Pill-shaped to
      echo the social-icon row in the hero; sliding arrow on hover gives
      the affordance that this leads somewhere without yelling about it. */

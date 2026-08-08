@@ -157,7 +157,6 @@ const personLd = {
   name: meta.name,
   url: Astro.site?.toString(),
   ...(meta.icon ? { image: meta.icon } : {}),
-  ...(meta.links.length > 0 ? { sameAs: meta.links.map((l) => l.url) } : {}),
 };
 const websiteLd = {
   '@type': 'WebSite',
