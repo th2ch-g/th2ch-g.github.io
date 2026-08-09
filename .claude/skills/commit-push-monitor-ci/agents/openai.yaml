@@ -1,4 +1,4 @@
 interface:
   display_name: "Commit, Push, and Monitor CI"
-  short_description: "Commit changes, push, and watch CI to completion"
-  default_prompt: "Use $commit-push-monitor-ci to commit completed changes with a co-author, push them, and monitor CI."
+  short_description: "Commit changes, push to main, and drive CI to green"
+  default_prompt: "Use $commit-push-monitor-ci to commit completed changes with a co-author, push to main, and monitor CI until it passes, fixing in-scope failures and re-monitoring."

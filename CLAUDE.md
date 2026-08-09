@@ -105,7 +105,7 @@ Reading-time: English uses the `reading-time` package; Japanese uses a char-coun
 `.claude/skills/` ships three skills used in this repo:
 - `orcid-cv-sync` — pull new publications and funding from ORCID into `src/content/cv/{ja,en}.md`. Never rewrites an existing entry; its one deletion rule drops a preprint once its peer-reviewed version is listed in the same file (CrossRef `is-preprint-of`, falling back to title match). Trigger when refreshing publications or funding.
 - `translate-ja-md-to-en` — produce the `en/<slug>.md` mirror for any `src/content/<collection>/ja/<slug>.md`. Slug, frontmatter keys, code blocks, DOIs, and BibTeX are preserved verbatim.
-- `commit-push-monitor-ci` — validate completed changes, create a co-authored commit, push the current branch, and monitor every CI workflow for the pushed SHA to completion.
+- `commit-push-monitor-ci` — validate completed changes, create a co-authored commit (trailer matches the agent actually running), push to `main`, and monitor every CI workflow for the pushed SHA until it is green. On failure it diagnoses, fixes in-scope, re-pushes, and re-monitors — bounded at 3 attempts, and it stops immediately if the same failure recurs, because every push to `main` is a production deploy.
 
 All three are auto-discoverable; prefer them over hand-rolled equivalents.
 
