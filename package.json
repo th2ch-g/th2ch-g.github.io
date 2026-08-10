@@ -31,7 +31,7 @@
     "@astrojs/sitemap": "^3.7.3",
     "@types/markdown-it": "^14.1.2",
     "@types/sanitize-html": "^2.16.1",
-    "astro": "^7.1.6",
+    "astro": "^7.2.0",
     "katex": "^0.18.1",
     "markdown-it": "^15.0.0",
     "mermaid": "^11.16.1",
@@ -42,9 +42,9 @@
     "rehype-slug": "6.0.0",
     "remark-math": "^6.0.0",
     "sanitize-html": "^2.17.6",
-    "shiki": "^4.4.1",
-    "simple-icons": "^16.27.1",
-    "undici": "^8.9.0",
+    "shiki": "^4.4.2",
+    "simple-icons": "^16.28.0",
+    "undici": "^8.10.0",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
