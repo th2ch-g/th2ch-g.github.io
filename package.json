@@ -15,7 +15,7 @@
     "prestart": "npm run build-assets",
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build && node scripts/inject-sitemap-xsl.mjs && pagefind --site dist && node scripts/build-cv-pdf.mjs",
+    "build": "astro build && node scripts/inject-sitemap-xsl.mjs && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",

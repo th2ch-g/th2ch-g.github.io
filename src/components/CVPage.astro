@@ -37,20 +37,13 @@ const cvLinks = [
     <div class="cv-content">
       <div class="cv-header">
         <h1>{t(lang, 'nav.cv')}</h1>
-        {/* Page-level toolbar. The three actions (copy all / open PDF / copy
-            .bib) are collapsed into one disclosure menu built client-side by
-            the script below — same affordance as the per-section copy menus.
-            This is just the mount point; labels + the PDF href ride along as
-            data-* so the script needn't re-derive the locale.
-            The PDF is generated post-build by `scripts/build-cv-pdf.mjs` and
-            opens in a new tab; the whole toolbar is hidden in the print
-            stylesheet so the menu doesn't recurse into the PDF. */}
+        {/* Page-level toolbar. Copy-all and .bib actions are collapsed into
+            one disclosure menu built client-side by the script below — the
+            same affordance as the per-section copy menus. */}
         <div
           class="cv-header-actions"
           data-cv-actions
-          data-pdf-href={lang === 'en' ? '/en/cv.pdf' : '/cv.pdf'}
           data-label-all={t(lang, 'cv.copy.all')}
-          data-label-pdf={t(lang, 'cv.open.pdf')}
           data-label-bib={t(lang, 'cv.copy.bib')}
           data-menu-aria={t(lang, 'cv.actions.menu.aria')}
         ></div>
@@ -439,12 +432,11 @@ const cvLinks = [
     // (defaults to the copy glyph); `triggerSizingClass` (.cv-copy-btn /
     // .cv-section-btn / .cv-header-btn) sets the chip size and selects which
     // hover rule reveals it. A `run` item copies and flashes feedback on the
-    // trigger then closes the menu; an `href` item is a real link (the CV PDF)
-    // that navigates in a new tab — no flash, since opening isn't "copied".
+    // trigger then closes the menu.
     const buildCopyMenu = (
       triggerAria: string,
       triggerSizingClass: string,
-      menuItems: { label: string; run?: () => Promise<boolean>; href?: string }[],
+      menuItems: { label: string; run: () => Promise<boolean> }[],
       triggerIcon: string = COPY_ICON,
     ): HTMLDetailsElement => {
       const details = document.createElement('details');
@@ -471,22 +463,6 @@ const cvLinks = [
       };
 
       for (const mi of menuItems) {
-        if (mi.href) {
-          // Link item (the CV PDF). Keep it a real anchor so cmd/middle-click
-          // open-in-new-tab still work; just close the menu and let the
-          // browser navigate — no preventDefault, no copy flash.
-          const item = document.createElement('a');
-          item.className = 'cv-menu-item';
-          item.href = mi.href;
-          item.target = '_blank';
-          item.rel = 'noopener noreferrer';
-          item.textContent = mi.label;
-          item.addEventListener('click', () => {
-            details.open = false;
-          });
-          list.appendChild(item);
-          continue;
-        }
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'cv-menu-item';
@@ -647,18 +623,15 @@ const cvLinks = [
       });
     });
 
-    // Page-level toolbar (copy all / open PDF / copy .bib) collapsed into one
-    // disclosure menu — the same affordance as the per-section copy menus.
-    // The PDF is a real link item; the two copy items reuse copyAll /
-    // copyBibtex. `fullBib` joins every BibTeX entry the same way
+    // Page-level toolbar (copy all / copy .bib) collapsed into one disclosure
+    // menu — the same affordance as the per-section copy menus. `fullBib`
+    // joins every BibTeX entry the same way
     // `src/pages/cv.bib.ts` does (DOI-sorted in the source JSON), so a paste
     // matches a `/cv.bib` download.
     const headerActions = document.querySelector<HTMLElement>('[data-cv-actions]');
     if (headerActions) {
       const allLabel = headerActions.dataset.labelAll ?? 'Copy all';
-      const pdfLabel = headerActions.dataset.labelPdf ?? 'Open PDF';
       const bibLabel = headerActions.dataset.labelBib ?? 'Copy .bib';
-      const pdfHref = headerActions.dataset.pdfHref ?? '';
       const menuAria = headerActions.dataset.menuAria ?? 'CV actions';
       const fullBib = Object.values(bibtexEntries)
         .map((e) => e.bibtex)
@@ -667,7 +640,6 @@ const cvLinks = [
       headerActions.appendChild(
         buildCopyMenu(menuAria, 'cv-header-btn', [
           { label: allLabel, run: () => copyAll(prose, lang) },
-          { label: pdfLabel, href: pdfHref },
           { label: bibLabel, run: () => copyBibtex(fullBib) },
         ]),
       );
@@ -716,7 +688,7 @@ const cvLinks = [
     margin-left: 0.4rem;
     color: var(--color-border);
   }
-  /* Page-level toolbar menu (copy all / open PDF / copy .bib). Built
+  /* Page-level toolbar menu (copy all / copy .bib). Built
      client-side and appended into `.cv-header-actions`, which is OUTSIDE
      `.cv-prose`, so it carries no scoped-style hash — the menu selectors must
      be :global() and live here rather than reusing the `.cv-prose`-scoped
@@ -804,8 +776,6 @@ const cvLinks = [
     color: var(--color-fg);
     font-family: inherit;
     cursor: pointer;
-    /* The PDF item is an <a>; neutralize the global link underline so it
-       reads like its sibling <button> items. */
     text-decoration: none;
   }
   .cv-header-actions :global(.cv-menu-item:hover),
@@ -814,11 +784,7 @@ const cvLinks = [
     color: var(--color-accent);
     text-decoration: none;
   }
-  /* Suppress the whole toolbar in the printed/PDF output so the rendered CV
-     doesn't carry interactive controls into the static document. The menu is
-     built with JS, which Playwright runs when printing the CV PDF, so hiding
-     the always-present container (not the old per-chip class) is what keeps
-     it out of dist/cv.pdf. */
+  /* Suppress the whole toolbar in printed output. */
   @media print { .cv-header-actions { display: none; } }
 
   /* Per-item copy buttons. Markdown rendered by <Content /> doesn't carry
@@ -881,7 +847,7 @@ const cvLinks = [
   @media (hover: none) {
     .cv-prose :global(.cv-copy-btn) { opacity: 0.55; }
   }
-  /* Don't render the buttons in the PDF/print output. */
+  /* Don't render the buttons in printed output. */
   @media print {
     .cv-prose :global(li.cv-copyable),
     .cv-prose :global(li.cv-copyable.cv-has-bibtex) { padding-right: 0; }
@@ -891,7 +857,7 @@ const cvLinks = [
   /* Reserve room at the heading's right edge so the absolutely-positioned
      actions never sit over the (often long) section title — the same
      strategy as `li.cv-copyable` above. One trigger/button is narrow, so a
-     single reservation suffices; zeroed in print further down so the PDF
+     single reservation suffices; zeroed in print further down so printed
      headings don't carry phantom right padding. */
   .cv-prose :global(.cv-section-heading) {
     padding-right: 4rem;
@@ -1080,8 +1046,8 @@ const cvLinks = [
 
   /* CrossRef cited-by badge appended next to DOI links by the script above.
      Kept visually quiet so it sits next to a paper title without competing
-     with the link. Hidden in print because the PDF is the formal CV and the
-     count goes stale between rebuilds. */
+     with the link. Hidden in print because the count goes stale between
+     rebuilds. */
   .cv-prose :global(.citation-badge) {
     display: inline-block;
     margin-left: 0.4rem;

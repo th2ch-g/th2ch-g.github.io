@@ -38,13 +38,6 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # build-cv-pdf.mjs hard-fails under CI=true when Chromium is absent
-          # (a guard so deploys never ship a missing PDF). This link-check job
-          # intentionally skips Playwright — the PDF isn't needed to verify
-          # links, and the deploy workflow already generates & guards it. Force
-          # the soft-skip path to avoid a ~150MB browser download every month.
-          CI: 'false'
 
       - name: Run lychee
         id: lychee
@@ -52,11 +45,11 @@ jobs:
         with:
           # Crawl built output. `--root-dir dist` resolves root-relative links
           # (e.g. /privacy) to dist/ files; the relative path dodges the
-          # Docker-action workspace remap. The generated cv.pdf is skipped in
-          # this job, and GitHub Pages serves the root 404 route from 404.html.
+          # Docker-action workspace remap. GitHub Pages serves the root 404
+          # route from 404.html.
           # External 401/403/429 responses commonly reject CI bots despite
           # being valid in a browser, so treat those statuses as reachable.
-          args: --no-progress --max-concurrency 4 --host-concurrency 2 --host-request-interval 250ms --accept '100..=103,200..=299,401,403,429' --root-dir dist --exclude 'cv\.pdf' --exclude '/404/?$' --exclude '^https://th2ch-g\.github\.io/404/?$' './dist/**/*.html'
+          args: --no-progress --max-concurrency 4 --host-concurrency 2 --host-request-interval 250ms --accept '100..=103,200..=299,401,403,429' --root-dir dist --exclude '/404/?$' --exclude '^https://th2ch-g\.github\.io/404/?$' './dist/**/*.html'
           fail: false
 
       - name: File issue on broken links

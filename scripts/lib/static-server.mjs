@@ -1,7 +1,7 @@
-// Tiny in-process HTTP file server pointing at `dist/`. Used by both
-// `build-cv-pdf.mjs` (Playwright PDF capture) and `check-a11y.mjs` (axe-core
-// audits) so they don't need to shell out to `astro preview`. Listens on a
-// random port so multiple scripts can run in parallel without collision.
+// Tiny in-process HTTP file server pointing at `dist/`. Used by
+// `check-a11y.mjs` so it doesn't need to shell out to `astro preview`.
+// Listens on a random port so multiple scripts can run in parallel without
+// collision.
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { join, extname, relative, isAbsolute, sep } from 'node:path';

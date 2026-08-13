@@ -18,7 +18,7 @@ install: ## Install npm dependencies
 dev: ## Run Astro dev server on :4321 (predev rebuilds assets)
 	npm run dev
 
-build: ## Production build: astro + pagefind + CV PDF (prebuild syncs CrossRef data)
+build: ## Production build: astro + pagefind (prebuild syncs CrossRef data)
 	npm run build
 
 preview: ## Serve the built dist/ locally
