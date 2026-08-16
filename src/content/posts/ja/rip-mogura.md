@@ -13,7 +13,7 @@ draft: false
 emoji: 🪦
 ---
 
-# mogura: ClaudeCode無き時代にしこしこ作ったRust製Visualizer
+# mogura: ClaudeCode無き時代に作ったRust製Visualizer
 
 https://github.com/mogura-rs/mogura
 
@@ -31,13 +31,13 @@ https://x.com/windymelt/status/1977112031775117616
 ポイントは、
 
 1. Rust製
-1. ターミナルとWASMによるブラウザサポート
+1. クロスプラットフォームとWASMによるブラウザサポート
 
 でした。
 
 
 と言っても実装したのはまだ最小限で、カメラワークがしにくかったり、タンパク質のcartoon表示などは未対応のままです😇
-スター数からもその実装のカスさがお分かりいただけると思います。
+スター数からもその実装のカスさがわかると思います。
 
 当初はWebGPUという新しい規格をRustで実装した[wgpu](https://github.com/gfx-rs/wgpu)というcrateを使って書いていましたがOpenGLなどより設定などが玄人向けで苦労したので、[Bevy](https://github.com/bevyengine/bevy)というECSを採用したゲームエンジンに乗り換えました😭。
 結局cameraの実装やPBRなど似た様なことが多いことを考えるとゲームエンジンを採用したのは悪くなかったのかなと勝手に正当化しています。
@@ -214,8 +214,8 @@ mdtraj-rsは外部ツールが必要な機能は意図的に実装していま�
 
 **SaaS is dead**やボトルネックは時間と言われている様に、研究でも相当強いソフトウェアでないと難しいのかなと思いました。
 GROMACSとかCPU/GPUなどたくさんの計算リソースが必要なソフトはデバッグが難しいでしょうしまだ安泰かなと思います。
-ClaudeCodeが出てから呪術廻戦のナナミンのような気持ちです。
-[AI-Scientist](https://www.nature.com/articles/s41586-026-10265-5)もNatureに出版されたし、研究もそのうちClaudeやチャッピーがやるのかなーて感じです😇
+ClaudeCodeが出てから呪術廻戦の七海のような気持ちです。
+[AI-Scientist](https://www.nature.com/articles/s41586-026-10265-5)もNatureに出版されたし、研究もそのうちClaudeやチャッピーがやるのかなーて感じです
 人間に残されるのは手法開発、研究の方向付けとかでしょうか。
 
 ![それ、ClaudeCodeで良くないですか？](https://assets.st-note.com/production/uploads/images/49809432/picture_pc_625db7e3b3f67f3b4e75ed3233b2f84a.png?width=1200)

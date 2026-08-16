@@ -65,4 +65,4 @@ emoji: 🧬
 [24]: https://www.nature.com/articles/s41586-026-10842-8 "Miniaturizing and modifying natural proteins with Raygun | Nature"
 
 
-> チャッピーにまとめさせたので間違っている可能性があります
+> チャッピーにまとめさせました
