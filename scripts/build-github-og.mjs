@@ -13,7 +13,15 @@
 //
 // Wired into npm `build-assets` (predev / prebuild / prestart) alongside
 // build-icon / build-fonts. The output dir is gitignored.
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REPO_URL, ogFilename, ogRemoteUrl } from '../src/plugins/lib/github-og.mjs';
@@ -26,7 +34,9 @@ const CONTENT_DIR = resolve(ROOT, 'src/content');
 // drift too far. CI starts from an empty (gitignored) dir, so deploys
 // always fetch fresh.
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const RETRY_BACKOFF_MS = 60 * 60 * 1000;
 const MAX_BYTES = 5 * 1024 * 1024;
+const FETCH_CONCURRENCY = 4;
 const UA = 'Mozilla/5.0 (compatible; astro-build/1.0)';
 
 // Recursively collect .md files under src/content.
@@ -95,6 +105,19 @@ async function download(url) {
   throw lastErr;
 }
 
+// Bound parallel downloads so cold builds overlap network latency without
+// overwhelming GitHub's image endpoint.
+async function mapLimit(items, limit, fn) {
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor++;
+      await fn(items[index]);
+    }
+  });
+  await Promise.all(workers);
+}
+
 const repos = collectRepos();
 if (repos.size === 0) {
   console.log('[build-github-og] no GitHub repo cards found, skipping');
@@ -104,11 +127,11 @@ if (repos.size === 0) {
 mkdirSync(OUT_DIR, { recursive: true });
 let fetched = 0;
 let skipped = 0;
-for (const [file, { owner, repo }] of repos) {
+await mapLimit([...repos], FETCH_CONCURRENCY, async ([file, { owner, repo }]) => {
   const out = join(OUT_DIR, file);
   if (existsSync(out) && Date.now() - statSync(out).mtimeMs < TTL_MS) {
     skipped++;
-    continue;
+    return;
   }
   try {
     const buf = await download(ogRemoteUrl(owner, repo));
@@ -118,7 +141,14 @@ for (const [file, { owner, repo }] of repos) {
   } catch (err) {
     // Fail-soft: leave the file absent so the card falls back to the
     // upstream opengraph.githubassets.com URL (current behavior).
+    if (existsSync(out)) {
+      // Keep a stale-but-valid local image and avoid retrying a failing
+      // endpoint on every local dev/build command. Its synthetic mtime makes
+      // it eligible for refresh again after the short backoff.
+      const retryMtime = new Date(Date.now() - TTL_MS + RETRY_BACKOFF_MS);
+      utimesSync(out, retryMtime, retryMtime);
+    }
     console.warn(`[build-github-og] skipped ${owner}/${repo}: ${err.message}`);
   }
-}
+});
 console.log(`[build-github-og] done: ${fetched} fetched, ${skipped} fresh-cached, ${repos.size} total`);

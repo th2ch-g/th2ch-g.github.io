@@ -5,12 +5,15 @@ name: a11y check
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# Only the newest revision of a PR needs browser validation.
+concurrency:
+  group: a11y-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   axe:
@@ -45,14 +48,10 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium firefox
 
-      - name: Install axe-core/playwright
-        run: npm install --no-save @axe-core/playwright
-
       - name: Build
         run: npm run build
 
-      - name: Mobile layout regression checks
-        run: npm run check:mobile
-
-      - name: Run axe checks
-        run: node scripts/check-a11y.mjs
+      # Both scripts serve dist/ on random ports and use independent browser
+      # processes, so they can run concurrently on the same runner.
+      - name: Run browser regression checks
+        run: node scripts/run-scripts-parallel.mjs check:mobile check:a11y

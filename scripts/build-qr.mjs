@@ -11,13 +11,14 @@
 // matches the "leave null to disable" contract documented in profile.yaml.
 // Localhost URLs remain a hard error so a dev URL never ships in a deploy.
 import QRCode from 'qrcode';
-import { mkdirSync, existsSync, unlinkSync } from 'node:fs';
+import { mkdirSync, existsSync, unlinkSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readProfileShallow } from '../src/lib/profile-yaml.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const OUT = resolve(ROOT, 'public/qr.png');
+const PROFILE = resolve(ROOT, 'src/content/profile.yaml');
 
 const url = (await readProfileShallow()).site?.trim();
 if (!url) {
@@ -34,6 +35,15 @@ if (!url) {
 if (url.startsWith('http://localhost')) {
   console.error(`[build-qr] refusing to encode non-public URL: ${url}`);
   process.exit(1);
+}
+
+if (
+  !process.argv.includes('--force') &&
+  existsSync(OUT) &&
+  statSync(OUT).mtimeMs >= statSync(PROFILE).mtimeMs
+) {
+  console.log('[build-qr] cached QR code is current, skipping');
+  process.exit(0);
 }
 
 console.log(`[build-qr] encoding ${url}`);

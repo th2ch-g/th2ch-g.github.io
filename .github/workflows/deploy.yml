@@ -54,21 +54,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Mobile layout regression checks
-        run: npm run check:mobile
-
-      # axe-core a11y audit against the built `dist/` via Playwright. Fails
-      # the job on any WCAG 2 A/AA violation so regressions are caught at PR
-      # time instead of shipping. Fully local — no external service, no
-      # account required. No untrusted input is interpolated into this step.
-      - name: A11y check (axe-core)
-        run: node scripts/check-a11y.mjs
-
-      # Lighthouse CI against `dist/` via @lhci/cli. The assertion thresholds
-      # live in `lighthouserc.json`: a11y is `error`, perf/best-practices/SEO
-      # are `warn`. Fully local — no upload, no account, no external service.
-      - name: Lighthouse CI
-        run: npx lhci autorun --config=./lighthouserc.json
+      # Each check serves dist/ on its own port and launches independent
+      # browser processes. Run them together so Lighthouse does not serialize
+      # the mobile and axe-core checks. Every exit status is still enforced.
+      - name: Run browser regression checks
+        run: npm run check:browsers
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0

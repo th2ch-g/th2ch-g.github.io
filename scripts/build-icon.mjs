@@ -2,10 +2,11 @@
 // src/content/profile.yaml (`icon:`), fetches it, and writes a
 // circle-cropped PNG with a 1px antialiased edge to public/icon.png.
 //
-// Wired into npm `prebuild` / `predev` so the asset is always fresh before
-// Astro starts. Pure JS via `jimp` to avoid native-binary build instability.
+// Wired into npm `prebuild` / `predev` with a short local refresh cache so
+// repeated commands avoid refetching the same avatar. Pure JS via `jimp` to
+// avoid native-binary build instability.
 import { Jimp } from 'jimp';
-import { writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, unlinkSync, statSync, utimesSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { iconUrl } from '../src/lib/profile-yaml.mjs';
@@ -14,10 +15,12 @@ import { readResponseBuffer } from '../src/plugins/lib/response-body.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const OUT = resolve(ROOT, 'public/icon.png');
+const PROFILE = resolve(ROOT, 'src/content/profile.yaml');
 // Classic favicon path. Google's favicon system and legacy browsers probe
 // /favicon.ico directly, so emit a real ICO (16/32/48 PNG-in-ICO) next to
 // the hi-res icon.png used by the rel=icon PNG link.
 const ICO_OUT = resolve(ROOT, 'public/favicon.ico');
+const REFRESH_MS = 60 * 60 * 1000;
 // 256 covers every consumer at 2x density: the home avatar (72px CSS →
 // 144px retina), the OG-card credit thumb (re-sized to 80px in
 // og-image.ts), and the favicon.ico tiles (<= 48px). The previous 512
@@ -65,6 +68,16 @@ if (!src) {
     console.log('[build-icon] `icon.url` is empty — skipping icon generation');
   }
   process.exit(0);
+}
+
+const force = process.argv.includes('--force');
+if (!force && existsSync(OUT) && existsSync(ICO_OUT)) {
+  const outputMtime = Math.min(statSync(OUT).mtimeMs, statSync(ICO_OUT).mtimeMs);
+  const profileMtime = statSync(PROFILE).mtimeMs;
+  if (outputMtime >= profileMtime && Date.now() - outputMtime < REFRESH_MS) {
+    console.log('[build-icon] cached icon is fresh, skipping');
+    process.exit(0);
+  }
 }
 
 console.log(`[build-icon] reading ${src}`);
@@ -123,6 +136,11 @@ try {
   // contract used by `build-fonts.mjs`. Any stale `public/icon.png` from a
   // previous run is intentionally preserved so the site keeps a usable
   // favicon / OG credit thumb until the URL works again.
+  if (existsSync(OUT) && existsSync(ICO_OUT)) {
+    const retryAfter = new Date();
+    utimesSync(OUT, retryAfter, retryAfter);
+    utimesSync(ICO_OUT, retryAfter, retryAfter);
+  }
   console.warn(`[build-icon] skipped: ${err.message}`);
   process.exit(0);
 }
