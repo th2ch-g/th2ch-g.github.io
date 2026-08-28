@@ -1,5 +1,5 @@
 ---
-title: 距離拘束誘導推論法が出版されました‼️
+title: 距離拘束誘導推論法‼️
 description: ｳｫｯﾌｫﾌｫ🎅‼️
 pubDate: 2026-05-11
 tags:
