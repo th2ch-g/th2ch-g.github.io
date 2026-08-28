@@ -1,6 +1,7 @@
-// Wires every `.photo-slideshow` element on the page. Auto-advances to
-// the next slide every `data-interval` ms (defaults to 5s), stops while
-// the user hovers / focuses inside the carousel, and resumes on leave.
+// Wires every `.photo-slideshow` element on the page. The first automatic
+// advance waits long enough for initial loading metrics to settle; later
+// advances use `data-interval` (defaults to 5s). User navigation or an
+// explicit speed choice starts the normal interval immediately.
 // Listens for a custom `photoslideshow:goto` event so external controls can
 // dispatch `{ index, fullscreen }` to jump to a slide and optionally request
 // browser fullscreen.
@@ -8,6 +9,7 @@
 type SlideshowEl = HTMLElement & { __cleanup?: () => void };
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const INITIAL_AUTOPLAY_DELAY = 15_000;
 
 function initSlideshow(root: SlideshowEl) {
   const slides = Array.from(root.querySelectorAll<HTMLElement>('.slide'));
@@ -25,11 +27,21 @@ function initSlideshow(root: SlideshowEl) {
   let keyboardMode = false;
   let swipeStart: { x: number; y: number; pointerId: number } | null = null;
 
+  const loadSlide = (index: number) => {
+    const image = slides[index].querySelector<HTMLImageElement>('img[data-src]');
+    const source = image?.dataset.src;
+    if (!image || !source) return;
+    image.src = source;
+    image.removeAttribute('data-src');
+  };
+
   const show = (next: number) => {
+    const nextIndex = (next + slides.length) % slides.length;
+    loadSlide(nextIndex);
     slides[current].classList.remove('active');
     slides[current].setAttribute('aria-hidden', 'true');
 
-    current = (next + slides.length) % slides.length;
+    current = nextIndex;
 
     slides[current].classList.add('active');
     slides[current].setAttribute('aria-hidden', 'false');
@@ -42,14 +54,17 @@ function initSlideshow(root: SlideshowEl) {
 
   const stop = () => {
     if (timer !== undefined) {
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
       timer = undefined;
     }
   };
-  const start = () => {
+  const start = (delay = interval) => {
     stop();
     if (!autoplayEnabled || document.hidden || hoverPaused || focusPaused) return;
-    timer = window.setInterval(() => show(current + 1), interval);
+    timer = window.setTimeout(() => {
+      show(current + 1);
+      start();
+    }, delay);
   };
 
   root.querySelectorAll<HTMLButtonElement>('.nav').forEach((btn) => {
@@ -202,7 +217,7 @@ function initSlideshow(root: SlideshowEl) {
     else start();
   });
 
-  start();
+  start(INITIAL_AUTOPLAY_DELAY);
   root.__cleanup = stop;
 }
 

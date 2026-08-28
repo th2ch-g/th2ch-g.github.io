@@ -1,5 +1,5 @@
 ---
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 
 interface Citer {
@@ -15,7 +15,7 @@ const { lang, citers } = Astro.props;
 ---
 {citers.length > 0 && (
   <section class="backlinks">
-    <h3>{t(lang, 'posts.backlinks')}</h3>
+    <h3>{tUi('posts.backlinks')}</h3>
     <ul class="bare">
       {citers.map((c) => (
         <li>

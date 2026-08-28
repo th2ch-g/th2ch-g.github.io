@@ -1,12 +1,12 @@
 ---
 import type { MarkdownHeading } from 'astro';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 
 interface Props {
   headings: MarkdownHeading[];
   lang: Lang;
 }
-const { headings, lang } = Astro.props;
+const { headings } = Astro.props;
 // Astro's `headings` only contains body-content headings — the
 // frontmatter-derived `<h1>{post.data.title}</h1>` (PostDetailPage.astro)
 // is NOT in this list, so there's no risk of double-listing the title.
@@ -14,7 +14,7 @@ const { headings, lang } = Astro.props;
 // Some authors top out their body at h1 ("# Section"), others at h2
 // ("## Section"). Pick the shallowest depth that actually appears as
 // the TOC's top level and include up to two further levels under it,
-// yielding a three-level nested bullet outline (disc → circle → square).
+// yielding a three-level hierarchical rail outline.
 const minDepth = headings.length > 0 ? Math.min(...headings.map((h) => h.depth)) : 2;
 const flat = headings.filter((h) => h.depth >= minDepth && h.depth <= minDepth + 2);
 
@@ -77,30 +77,30 @@ const tree = buildTree(flat);
       data-toc-toggle
       aria-controls="post-toc-panel"
       aria-expanded="false"
-      aria-label={t(lang, 'posts.toc.open')}
+      aria-label={tUi('posts.toc.open')}
     >
-      {t(lang, 'posts.toc')}
+      {tUi('posts.toc')}
     </button>
     <button
       class="toc-backdrop"
       type="button"
       data-toc-backdrop
-      aria-label={t(lang, 'posts.toc.close')}
+      aria-label={tUi('posts.toc.close')}
       tabindex="-1"
     ></button>
     <aside
       id="post-toc-panel"
       class="toc"
       data-toc-panel
-      aria-label={t(lang, 'posts.toc')}
+      aria-label={tUi('posts.toc')}
     >
       <div class="toc-head">
-        <p class="toc-title">{t(lang, 'posts.toc')}</p>
+        <p class="toc-title">{tUi('posts.toc')}</p>
         <button
           class="toc-close"
           type="button"
           data-toc-close
-          aria-label={t(lang, 'posts.toc.close')}
+          aria-label={tUi('posts.toc.close')}
         >
           <span aria-hidden="true">×</span>
         </button>
@@ -184,26 +184,28 @@ const tree = buildTree(flat);
       if (slug) linkMap.set(slug, el);
     });
 
+    function setActiveLink(slug: string) {
+      linkMap.forEach((link, linkSlug) => {
+        const isActive = linkSlug === slug;
+        link.classList.toggle('is-active', isActive);
+        if (isActive) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    }
+
+    const hashSlug = decodeURIComponent(window.location.hash.slice(1));
+    const initialSlug = linkMap.has(hashSlug) ? hashSlug : linkMap.keys().next().value;
+    if (initialSlug) setActiveLink(initialSlug);
+
     if (linkMap.size > 0 && 'IntersectionObserver' in window) {
       // Bias the active zone toward the upper third so the link switches
       // before its heading reaches the top edge.
       const observer = new IntersectionObserver(
         (entries) => {
-          entries.forEach((entry) => {
-            const link = linkMap.get(entry.target.id);
-            if (!link) return;
-            if (entry.isIntersecting) {
-              link.classList.add('is-active');
-              // `aria-current="location"` is the schema.org-aligned way to
-              // mark the in-viewport section so screen readers can
-              // announce position changes — complements the visual
-              // `.is-active` class.
-              link.setAttribute('aria-current', 'location');
-            } else {
-              link.classList.remove('is-active');
-              link.removeAttribute('aria-current');
-            }
-          });
+          const current = entries
+            .filter((entry) => entry.isIntersecting && linkMap.has(entry.target.id))
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+          if (current) setActiveLink(current.target.id);
         },
         { rootMargin: '-20% 0% -70% 0%' },
       );
@@ -257,14 +259,9 @@ const tree = buildTree(flat);
     width: min(20rem, 88vw);
     height: 100dvh;
     overflow-y: auto;
-    border: 1px solid color-mix(in srgb, var(--color-border) 78%, var(--color-accent));
-    background:
-      linear-gradient(
-        145deg,
-        color-mix(in srgb, var(--color-accent) 10%, var(--color-card)) 0,
-        var(--color-card) 5rem
-      );
-    padding: 1rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    padding: 1.25rem;
     font-size: 0.9rem;
     transform: translateX(100%);
     transition: transform 180ms ease;
@@ -278,26 +275,14 @@ const tree = buildTree(flat);
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.7rem;
   }
   .toc-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     margin: 0;
     color: var(--color-fg);
-    font-size: 0.78rem;
+    font-size: 1rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .toc-title::before {
-    content: '';
-    width: 0.28rem;
-    height: 1.05rem;
-    border-radius: 999px;
-    background: linear-gradient(180deg, var(--color-accent), var(--color-accent-hover));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 12%, transparent);
+    letter-spacing: 0;
   }
   .toc-close {
     display: grid;
@@ -320,42 +305,90 @@ const tree = buildTree(flat);
     padding: 0;
     margin: 0;
   }
+  :global(.toc > .toc-list) {
+    --toc-rail-offset: -0.9rem;
+    position: relative;
+    padding-left: 1.2rem;
+  }
+  :global(.toc > .toc-list)::before {
+    content: '';
+    position: absolute;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.3rem;
+    width: 1px;
+    background: color-mix(in srgb, var(--color-accent) 58%, var(--color-border));
+  }
   :global(.toc .toc-list .toc-list) {
-    margin: 0.15rem 0 0.25rem 0.6rem;
-    padding-left: 0.65rem;
-    border-left: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
-    font-size: 0.93em;
+    --toc-rail-offset: -0.8rem;
+    position: relative;
+    margin: 0.08rem 0 0.16rem 0.8rem;
+    padding-left: 1rem;
+    font-size: 0.92em;
+  }
+  :global(.toc .toc-list .toc-list)::before {
+    content: '';
+    position: absolute;
+    top: 0.68rem;
+    bottom: 0.68rem;
+    left: 0.2rem;
+    width: 1px;
+    background: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
   }
   :global(.toc .toc-list .toc-list .toc-list) {
-    margin-left: 0.35rem;
+    margin-left: 0.65rem;
+    font-size: 0.9em;
   }
   :global(.toc .toc-item) {
-    margin: 0.08rem 0;
+    position: relative;
+    margin: 0;
     line-height: 1.45;
   }
   :global(.toc .toc-item a) {
+    position: relative;
     display: block;
-    margin-left: -0.45rem;
-    padding: 0.3rem 0.45rem;
-    border-radius: 0.4rem;
+    margin: 0;
+    padding: 0.22rem 0;
     color: var(--color-muted);
-    text-wrap: pretty;
-    transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
-  }
-  :global(.toc > .toc-list > .toc-item > a) {
-    color: var(--color-fg);
     font-weight: 600;
+    text-wrap: pretty;
+    transition: color 160ms ease;
+  }
+  :global(.toc .toc-item a)::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: var(--toc-rail-offset);
+    z-index: 1;
+    width: 0.48rem;
+    height: 0.48rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-accent) 72%, var(--color-card));
+    transform: translate(-50%, -50%);
+    transition: width 160ms ease, height 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
   }
   :global(.toc .toc-item a:hover) {
     color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
     text-decoration: none;
   }
+  :global(.toc .toc-item a:hover)::before {
+    background: var(--color-accent);
+  }
+  :global(.toc .toc-item a:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
   :global(.toc .toc-item a.is-active) {
-    color: var(--color-accent);
-    font-weight: 600;
-    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
-    box-shadow: inset 3px 0 var(--color-accent);
+    color: var(--color-fg);
+    font-weight: 700;
+  }
+  :global(.toc .toc-item a.is-active)::before {
+    width: 0.68rem;
+    height: 0.68rem;
+    background: var(--color-accent);
+    box-shadow:
+      0 0 0 2px var(--color-card),
+      0 0 0 3px color-mix(in srgb, var(--color-accent) 78%, transparent);
   }
   :global(body.toc-drawer-open) {
     overflow: hidden;
@@ -375,13 +408,13 @@ const tree = buildTree(flat);
       max-height: calc(100vh - 7rem);
       margin: 0;
       border-radius: var(--radius);
-      padding: 0.85rem 1rem 1rem;
+      padding: 1.25rem;
       transform: none;
       transition: none;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+      box-shadow: none;
     }
     .toc-head {
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.7rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {

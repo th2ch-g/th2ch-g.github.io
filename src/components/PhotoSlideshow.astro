@@ -20,7 +20,26 @@ const { images, intervalMs = 5000 } = Astro.props;
     <div class="slides">
       {images.map((img, i) => (
         <div class:list={['slide', { active: i === 0 }]} aria-hidden={i === 0 ? 'false' : 'true'}>
-          <Image src={img} alt="" loading={i === 0 ? 'eager' : 'lazy'} />
+          {i === 0 ? (
+            <Image
+              src={img}
+              alt=""
+              loading="eager"
+              fetchpriority="high"
+              decoding="sync"
+            />
+          ) : (
+            // Inactive slides are absolutely positioned inside the viewport.
+            // Giving them `src` here defeats native lazy loading and fetches
+            // the entire gallery at once, so the slideshow wires it on demand.
+            <img
+              data-src={img.src}
+              alt=""
+              decoding="async"
+              width={img.width}
+              height={img.height}
+            />
+          )}
         </div>
       ))}
     </div>

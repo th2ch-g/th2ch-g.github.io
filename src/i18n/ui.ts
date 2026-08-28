@@ -1,109 +1,14 @@
-// All UI strings live here so that adding a new locale = adding a new column.
-// Keys must stay in sync across locales.
+// Content is bilingual, but the site interface is intentionally English-only.
+// Keep locale-specific prose in content collections or profile metadata.
 
 export const languages = {
-  ja: '日本語',
-  en: 'English',
+  ja: 'JA',
+  en: 'EN',
 } as const;
 
 export type Lang = keyof typeof languages;
 
-export const defaultLang: Lang = 'ja';
-
 export const ui = {
-  ja: {
-    'nav.home': 'ホーム',
-    'nav.cv': 'CV',
-    'nav.posts': 'Posts',
-    'nav.photos': 'Gallery',
-    'nav.archive': 'アーカイブ',
-    'nav.contact': 'Contact',
-    'nav.menu': 'メニュー',
-    'sitemap.title': 'サイトマップ',
-    'sitemap.description': '本サイトの全ページ一覧。',
-    'sitemap.pages': 'ページ',
-    'sitemap.posts': '記事',
-    'sitemap.tags': 'タグ',
-    'sitemap.qr': 'QR コード',
-    'sitemap.qrNote': 'スマートフォンのカメラで読み取るとサイトトップを開けます。',
-    'sitemap.xmlNote': 'クローラ向けの XML 形式：',
-    'tags.heading': 'タグ',
-    'tags.index.title': 'タグ',
-    'tags.index.count': '{n} 記事',
-    'archive.title': 'アーカイブ',
-    'search.title': '検索',
-    'search.placeholder': '記事を検索...',
-    '404.title': 'ページが見つかりません',
-    '404.message': 'お探しのページは移動または削除された可能性があります。',
-    '404.home': 'ホームへ戻る',
-    'comments.title': 'コメント',
-    'webmention.title': '言及',
-    'webmention.empty': 'まだ言及はありません。',
-    'webmention.send': 'この記事にメンションを送る',
-    'home.see.all': 'すべて見る',
-    'list.empty': 'まだ項目がありません。',
-    'posts.published': '公開日',
-    'posts.updated': '更新日',
-    'posts.draft': '下書き中',
-    'posts.readingTime': '分で読了',
-    'posts.toc': '目次',
-    'posts.toc.open': '目次を開く',
-    'posts.toc.close': '目次を閉じる',
-    'posts.license.text': 'この記事は AI で生成した画像を除き CC BY 4.0 ライセンスで公開されています。',
-    'posts.related': '関連記事',
-    'posts.backlinks': 'この記事を参照している記事',
-    'posts.prev': '前の記事',
-    'posts.next': '次の記事',
-    'posts.series': 'このシリーズ',
-    'cv.copy.bib': '.bib をコピー',
-    'cv.copy.all': '全体をコピー',
-    'cv.copy.bibtex': 'BibTeX',
-    'cv.copy.bibtex.aria': 'BibTeXをコピー',
-    'cv.copy.bibtex.section': 'BibTeX (全件)',
-    'cv.copy.section': '一覧コピー',
-    'cv.copy.section.menu': 'コピー',
-    'cv.copy.section.menu.aria': 'このセクションのコピー操作',
-    'cv.copy.item.text': 'テキスト',
-    'cv.actions.menu.aria': 'CVの操作',
-    'citation.label': '{n} 件の引用',
-    'citation.source': 'CrossRef より',
-    'code.copy': 'コピー',
-    'code.copied': 'コピーしました',
-    'share.title': 'この記事をシェア',
-    'share.x': 'Xでシェア',
-    'share.bluesky': 'Blueskyでシェア',
-    'share.hatena': 'はてなブックマークに追加',
-    'share.facebook': 'Facebookでシェア',
-    'share.linkedin': 'LinkedInでシェア',
-    'share.copy': 'リンクをコピー',
-    'share.copied': 'コピーしました！',
-    'share.copy.failed': 'コピーに失敗しました',
-    'filter.all': 'すべて',
-    'filter.label': 'タグで絞り込む',
-    'filter.more': '+ {n}',
-    'filter.less': '− less',
-    'sort.newest': '新しい順',
-    'sort.oldest': '古い順',
-    'list.empty.filter': '該当する項目がありません。',
-    'lang.switch': '言語を切り替える',
-    'breadcrumb.label': 'パンくずリスト',
-    'series.heading': 'シリーズ',
-    'feed.tag.title': 'タグ別フィード',
-    'shortcuts.title': 'キーボードショートカット',
-    'shortcuts.search': '検索を開く',
-    'shortcuts.help': 'このヘルプを開く',
-    'shortcuts.close': '閉じる',
-    'shortcuts.go.home': 'ホームへ移動',
-    'shortcuts.go.posts': 'Posts へ移動',
-    'shortcuts.go.photos': 'Gallery へ移動',
-    'shortcuts.go.cv': 'CV へ移動',
-    'theme.toggle': 'テーマ切り替え',
-    'contact.description': 'ご質問・ご依頼などはこちらのフォームからお気軽にどうぞ。',
-    'contact.embedTitle': 'お問い合わせフォーム',
-    'contact.cta': '新しいタブでフォームを開く',
-    'contact.unavailable': 'お問い合わせフォームは現在準備中です。',
-    'a11y.skipToMain': 'メインコンテンツへスキップ',
-  },
   en: {
     'nav.home': 'Home',
     'nav.cv': 'CV',
@@ -128,7 +33,8 @@ export const ui = {
     'search.placeholder': 'Search posts...',
     '404.title': 'Page not found',
     '404.message': 'The page you requested may have been moved or deleted.',
-    '404.home': 'Back to home',
+    '404.home.ja': 'Japanese home',
+    '404.home.en': 'English home',
     'comments.title': 'Comments',
     'webmention.title': 'Mentions',
     'webmention.empty': 'No mentions yet.',
@@ -195,19 +101,13 @@ export const ui = {
     'contact.embedTitle': 'Contact form',
     'contact.cta': 'Open the form in a new tab',
     'contact.unavailable': 'The contact form is not available yet.',
+    'legal.updated': 'Last updated',
     'a11y.skipToMain': 'Skip to main content',
   },
-} as const satisfies Record<Lang, Record<string, string>>;
+} as const;
 
-export type UIKey = keyof (typeof ui)[typeof defaultLang];
+export type UIKey = keyof typeof ui.en;
 
-export function t(lang: Lang, key: UIKey): string {
-  return ui[lang][key] ?? ui[defaultLang][key];
-}
-
-// Always returns the English label, regardless of current locale.
-// Used for browser-tab titles and other off-page chrome (nav, breadcrumbs)
-// which are intentionally English in both locales for consistency.
-export function tEn(key: UIKey): string {
+export function tUi(key: UIKey): string {
   return ui.en[key];
 }

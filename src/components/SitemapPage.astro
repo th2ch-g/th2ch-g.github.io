@@ -10,7 +10,7 @@ import {
   sortByDateDesc,
 } from '@/lib/content';
 import { readProfileShallow } from '@/lib/profile-yaml.mjs';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 
 interface Props {
   lang: Lang;
@@ -25,22 +25,22 @@ const tags = collectTags(posts);
 const legalDocs = await getLegalByLang(lang);
 
 const pages = [
-  { href: getRelativeLocaleUrl(lang, '/'), label: t(lang, 'nav.home') },
-  { href: getRelativeLocaleUrl(lang, '/cv'), label: t(lang, 'nav.cv') },
-  { href: getRelativeLocaleUrl(lang, '/gallery'), label: t(lang, 'nav.photos') },
-  { href: getRelativeLocaleUrl(lang, '/posts'), label: t(lang, 'nav.posts') },
-  { href: getRelativeLocaleUrl(lang, '/posts/archive'), label: t(lang, 'nav.archive') },
-  { href: getRelativeLocaleUrl(lang, '/tags'), label: t(lang, 'tags.index.title') },
-  { href: getRelativeLocaleUrl(lang, '/contact'), label: t(lang, 'nav.contact') },
+  { href: getRelativeLocaleUrl(lang, '/'), label: tUi('nav.home') },
+  { href: getRelativeLocaleUrl(lang, '/cv'), label: tUi('nav.cv') },
+  { href: getRelativeLocaleUrl(lang, '/gallery'), label: tUi('nav.photos') },
+  { href: getRelativeLocaleUrl(lang, '/posts'), label: tUi('nav.posts') },
+  { href: getRelativeLocaleUrl(lang, '/posts/archive'), label: tUi('nav.archive') },
+  { href: getRelativeLocaleUrl(lang, '/tags'), label: tUi('tags.index.title') },
+  { href: getRelativeLocaleUrl(lang, '/contact'), label: tUi('nav.contact') },
   ...legalDocs.map((d) => ({
     href: getRelativeLocaleUrl(lang, `/${d.slug}`),
     label: d.title,
   })),
 ];
 
-const title = t(lang, 'sitemap.title');
-const description = t(lang, 'sitemap.description');
-const xmlNote = t(lang, 'sitemap.xmlNote');
+const title = tUi('sitemap.title');
+const description = tUi('sitemap.description');
+const xmlNote = tUi('sitemap.xmlNote');
 // Read `site:` directly from profile.yaml — the same source `build-qr.mjs`
 // consumes. This keeps the displayed URL / alt text and the PNG existence
 // in lock-step: if `site:` is null, the PNG is never generated AND the
@@ -52,7 +52,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
   <p class="muted lead">{description}</p>
 
   <section>
-    <h2>{t(lang, 'sitemap.pages')}</h2>
+    <h2>{tUi('sitemap.pages')}</h2>
     <ul class="list">
       {pages.map((p) => (
         <li><a href={p.href}>{p.label}</a></li>
@@ -63,7 +63,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
   {posts.length > 0 && (
     <section>
       <h2>
-        {t(lang, 'sitemap.posts')} <span class="count">({posts.length})</span>
+        {tUi('sitemap.posts')} <span class="count">({posts.length})</span>
       </h2>
       <ul class="list">
         {posts.map((post) => {
@@ -73,7 +73,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
             <li>
               <a href={href}>{post.data.title}</a>
               <time class="date" datetime={post.data.pubDate.toISOString()}>
-                {formatDate(post.data.pubDate, lang)}
+                {formatDate(post.data.pubDate)}
               </time>
             </li>
           );
@@ -85,7 +85,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
   {tags.length > 0 && (
     <section>
       <h2>
-        {t(lang, 'sitemap.tags')} <span class="count">({tags.length})</span>
+        {tUi('sitemap.tags')} <span class="count">({tags.length})</span>
       </h2>
       <ul class="tag-list">
         {tags.map((tag) => (
@@ -99,8 +99,8 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
 
   {site && (
     <section>
-      <h2>{t(lang, 'sitemap.qr')}</h2>
-      <p class="muted qr-note">{t(lang, 'sitemap.qrNote')}</p>
+      <h2>{tUi('sitemap.qr')}</h2>
+      <p class="muted qr-note">{tUi('sitemap.qrNote')}</p>
       <figure class="qr-figure">
         <img
           src="/qr.png"

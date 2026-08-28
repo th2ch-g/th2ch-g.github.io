@@ -75,7 +75,7 @@ async function assertCvBibtexCopy() {
   await trigger.click();
   assert.deepEqual(
     await firstPaper.locator('.cv-menu-item').allTextContents(),
-    ['テキスト', 'BibTeX'],
+    ['Text', 'BibTeX'],
     'CV paper copy menu does not expose text and BibTeX actions',
   );
   await firstPaper.getByRole('button', { name: 'BibTeX', exact: true }).click();
@@ -135,6 +135,11 @@ try {
 
   const galleryPage = await newLocalPage({ width: 393, height: 852 });
   await galleryPage.goto(`${url}/gallery/`, { waitUntil: 'networkidle' });
+  assert.equal(
+    await galleryPage.locator('.photo-slideshow img[src]').count(),
+    1,
+    'Inactive slideshow images load during initial page rendering',
+  );
   const activeSlideIndex = () =>
     galleryPage.locator('.photo-slideshow .slide').evaluateAll(
       (slides) => slides.findIndex((slide) => slide.classList.contains('active')),
@@ -221,6 +226,11 @@ try {
     headerLayout.rightEdge <= headerLayout.viewportWidth,
     'Mobile navigation controls overflow the viewport',
   );
+  assert.deepEqual(
+    (await mobilePage.locator('.lang-switch a').allTextContents()).map((label) => label.trim()),
+    ['JA', 'EN'],
+    'Language switcher labels are not JA/EN',
+  );
 
   await mobilePage.locator('.avatar-wrap').first().hover();
   await mobilePage.waitForTimeout(200);
@@ -282,8 +292,33 @@ try {
 
   const listPage = await newLocalPage({ width: 393, height: 852 });
   await listPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
+  assert.equal(
+    (await listPage.locator('h1').first().textContent())?.trim().replace(/\d+$/, '').trim(),
+    'Posts',
+    'Japanese content route does not use the English Posts heading',
+  );
+  assert.equal(
+    await listPage.locator('[data-sort-toggle] .sort-label').textContent(),
+    'Newest first',
+    'Post sort control is not English',
+  );
+  assert.equal(
+    await listPage.locator('[data-facet="tag"][data-value=""]').textContent(),
+    'All',
+    'Post tag filter is not English',
+  );
+  assert.match(
+    (await listPage.locator('[data-post-row] time').first().textContent())?.trim() ?? '',
+    /^\d{2}-\d{2}$/,
+    'Grouped post date is not MM-DD',
+  );
   assert.equal(await listPage.locator('.post-card').count(), 0, 'Post cards still render');
   assert.equal(await listPage.locator('[data-posts-filter]').count(), 1, 'Post filters are missing');
+  assert.match(
+    await listPage.locator('.tags-index-link').getAttribute('href') ?? '',
+    /^\/tags\/?$/,
+    'JA Posts page does not link to the tags index',
+  );
   const mobileRow = await listPage.locator('[data-post-row]').first().evaluate((row) => {
     const date = row.querySelector('time')?.getBoundingClientRect();
     const title = row.querySelector('a')?.getBoundingClientRect();
@@ -340,6 +375,8 @@ try {
 
   const desktopPage = await newLocalPage({ width: 1280, height: 900 });
   await desktopPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
+  const jaPostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
+    .map((title) => title.trim());
   const desktopNavLabels = await desktopPage.locator('.nav-list a').allTextContents();
   assert.deepEqual(
     desktopNavLabels.map((label) => label.trim()),
@@ -362,9 +399,51 @@ try {
     'Desktop post date and title do not form separate columns',
   );
   assert.equal(desktopLayout.alignItems, 'baseline', 'Desktop post row is not baseline-aligned');
+
+  const sortPositionBeforeExpand = await desktopPage.locator('[data-sort-toggle]').boundingBox();
+  const chipToggle = desktopPage.locator('.chip-toggle');
+  assert.equal(await chipToggle.count(), 1, 'Post tag expansion control is missing');
+  await chipToggle.click();
+  const sortPositionAfterExpand = await desktopPage.locator('[data-sort-toggle]').boundingBox();
+  assert.ok(sortPositionBeforeExpand && sortPositionAfterExpand, 'Post sort control has no layout box');
+  assert.ok(
+    Math.abs(sortPositionAfterExpand.x - sortPositionBeforeExpand.x) < 1
+      && Math.abs(sortPositionAfterExpand.y - sortPositionBeforeExpand.y) < 1,
+    'Post sort control moves when all tags are shown',
+  );
+
+  const jaFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
+    .map((label) => label.trim())
+    .filter((label) => label.endsWith('Policy'));
+  await desktopPage.goto(`${url}/en/posts/`, { waitUntil: 'networkidle' });
+  assert.match(
+    await desktopPage.locator('.tags-index-link').getAttribute('href') ?? '',
+    /^\/en\/tags\/?$/,
+    'EN Posts page does not link to the tags index',
+  );
+  const enPostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
+    .map((title) => title.trim());
+  assert.deepEqual(enPostTitles, jaPostTitles, 'JA and EN routes do not show the same posts');
+  const enFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
+    .map((label) => label.trim())
+    .filter((label) => label.endsWith('Policy'));
+  assert.deepEqual(
+    enFooterPolicies,
+    jaFooterPolicies,
+    'Footer policy links change order between JA and EN routes',
+  );
   await desktopPage.close();
 
-  console.log('✓ Chromium/Firefox mobile gallery, TOC, navigation, and post-list checks passed');
+  const detailPage = await newLocalPage({ width: 1280, height: 900 });
+  await detailPage.goto(`${url}/posts/dotfiles-2026-summer/`, { waitUntil: 'networkidle' });
+  assert.match(
+    (await detailPage.locator('.post-header > .muted').textContent())?.trim() ?? '',
+    /^Published: \d{4}-\d{2}-\d{2}/,
+    'Standalone post date is not English YYYY-MM-DD',
+  );
+  await detailPage.close();
+
+  console.log('✓ Chromium/Firefox English UI, date, gallery, TOC, navigation, and post-list checks passed');
 } finally {
   await browser.close();
   await close();

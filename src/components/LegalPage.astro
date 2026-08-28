@@ -1,6 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getLegal, formatDate } from '@/lib/content';
 import { render } from 'astro:content';
 
@@ -20,7 +20,7 @@ const { Content } = await render(doc);
 <Base lang={lang} title={doc.data.title} description={doc.data.description}>
   <h1>{doc.data.title}</h1>
   <p class="muted updated">
-    {lang === 'ja' ? '最終更新日' : 'Last updated'}: {formatDate(doc.data.updatedDate, lang)}
+    {tUi('legal.updated')}: {formatDate(doc.data.updatedDate)}
   </p>
   <div class="prose"><Content /></div>
 </Base>

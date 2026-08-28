@@ -201,6 +201,9 @@ const profileMeta = defineCollection({
   }),
 });
 
+// Posts are shared Japanese content. Files live directly under
+// `src/content/posts/`; both JA and EN routes render the same entries while
+// keeping their own interface chrome and URL prefixes.
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({

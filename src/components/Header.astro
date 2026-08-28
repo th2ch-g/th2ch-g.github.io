@@ -1,6 +1,6 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getProfileMeta } from '@/lib/content';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import ThemeToggle from './ThemeToggle.astro';
@@ -16,8 +16,8 @@ const { lang, availableLocales } = Astro.props;
 
 const meta = await getProfileMeta(lang);
 
-// Navigation labels are intentionally English in both locales (per user preference).
-// Per-section page H1s still use the localized `t(lang, 'nav.xxx')` keys.
+// Navigation and all other interface labels are intentionally English in
+// both content locales.
 // Entries use prefix matching so that detail routes like /posts/foo keep the
 // parent section highlighted. `match: 'exact'` stays available for any future
 // entry whose href would otherwise prefix-match unrelated paths (notably `/`,
@@ -54,10 +54,8 @@ const atHome = current === withSlash(homeHref);
   <div class="inner">
     {/* Icon-only brand. The image is decorative (`alt=""` + `aria-hidden`), so
         the link would have no accessible name on its own — `aria-label` supplies
-        it and keeps axe's `link-name` (wcag2a) satisfied. Unlike the visible nav
-        labels, which stay English in both locales, a screen-reader-only name is
-        localized. */}
-    <a class="brand" href={homeHref} aria-label={t(lang, 'nav.home')} aria-current={atHome ? 'page' : undefined}>
+        it and keeps axe's `link-name` (wcag2a) satisfied. */}
+    <a class="brand" href={homeHref} aria-label={tUi('nav.home')} aria-current={atHome ? 'page' : undefined}>
       {meta.icon && (
         <img
           class="brand-icon"
@@ -99,7 +97,7 @@ const atHome = current === withSlash(homeHref);
       class="nav-toggle"
       aria-controls="primary-nav"
       aria-expanded="false"
-      aria-label={t(lang, 'nav.menu')}
+      aria-label={tUi('nav.menu')}
       data-nav-toggle
     >
       <span class="bar" aria-hidden="true"></span>

@@ -1,8 +1,10 @@
 ---
 import Base from '@/layouts/Base.astro';
 import PostArchiveList from './PostArchiveList.astro';
-import { t, tEn, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { collectTags, getPublishedByLang, sortByDateDesc } from '@/lib/content';
+import { DEFAULT_CHIP_COLLAPSE_THRESHOLD } from '@/lib/chip-collapse';
+import { getRelativeLocaleUrl } from 'astro:i18n';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -12,14 +14,17 @@ const posts = sortByDateDesc(
   'pubDate',
 );
 const allTags = collectTags(posts);
+const visibleTagCount = DEFAULT_CHIP_COLLAPSE_THRESHOLD - 1;
+const shouldCollapseTags = allTags.length > DEFAULT_CHIP_COLLAPSE_THRESHOLD;
+const collapsedTagCount = shouldCollapseTags ? allTags.length - visibleTagCount : 0;
 ---
-<Base lang={lang} title={tEn('nav.posts')} image={lang === 'en' ? '/en/og/posts.png' : '/og/posts.png'}>
+<Base lang={lang} title={tUi('nav.posts')} image={lang === 'en' ? '/en/og/posts.png' : '/og/posts.png'}>
   <h1>
-    {t(lang, 'nav.posts')}
+    {tUi('nav.posts')}
     {posts.length > 0 && <span class="count-badge">{posts.length}</span>}
   </h1>
   {posts.length === 0 ? (
-    <p class="muted">{t(lang, 'list.empty')}</p>
+    <p class="muted">{tUi('list.empty')}</p>
   ) : (
     <>
       <div class="filter-bar" data-posts-filter>
@@ -27,35 +32,48 @@ const allTags = collectTags(posts);
           <div
             class="tag-chips"
             role="group"
-            aria-label={t(lang, 'filter.label')}
+            aria-label={tUi('filter.label')}
             data-collapsible
-            data-more-label={t(lang, 'filter.more')}
-            data-less-label={t(lang, 'filter.less')}
+            data-more-label={tUi('filter.more')}
+            data-less-label={tUi('filter.less')}
           >
+            <a class="tags-index-link" href={getRelativeLocaleUrl(lang, '/tags')}>
+              {tUi('tags.index.title')} →
+            </a>
             <button type="button" class="chip is-active" data-facet="tag" data-value="">
-              {t(lang, 'filter.all')}
+              {tUi('filter.all')}
             </button>
-            {allTags.map((tag) => (
-              <button type="button" class="chip" data-facet="tag" data-value={tag}>
+            {allTags.map((tag, index) => (
+              <button
+                type="button"
+                class:list={['chip', { 'chip-hidden': shouldCollapseTags && index >= visibleTagCount }]}
+                data-facet="tag"
+                data-value={tag}
+              >
                 #{tag}
               </button>
             ))}
+            {shouldCollapseTags && (
+              <button type="button" class="chip chip-toggle" aria-expanded="false">
+                {tUi('filter.more').replace('{n}', String(collapsedTagCount))}
+              </button>
+            )}
           </div>
         )}
         <button
           type="button"
           class="sort-toggle"
           data-sort-toggle
-          data-label-newest={t(lang, 'sort.newest')}
-          data-label-oldest={t(lang, 'sort.oldest')}
-          aria-label={t(lang, 'sort.newest')}
+          data-label-newest={tUi('sort.newest')}
+          data-label-oldest={tUi('sort.oldest')}
+          aria-label={tUi('sort.newest')}
         >
-          <span class="sort-label">{t(lang, 'sort.newest')}</span>
+          <span class="sort-label">{tUi('sort.newest')}</span>
           <span class="sort-arrow" aria-hidden="true">↓</span>
         </button>
       </div>
       <PostArchiveList posts={posts} lang={lang} largeTitles />
-      <p class="muted empty-msg" hidden data-empty-msg>{t(lang, 'list.empty.filter')}</p>
+      <p class="muted empty-msg" hidden data-empty-msg>{tUi('list.empty.filter')}</p>
     </>
   )}
 </Base>
@@ -69,17 +87,26 @@ const allTags = collectTags(posts);
 
 <style>
   .filter-bar {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.75rem 1rem;
     align-items: flex-start;
-    justify-content: space-between;
     margin: 0.5rem 0 1.5rem;
   }
   .tag-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
+    min-width: 0;
+  }
+  .tags-index-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.7rem;
+    padding-inline: 0.2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
   }
   .tag-chips :global(.chip) {
     padding: 0.2rem 0.7rem;
@@ -126,6 +153,8 @@ const allTags = collectTags(posts);
     font-size: 0.85rem;
     cursor: pointer;
     transition: border-color 160ms ease, color 160ms ease;
+    grid-column: 2;
+    grid-row: 1;
   }
   .sort-toggle:hover,
   .sort-toggle:focus-visible {

@@ -2,7 +2,7 @@
 import Base from '@/layouts/Base.astro';
 import PostArchiveList from './PostArchiveList.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
-import { t, tEn, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getPublishedByLang, sortByDateDesc } from '@/lib/content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 
@@ -43,7 +43,7 @@ const availableLocales: Lang[] = otherHasTag ? ['ja', 'en'] : [lang];
 <Base
   lang={lang}
   availableLocales={availableLocales}
-  title={`${tEn('tags.heading')}: #${tag}`}
+  title={`${tUi('tags.heading')}: #${tag}`}
   image={tagFeedExists
     ? (lang === 'en' ? `/en/og/tags/${tag}.png` : `/og/tags/${tag}.png`)
     : undefined}
@@ -51,8 +51,8 @@ const availableLocales: Lang[] = otherHasTag ? ['ja', 'en'] : [lang];
   <Breadcrumbs
     lang={lang}
     items={[
-      { label: t(lang, 'nav.home'), href: getRelativeLocaleUrl(lang, '/') },
-      { label: t(lang, 'nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
+      { label: tUi('nav.home'), href: getRelativeLocaleUrl(lang, '/') },
+      { label: tUi('nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
       { label: `#${tag}` },
     ]}
   />
@@ -64,7 +64,7 @@ const availableLocales: Lang[] = otherHasTag ? ['ja', 'en'] : [lang];
       )}
     </h1>
     {tagFeedExists && (
-      <a class="tag-feed" href={tagFeed} aria-label={t(lang, 'feed.tag.title')}>
+      <a class="tag-feed" href={tagFeed} aria-label={tUi('feed.tag.title')}>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <path d="M4 11a9 9 0 0 1 9 9" />
           <path d="M4 4a16 16 0 0 1 16 16" />
@@ -78,7 +78,7 @@ const availableLocales: Lang[] = otherHasTag ? ['ja', 'en'] : [lang];
   {posts.length > 0 ? (
     <PostArchiveList posts={posts} lang={lang} />
   ) : (
-    <p class="muted">{t(lang, 'list.empty')}</p>
+    <p class="muted">{tUi('list.empty')}</p>
   )}
 </Base>
 

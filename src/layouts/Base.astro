@@ -7,7 +7,7 @@ import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import Lightbox from '@/components/Lightbox.astro';
 import Shortcuts from '@/components/Shortcuts.astro';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getProfileMeta } from '@/lib/content';
 import type { ImageMetadata } from 'astro';
 
@@ -38,6 +38,7 @@ interface Props {
     updatedDate?: Date;
     tags?: string[];
     wordCount?: number;
+    contentLang?: Lang;
   };
   // Optional breadcrumb trail, leaf last. URLs may be relative; they are
   // resolved against `Astro.site` when emitted into the BreadcrumbList
@@ -47,6 +48,9 @@ interface Props {
 const { title, description, lang, image, article, breadcrumbs, availableLocales } = Astro.props;
 const locales = availableLocales ?? (['ja', 'en'] as Lang[]);
 const meta = await getProfileMeta(lang);
+const adsenseClientId = meta.integrations.adsense?.clientId;
+const googleAnalyticsId = meta.integrations.analytics?.googleAnalyticsId;
+const productionHost = Astro.site?.hostname;
 
 // Site-wide description fallback: the verbatim bio. Ensures no page
 // ships a thin/empty <meta name="description"> (search engines scrape the
@@ -129,13 +133,14 @@ const csp = [
   "object-src 'none'",
   "form-action 'self'",
   "img-src 'self' data: https:",
-  "font-src 'self'",
+  // AdSense may inject a small base64-encoded UI font inside its ad frame.
+  "font-src 'self' data:",
   "media-src 'self'",
   // giscus.app: client.js prepends `<link rel="stylesheet" href="https://giscus.app/default.css">`
   // to the document head; that sheet sets `.giscus, .giscus-frame { width: 100% }`. Without
   // it the iframe falls back to the HTML default 300px width.
   "style-src 'self' 'unsafe-inline' https://giscus.app",
-  "script-src 'self' 'unsafe-inline' https://giscus.app https://platform.twitter.com https://*.twimg.com https://gc.zgo.at https://www.googletagmanager.com https://*.googlesyndication.com https://*.google.com",
+  "script-src 'self' 'unsafe-inline' https://giscus.app https://platform.twitter.com https://*.twimg.com https://gc.zgo.at https://www.googletagmanager.com https://*.googlesyndication.com https://*.google.com https://*.adtrafficquality.google",
   // docs.google.com hosts the embedded contact form (profile.yaml `contactForm`).
   // Swap this origin if you point `contactForm` at a different form provider.
   "frame-src 'self' https://giscus.app https://platform.twitter.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://docs.google.com",
@@ -183,7 +188,7 @@ const articleLd = article
       ...(article.updatedDate ? { dateModified: article.updatedDate.toISOString() } : {}),
       url: canonical,
       image: ogImage,
-      inLanguage: lang === 'ja' ? 'ja-JP' : 'en-US',
+      inLanguage: (article.contentLang ?? lang) === 'ja' ? 'ja-JP' : 'en-US',
       author: { '@type': 'Person', name: meta.name },
       // Publisher is the site itself (Person doubling as Publisher matches
       // Google's guidance for personal blogs — Organization is overkill).
@@ -368,20 +373,20 @@ const jsonLd = {
         profile.yaml so forks can swap in their own without touching this
         layout. CSP allows the loader origin (googletagmanager.com) and
         the collection endpoints (google-analytics.com et al.) above. */}
-    {meta.integrations.analytics?.googleAnalyticsId && (
-      <>
-        <script
-          is:inline
-          async
-          src={`https://www.googletagmanager.com/gtag/js?id=${meta.integrations.analytics.googleAnalyticsId}`}
-        />
-        <script is:inline define:vars={{ gaId: meta.integrations.analytics.googleAnalyticsId }}>
+    {googleAnalyticsId && (
+      <script is:inline define:vars={{ googleAnalyticsId, productionHost }}>
+        (() => {
+          if (!productionHost || location.hostname !== productionHost) return;
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', gaId);
-        </script>
-      </>
+          gtag('config', googleAnalyticsId);
+          const script = document.createElement('script');
+          script.async = true;
+          script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleAnalyticsId)}`;
+          document.head.appendChild(script);
+        })();
+      </script>
     )}
 
     {/* Google AdSense. The meta tag carries the site-verification record
@@ -393,15 +398,22 @@ const jsonLd = {
         serving anything. CSP allows the loader origin
         (*.googlesyndication.com) and the ad-iframe origins
         (googleads.g.doubleclick.net) above. */}
-    {meta.integrations.adsense && (
+    {adsenseClientId && (
       <>
-        <meta name="google-adsense-account" content={meta.integrations.adsense.clientId} />
-        <script
-          is:inline
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${meta.integrations.adsense.clientId}`}
-          crossorigin="anonymous"
-        />
+        <meta name="google-adsense-account" content={adsenseClientId} />
+        {/* Production-only loading keeps local development and Lighthouse CI
+            from sending traffic to the live publisher account. Verification
+            still works locally through the static meta tag and ads.txt. */}
+        <script is:inline define:vars={{ adsenseClientId, productionHost }}>
+          (() => {
+            if (!productionHost || location.hostname !== productionHost) return;
+            const script = document.createElement('script');
+            script.async = true;
+            script.crossOrigin = 'anonymous';
+            script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(adsenseClientId)}`;
+            document.head.appendChild(script);
+          })();
+        </script>
       </>
     )}
 
@@ -429,7 +441,7 @@ const jsonLd = {
 
   </head>
   <body>
-    <a class="skip-link" href="#main-content">{t(lang, 'a11y.skipToMain')}</a>
+    <a class="skip-link" href="#main-content">{tUi('a11y.skipToMain')}</a>
     <Header lang={lang} availableLocales={locales} />
     <main id="main-content" tabindex="-1">
       <slot />
@@ -438,7 +450,7 @@ const jsonLd = {
     <Lightbox />
     <Shortcuts lang={lang} />
 
-    <script is:inline data-astro-rerun define:vars={{ lCopy: t(lang, 'code.copy'), lCopied: t(lang, 'code.copied') }}>
+    <script is:inline data-astro-rerun define:vars={{ lCopy: tUi('code.copy'), lCopied: tUi('code.copied') }}>
       // Inject a copy-to-clipboard button into every fenced code block.
       // Skip `pre.mermaid` blocks — those get replaced by SVG by the
       // Mermaid renderer and would have nothing meaningful to copy.

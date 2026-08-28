@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { localeSlug } from '@/lib/content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 
@@ -18,7 +18,7 @@ const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)
   <nav class="post-nav" aria-label="Post navigation">
     {prev && prevHref ? (
       <a class="nav-card nav-prev" href={prevHref}>
-        <span class="nav-direction muted">← {t(lang, 'posts.prev')}</span>
+        <span class="nav-direction muted">← {tUi('posts.prev')}</span>
         <span class="nav-title">{prev.data.title}</span>
       </a>
     ) : (
@@ -28,7 +28,7 @@ const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)
     )}
     {next && nextHref ? (
       <a class="nav-card nav-next" href={nextHref}>
-        <span class="nav-direction muted">{t(lang, 'posts.next')} →</span>
+        <span class="nav-direction muted">{tUi('posts.next')} →</span>
         <span class="nav-title">{next.data.title}</span>
       </a>
     ) : (

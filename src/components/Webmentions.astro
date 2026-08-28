@@ -1,6 +1,6 @@
 ---
 import { getProfileMeta } from '@/lib/content';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -9,12 +9,12 @@ const webmention = (await getProfileMeta(lang)).integrations.webmention;
 ---
 {webmention && (
   <section class="webmentions" data-webmentions data-api-target={webmention.apiTarget}>
-    <h2>{t(lang, 'webmention.title')}</h2>
-    <p class="muted empty" data-empty>{t(lang, 'webmention.empty')}</p>
+    <h2>{tUi('webmention.title')}</h2>
+    <p class="muted empty" data-empty>{tUi('webmention.empty')}</p>
     <ul class="bare list" data-list></ul>
     {webmention.endpoint && (
       <p class="muted send">
-        <a href={webmention.endpoint}>{t(lang, 'webmention.send')} →</a>
+        <a href={webmention.endpoint}>{tUi('webmention.send')} →</a>
       </p>
     )}
 

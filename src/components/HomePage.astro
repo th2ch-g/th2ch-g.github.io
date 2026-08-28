@@ -1,7 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import PostArchiveList from './PostArchiveList.astro';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import {
   getProfileMeta,
   getPublishedByLang,
@@ -40,11 +40,11 @@ const recentPosts = sortByDateDesc(
 
   {recentPosts.length > 0 && (
     <section class="posts-section">
-      <h2>{t(lang, 'nav.posts')}</h2>
+      <h2>{tUi('nav.posts')}</h2>
       <PostArchiveList posts={recentPosts} lang={lang} yearHeadingLevel="h3" size="large" />
       <p class="see-all">
         <a href={getRelativeLocaleUrl(lang, '/posts')}>
-          {t(lang, 'home.see.all')}
+          {tUi('home.see.all')}
           <span class="arrow" aria-hidden="true">→</span>
         </a>
       </p>

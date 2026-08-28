@@ -1,5 +1,5 @@
 ---
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 
 interface Props { lang: Lang }
@@ -12,20 +12,20 @@ const postsUrl = getRelativeLocaleUrl(lang, '/posts');
 const galleryUrl = getRelativeLocaleUrl(lang, '/gallery');
 const cvUrl = getRelativeLocaleUrl(lang, '/cv');
 ---
-<dialog class="shortcuts-dialog" data-shortcuts-dialog aria-label={t(lang, 'shortcuts.title')}>
+<dialog class="shortcuts-dialog" data-shortcuts-dialog aria-label={tUi('shortcuts.title')}>
   <div class="shortcuts-shell">
-    <h2>{t(lang, 'shortcuts.title')}</h2>
+    <h2>{tUi('shortcuts.title')}</h2>
     <dl class="shortcuts-list">
-      <dt><kbd>/</kbd></dt><dd>{t(lang, 'shortcuts.search')}</dd>
-      <dt><kbd>⌘</kbd> + <kbd>K</kbd></dt><dd>{t(lang, 'shortcuts.search')}</dd>
-      <dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>{t(lang, 'shortcuts.go.home')}</dd>
-      <dt><kbd>g</kbd> <kbd>b</kbd></dt><dd>{t(lang, 'shortcuts.go.posts')}</dd>
-      <dt><kbd>g</kbd> <kbd>p</kbd></dt><dd>{t(lang, 'shortcuts.go.photos')}</dd>
-      <dt><kbd>g</kbd> <kbd>c</kbd></dt><dd>{t(lang, 'shortcuts.go.cv')}</dd>
-      <dt><kbd>?</kbd></dt><dd>{t(lang, 'shortcuts.help')}</dd>
-      <dt><kbd>Esc</kbd></dt><dd>{t(lang, 'shortcuts.close')}</dd>
+      <dt><kbd>/</kbd></dt><dd>{tUi('shortcuts.search')}</dd>
+      <dt><kbd>⌘</kbd> + <kbd>K</kbd></dt><dd>{tUi('shortcuts.search')}</dd>
+      <dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>{tUi('shortcuts.go.home')}</dd>
+      <dt><kbd>g</kbd> <kbd>b</kbd></dt><dd>{tUi('shortcuts.go.posts')}</dd>
+      <dt><kbd>g</kbd> <kbd>p</kbd></dt><dd>{tUi('shortcuts.go.photos')}</dd>
+      <dt><kbd>g</kbd> <kbd>c</kbd></dt><dd>{tUi('shortcuts.go.cv')}</dd>
+      <dt><kbd>?</kbd></dt><dd>{tUi('shortcuts.help')}</dd>
+      <dt><kbd>Esc</kbd></dt><dd>{tUi('shortcuts.close')}</dd>
     </dl>
-    <button type="button" class="shortcuts-close" data-shortcuts-close>{t(lang, 'shortcuts.close')}</button>
+    <button type="button" class="shortcuts-close" data-shortcuts-close>{tUi('shortcuts.close')}</button>
   </div>
 </dialog>
 

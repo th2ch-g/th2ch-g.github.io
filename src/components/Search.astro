@@ -1,8 +1,7 @@
 ---
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 
 interface Props { lang: Lang }
-const { lang } = Astro.props;
 
 // Pagefind ships its UI bundle into `dist/pagefind/` after `pagefind --site dist`
 // runs in `npm run build`. We load the script lazily on first dialog open so
@@ -12,8 +11,8 @@ const { lang } = Astro.props;
   type="button"
   class="search-trigger"
   data-search-open
-  aria-label={t(lang, 'search.title')}
-  title={t(lang, 'search.title')}
+  aria-label={tUi('search.title')}
+  title={tUi('search.title')}
 >
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -33,9 +32,9 @@ const { lang } = Astro.props;
   <kbd class="kbd">⌘K</kbd>
 </button>
 
-<dialog class="search-dialog" data-search-dialog aria-label={t(lang, 'search.title')}>
+<dialog class="search-dialog" data-search-dialog aria-label={tUi('search.title')}>
   <div class="search-shell">
-    <div id="pagefind-search" data-pagefind-ui data-placeholder={t(lang, 'search.placeholder')}></div>
+    <div id="pagefind-search" data-pagefind-ui data-placeholder={tUi('search.placeholder')}></div>
     <p class="search-error muted" data-search-error hidden>
       Search index unavailable. Run <code>npm run build</code> to generate it
       (the Pagefind index is only produced by the production build).

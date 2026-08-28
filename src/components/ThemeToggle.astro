@@ -1,12 +1,11 @@
 ---
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 
 interface Props {
   lang: Lang;
 }
-const { lang } = Astro.props;
 
-const label = t(lang, 'theme.toggle');
+const label = tUi('theme.toggle');
 ---
 <button type="button" class="theme-toggle" data-theme-toggle aria-label={label} title={label}>
   <span class="icon sun" aria-hidden="true">☀</span>

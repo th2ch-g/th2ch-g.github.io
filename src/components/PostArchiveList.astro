@@ -1,8 +1,8 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { t, type Lang } from '@/i18n/ui';
-import { formatDate, localeSlug } from '@/lib/content';
+import { tUi, type Lang } from '@/i18n/ui';
+import { formatMonthDay, localeSlug } from '@/lib/content';
 
 interface Props {
   posts: CollectionEntry<'posts'>[];
@@ -24,7 +24,7 @@ const {
 // publication date, so the output stays newest-first without client-side JS.
 const byYear = new Map<number, CollectionEntry<'posts'>[]>();
 posts.forEach((post) => {
-  const year = post.data.pubDate.getFullYear();
+  const year = post.data.pubDate.getUTCFullYear();
   const items = byYear.get(year) ?? [];
   items.push(post);
   byYear.set(year, items);
@@ -58,11 +58,11 @@ posts.forEach((post) => {
               class="date muted"
               datetime={post.data.pubDate.toISOString()}
             >
-              {formatDate(post.data.pubDate, lang)}
+              {formatMonthDay(post.data.pubDate)}
             </time>
             <a href={getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}`)}>
               {post.data.title}
-              {post.data.draft && <span class="draft-badge">{t(lang, 'posts.draft')}</span>}
+              {post.data.draft && <span class="draft-badge">{tUi('posts.draft')}</span>}
             </a>
           </li>
         ))}
@@ -81,7 +81,7 @@ posts.forEach((post) => {
   }
   .row {
     display: grid;
-    grid-template-columns: 8.5rem minmax(0, 1fr);
+    grid-template-columns: 4rem minmax(0, 1fr);
     gap: 0.5rem 1rem;
     padding: 0.25rem 0;
     align-items: baseline;

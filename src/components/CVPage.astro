@@ -1,6 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { t, tEn, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getCv } from '@/lib/content';
 import { allCitations } from '@/lib/citations';
 import { allBibtex } from '@/lib/bibtex';
@@ -31,25 +31,25 @@ const cvLinks = [
     : undefined,
 ].filter((link): link is { label: string; url: string } => Boolean(link));
 ---
-<Base lang={lang} title={tEn('nav.cv')} image={lang === 'en' ? '/en/og/cv.png' : '/og/cv.png'}>
+<Base lang={lang} title={tUi('nav.cv')} image={lang === 'en' ? '/en/og/cv.png' : '/og/cv.png'}>
   <div class:list={['cv-layout', { 'has-toc': hasToc }]}>
     <Toc headings={headings} lang={lang} />
     <div class="cv-content">
       <div class="cv-header">
-        <h1>{t(lang, 'nav.cv')}</h1>
+        <h1>{tUi('nav.cv')}</h1>
         {/* Page-level toolbar. Copy-all and .bib actions are collapsed into
             one disclosure menu built client-side by the script below — the
             same affordance as the per-section copy menus. */}
         <div
           class="cv-header-actions"
           data-cv-actions
-          data-label-all={t(lang, 'cv.copy.all')}
-          data-label-bib={t(lang, 'cv.copy.bib')}
-          data-menu-aria={t(lang, 'cv.actions.menu.aria')}
+          data-label-all={tUi('cv.copy.all')}
+          data-label-bib={tUi('cv.copy.bib')}
+          data-menu-aria={tUi('cv.actions.menu.aria')}
         ></div>
       </div>
       {cvLinks.length > 0 && (
-        <nav aria-label={lang === 'ja' ? 'プロフィールリンク' : 'Profile links'}>
+        <nav aria-label="Profile links">
           <ul class="cv-profile-links">
             {cvLinks.map((link) => (
               <li>
@@ -64,18 +64,18 @@ const cvLinks = [
       <div
         class="prose cv-prose"
         data-cv-lang={lang}
-        data-copy-label={t(lang, 'code.copy')}
+        data-copy-label={tUi('code.copy')}
         data-citations={JSON.stringify(allCitations)}
-        data-citation-label={t(lang, 'citation.label')}
-        data-citation-source={t(lang, 'citation.source')}
+        data-citation-label={tUi('citation.label')}
+        data-citation-source={tUi('citation.source')}
         data-bibtex={JSON.stringify(allBibtex)}
-        data-bibtex-label={t(lang, 'cv.copy.bibtex')}
-        data-bibtex-aria={t(lang, 'cv.copy.bibtex.aria')}
-        data-section-bibtex-label={t(lang, 'cv.copy.bibtex.section')}
-        data-section-copy-label={t(lang, 'cv.copy.section')}
-        data-section-menu-label={t(lang, 'cv.copy.section.menu')}
-        data-section-menu-aria={t(lang, 'cv.copy.section.menu.aria')}
-        data-item-text-label={t(lang, 'cv.copy.item.text')}
+        data-bibtex-label={tUi('cv.copy.bibtex')}
+        data-bibtex-aria={tUi('cv.copy.bibtex.aria')}
+        data-section-bibtex-label={tUi('cv.copy.bibtex.section')}
+        data-section-copy-label={tUi('cv.copy.section')}
+        data-section-menu-label={tUi('cv.copy.section.menu')}
+        data-section-menu-aria={tUi('cv.copy.section.menu.aria')}
+        data-item-text-label={tUi('cv.copy.item.text')}
       ><Content /></div>
     </div>
   </div>
@@ -1075,7 +1075,7 @@ const cvLinks = [
      desktop TOC in the otherwise unused right viewport gutter. */
   @media (min-width: 90rem) {
     .cv-layout.has-toc {
-      --toc-space: min(16rem, calc((100vw - var(--max-width)) / 2));
+      --toc-space: min(19rem, calc((100vw - var(--max-width)) / 2));
       display: grid;
       grid-template-columns:
         calc(100% - var(--toc-space))

@@ -10,6 +10,7 @@ import type { Lang } from '@/i18n/ui';
 // Draft policy: post detail / post tag pages exclude drafts from production
 // but keep them buildable in `npm run dev` so authors can preview.
 
+// Posts are shared, so JA and EN route wrappers receive the same path set.
 export async function buildPostsDetailPaths(lang: Lang) {
   const posts = (await getByLang('posts', lang)).filter(
     (p) => !p.data.draft || import.meta.env.DEV,

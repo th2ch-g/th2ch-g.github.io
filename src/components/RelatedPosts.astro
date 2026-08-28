@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { localeSlug, formatDate } from '@/lib/content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 
@@ -11,8 +11,8 @@ interface Props {
 const { posts, lang } = Astro.props;
 ---
 {posts.length > 0 && (
-  <section class="related-posts" aria-label={t(lang, 'posts.related')}>
-    <h2 class="related-heading">{t(lang, 'posts.related')}</h2>
+  <section class="related-posts" aria-label={tUi('posts.related')}>
+    <h2 class="related-heading">{tUi('posts.related')}</h2>
     <ul class="related-list">
       {posts.map((post) => {
         const slug = localeSlug(post.id);
@@ -21,7 +21,7 @@ const { posts, lang } = Astro.props;
           <li>
             <a class="related-card" href={href}>
               <span class="related-title">{post.data.title}</span>
-              <span class="related-date muted">{formatDate(post.data.pubDate, lang)}</span>
+              <span class="related-date muted">{formatDate(post.data.pubDate)}</span>
             </a>
           </li>
         );

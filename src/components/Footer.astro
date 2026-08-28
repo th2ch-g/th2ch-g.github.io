@@ -1,6 +1,6 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getLegalByLang, getProfileMeta } from '@/lib/content';
 
 interface Props {
@@ -14,20 +14,31 @@ const year = new Date().getFullYear();
 // rather than rendering broken `https://github.com/` links.
 const repoUrl = meta.repo ? `https://github.com/${meta.repo}` : undefined;
 // Legal docs auto-discovered from src/content/legal/<lang>/. Drop a new
-// markdown file there and it appears in the footer + sitemap with no
-// further code change. Labels come from each doc's frontmatter `title`,
-// so editing the markdown is sufficient to rename the link.
+// markdown file there and it appears in the footer + sitemap with no further
+// code change. Footer labels prefer the English mirror's frontmatter title;
+// the destination still follows the current content locale.
 const legalDocs = await getLegalByLang(lang);
+const englishLegalTitles = new Map(
+  (await getLegalByLang('en')).map((doc) => [doc.slug, doc.title]),
+);
+const legalLinks = legalDocs.map((doc) => ({
+  slug: doc.slug,
+  // Legal pages are content and keep their localized headings, but footer
+  // navigation is English-only. A humanized slug preserves that contract if
+  // a locale-specific page temporarily has no English mirror.
+  label: englishLegalTitles.get(doc.slug)
+    ?? doc.slug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' '),
+})).sort((a, b) => a.label.localeCompare(b.label, 'en'));
 const sitemapUrl = getRelativeLocaleUrl(lang, '/sitemap');
-const sitemapLabel = t(lang, 'sitemap.title');
+const sitemapLabel = tUi('sitemap.title');
 ---
 <footer class="site-footer">
   <div class="inner">
     <p class="muted">© {year} {meta.siteHandle}</p>
     <p class="muted">
-      {legalDocs.map((d) => (
+      {legalLinks.map((doc) => (
         <>
-          <a href={getRelativeLocaleUrl(lang, `/${d.slug}`)}>{d.title}</a>
+          <a href={getRelativeLocaleUrl(lang, `/${doc.slug}`)}>{doc.label}</a>
           <span class="sep">·</span>
         </>
       ))}
@@ -37,7 +48,7 @@ const sitemapLabel = t(lang, 'sitemap.title');
           <span class="sep">·</span>
           <a href={`${repoUrl}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">Code license: MIT</a>
           <span class="sep">·</span>
-          <a href={`${repoUrl}/blob/main/LICENSE-content`} target="_blank" rel="noopener noreferrer">Content license: CC BY 4.0 (excluding AI-generated images)</a>
+          <a href={`${repoUrl}/blob/main/LICENSE-content`} target="_blank" rel="noopener noreferrer">Content license: CC BY 4.0</a>
           <span class="sep">·</span>
           <a href={repoUrl} target="_blank" rel="noopener noreferrer">Source</a>
         </>

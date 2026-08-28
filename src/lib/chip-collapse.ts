@@ -5,19 +5,24 @@ export interface ChipCollapseOptions {
   lessLabel: string;
 }
 
+export const DEFAULT_CHIP_COLLAPSE_THRESHOLD = 5;
+
 export function wireChipCollapse(container: HTMLElement, opts: ChipCollapseOptions): void {
   if (container.dataset.collapseWired === '1') return;
-  const threshold = opts.threshold ?? 5;
-  const chips = Array.from(container.querySelectorAll<HTMLElement>('.chip'));
+  const threshold = opts.threshold ?? DEFAULT_CHIP_COLLAPSE_THRESHOLD;
+  const chips = Array.from(container.querySelectorAll<HTMLElement>('.chip:not(.chip-toggle)'));
   if (chips.length <= threshold + 1) return;
 
   const hiddenChips = chips.slice(threshold);
   hiddenChips.forEach((chip, index) => chip.style.setProperty('--reveal-i', String(index)));
 
-  const toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.className = 'chip chip-toggle';
-  container.appendChild(toggle);
+  const existingToggle = container.querySelector<HTMLButtonElement>('.chip-toggle');
+  const toggle = existingToggle ?? document.createElement('button');
+  if (!existingToggle) {
+    toggle.type = 'button';
+    toggle.className = 'chip chip-toggle';
+    container.appendChild(toggle);
+  }
 
   let expanded = hiddenChips.some((chip) => chip.classList.contains('is-active'));
 

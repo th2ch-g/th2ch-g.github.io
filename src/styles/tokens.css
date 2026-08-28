@@ -39,7 +39,7 @@
     "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans",
     "Yu Gothic UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Menlo", "Consolas", monospace;
-  --max-width: 64rem;
+  --max-width: 50rem;
   --radius: 6px;
 }
 

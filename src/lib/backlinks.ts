@@ -2,13 +2,11 @@ import type { CollectionEntry } from 'astro:content';
 import { getByLang, localeSlug } from './content';
 import type { Lang } from '@/i18n/ui';
 
-// Build a slug -> citers map for the given locale. A "citer" is any
-// post whose body contains a relative link `/posts/<slug>` (with or
-// without locale prefix) targeting another post in the same locale.
+// Build a slug -> citers map for the shared post collection. A "citer" is
+// any post whose body contains a relative link to either route locale.
 //
 // External links (https://...) and links to non-post routes are ignored.
-// The crawl runs once per locale per build and the result is cached for
-// the remainder of the same Astro build process.
+// The crawl result is identical for both routes and is cached once per build.
 
 type Citer = {
   id: string;
@@ -17,19 +15,9 @@ type Citer = {
   pubDate: Date;
 };
 
-const cache = new Map<Lang, Map<string, Citer[]>>();
+let cache: Map<string, Citer[]> | undefined;
 
-// Per-locale URL prefix for post links inside markdown bodies. Tied
-// to the `prefixDefaultLocale: false` routing model in astro.config.mjs
-// (JA at root, EN under `/en/`). Kept as a literal map (rather than
-// going through `getRelativeLocaleUrl`) because the consumer below
-// embeds it as a regex source, not as a real URL.
-const POSTS_PREFIX_BY_LANG: Record<Lang, string> = {
-  ja: '/posts/',
-  en: '/en/posts/',
-};
-
-function extractPostsSlugs(body: string, lang: Lang): string[] {
+function extractPostsSlugs(body: string): string[] {
   const out: string[] = [];
   // Match `[label](/posts/foo)`, `[label](/posts/foo/)`, or the EN-prefixed
   // form `(/en/posts/foo)`. We accept either `/...` (root-relative) so
@@ -42,22 +30,21 @@ function extractPostsSlugs(body: string, lang: Lang): string[] {
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`]*`/g, '')
     .replace(/<!--[\s\S]*?-->/g, '');
-  const prefix = POSTS_PREFIX_BY_LANG[lang];
-  const regex = new RegExp(`\\]\\((${prefix.replace(/\//g, '\\/')})([^)\\s#?]+)`, 'g');
+  const regex = /\]\((?:\/en)?\/posts\/([^)\s#?]+)/g;
   for (const m of prose.matchAll(regex)) {
-    out.push(m[2].replace(/\/$/, ''));
+    out.push(m[1].replace(/\/$/, ''));
   }
   return out;
 }
 
 async function getBacklinkMap(lang: Lang): Promise<Map<string, Citer[]>> {
-  if (cache.has(lang)) return cache.get(lang)!;
+  if (cache) return cache;
   const posts = (await getByLang('posts', lang)).filter(
     (p) => !p.data.draft || import.meta.env.DEV,
   );
   const map = new Map<string, Citer[]>();
   for (const post of posts) {
-    const targets = extractPostsSlugs(post.body ?? '', lang);
+    const targets = extractPostsSlugs(post.body ?? '');
     for (const target of targets) {
       const list = map.get(target) ?? [];
       list.push({
@@ -69,7 +56,7 @@ async function getBacklinkMap(lang: Lang): Promise<Map<string, Citer[]>> {
       map.set(target, list);
     }
   }
-  cache.set(lang, map);
+  cache = map;
   return map;
 }
 

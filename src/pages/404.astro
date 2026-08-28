@@ -1,29 +1,22 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { t } from '@/i18n/ui';
+import { tUi } from '@/i18n/ui';
 
 // GitHub Pages serves a single `/404.html` regardless of the requested
-// locale, so this page intentionally renders bilingual content stacked
-// rather than picking a side. Anchors point to `/` (ja) and `/en/`
-// respectively so the visitor can land in either home.
+// content locale. The interface stays English and offers both content homes.
 //
 // availableLocales={['ja']}: there is no /en/404 route (GitHub Pages only
 // serves the root 404.html), so the language switcher and hreflang must NOT
-// advertise /en/404 — it would be a dead link. The stacked sections below
-// keep the page itself bilingual regardless.
+// advertise /en/404 — it would be a dead link. The explicit links below
+// still expose both content locales.
 ---
 <Base lang="ja" title="404 — Not Found" availableLocales={['ja']}>
   <h1 class="big-404">404</h1>
   <section>
-    <h2>{t('ja', '404.title')}</h2>
-    <p>{t('ja', '404.message')}</p>
-    <p><a href="/">{t('ja', '404.home')} →</a></p>
-  </section>
-  <hr />
-  <section>
-    <h2>{t('en', '404.title')}</h2>
-    <p>{t('en', '404.message')}</p>
-    <p><a href="/en/">{t('en', '404.home')} →</a></p>
+    <h2>{tUi('404.title')}</h2>
+    <p>{tUi('404.message')}</p>
+    <p><a href="/">{tUi('404.home.ja')} →</a></p>
+    <p><a href="/en/">{tUi('404.home.en')} →</a></p>
   </section>
 </Base>
 
@@ -35,10 +28,5 @@ import { t } from '@/i18n/ui';
     color: var(--color-accent);
     font-family: var(--font-mono);
     line-height: 1;
-  }
-  hr {
-    margin: 2rem 0;
-    border: 0;
-    border-top: 1px solid var(--color-border);
   }
 </style>

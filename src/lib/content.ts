@@ -12,38 +12,31 @@ type LangAware = 'posts';
 // (Base.astro's getProfileMeta throws on the missing profile.yaml).
 // In prod we never touch the cache: an empty collection at build time
 // is a real configuration error and must still surface loudly.
-const devPostsByLang = new Map<Lang, CollectionEntry<'posts'>[]>();
+let devPosts: CollectionEntry<'posts'>[] | undefined;
 const devProfileMetaByLang = new Map<Lang, ProfileMeta>();
 
-// Entries live under `<collection>/<lang>/<slug>.md`, so `entry.id` looks like
-// `ja/foo` or `en/foo`. We strip the locale prefix to get a stable, language-
-// independent slug used for URLs. Anything that doesn't match the expected
-// shape is a misplaced content file and should fail the build loudly rather
-// than silently producing a colliding URL.
+// Shared posts live directly under `posts/<slug>.md`, so their entry IDs are
+// already URL slugs. Locale-specific collections such as legal still use
+// `ja/<slug>` and `en/<slug>` IDs. Normalize both layouts for callers that
+// build URLs from a collection entry.
 const LOCALE_PREFIX = /^(ja|en)\//;
 export function localeSlug(id: string): string {
-  if (!LOCALE_PREFIX.test(id)) {
-    throw new Error(
-      `localeSlug: entry id "${id}" is not under ja/ or en/; check the file layout`,
-    );
-  }
   return id.replace(LOCALE_PREFIX, '');
 }
 
 export async function getByLang<C extends LangAware>(
   collection: C,
-  lang: Lang,
+  _lang: Lang,
 ): Promise<CollectionEntry<C>[]> {
-  const entries = await getCollection(collection, ({ id }: { id: string }) =>
-    id.startsWith(`${lang}/`),
-  );
+  // Posts are shared content. The route locale controls interface chrome and
+  // URL prefixes, never which post entries are returned.
+  const entries = await getCollection(collection);
   if (import.meta.env.DEV && collection === 'posts') {
     const posts = entries as unknown as CollectionEntry<'posts'>[];
     if (posts.length === 0) {
-      const cached = devPostsByLang.get(lang);
-      if (cached) return cached as unknown as CollectionEntry<C>[];
+      if (devPosts) return devPosts as unknown as CollectionEntry<C>[];
     } else {
-      devPostsByLang.set(lang, posts);
+      devPosts = posts;
     }
   }
   return entries as CollectionEntry<C>[];
@@ -252,12 +245,14 @@ export function sortByDateDesc<T extends { id: string; data: Record<string, unkn
   });
 }
 
-export function formatDate(date: Date, lang: Lang) {
-  return new Intl.DateTimeFormat(lang === 'ja' ? 'ja-JP' : 'en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
+// Content dates originate as date-only frontmatter values. Format from their
+// ISO representation so local and CI time zones cannot shift the calendar day.
+export function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+export function formatMonthDay(date: Date) {
+  return date.toISOString().slice(5, 10);
 }
 
 // Series helpers. A "series" is just a free-form string in front-matter —

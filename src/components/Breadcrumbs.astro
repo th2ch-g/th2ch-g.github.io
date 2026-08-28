@@ -1,5 +1,5 @@
 ---
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 
 // Renders a Schema.org `BreadcrumbList` using Microdata so search engines
 // can show breadcrumb-style URLs in result snippets without needing a
@@ -13,9 +13,9 @@ interface Props {
   items: Crumb[];
   lang: Lang;
 }
-const { items, lang } = Astro.props;
+const { items } = Astro.props;
 ---
-<nav class="breadcrumbs" aria-label={t(lang, 'breadcrumb.label')}>
+<nav class="breadcrumbs" aria-label={tUi('breadcrumb.label')}>
   <ol itemscope itemtype="https://schema.org/BreadcrumbList">
     {items.map((it, i) => (
       <li

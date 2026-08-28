@@ -1,6 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { getProfileMeta } from '@/lib/content';
 
 interface Props {
@@ -11,8 +11,8 @@ const { lang } = Astro.props;
 const meta = await getProfileMeta(lang);
 // The localized `nav.contact` doubles as the page H1, matching the
 // per-section H1 convention used by the other static pages.
-const title = t(lang, 'nav.contact');
-const description = t(lang, 'contact.description');
+const title = tUi('nav.contact');
+const description = tUi('contact.description');
 
 // Build the iframe src from the configured form URL. Google Forms render a
 // chrome-less, embed-friendly page when `embedded=true` is present; the URL
@@ -36,21 +36,21 @@ if (meta.contactForm) {
       <iframe
         class="contact-form"
         src={embedSrc}
-        title={t(lang, 'contact.embedTitle')}
+        title={tUi('contact.embedTitle')}
         loading="lazy"
       >…</iframe>
       {/* Fallback for browsers/extensions that block the frame, and for
           visitors who prefer the full-page form. Uses the plain URL. */}
       <p class="fallback">
         <a href={meta.contactForm} target="_blank" rel="noopener noreferrer">
-          {t(lang, 'contact.cta')}
+          {tUi('contact.cta')}
         </a>
       </p>
     </>
   ) : (
     /* Forkable fallback: a fork that leaves `contactForm` blank still gets
        a coherent page rather than a dangling embed or build error. */
-    <p class="muted">{t(lang, 'contact.unavailable')}</p>
+    <p class="muted">{tUi('contact.unavailable')}</p>
   )}
 </Base>
 

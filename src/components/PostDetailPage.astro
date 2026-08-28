@@ -1,6 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { formatDate, getReadingMinutes, getWordCount } from '@/lib/content';
 import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content';
@@ -24,8 +24,11 @@ interface Props {
 }
 const { post, lang } = Astro.props;
 const { Content, headings } = await render(post);
-const readingMinutes = getReadingMinutes(post.body ?? '', lang);
-const wordCount = getWordCount(post.body ?? '', lang);
+// Post bodies are authored once in Japanese and shared by both route locales.
+// Interface chrome follows `lang`; prose metrics and language metadata do not.
+const contentLang: Lang = 'ja';
+const readingMinutes = getReadingMinutes(post.body ?? '', contentLang);
+const wordCount = getWordCount(post.body ?? '', contentLang);
 const related = await getRelatedPosts(post, lang, 3);
 const { prev, next } = await getAdjacentPosts(post, lang);
 const seriesPosts = post.data.series ? await getSeriesPosts(post.data.series, lang) : [];
@@ -69,24 +72,25 @@ const hasToc = tocHeadingCount >= 2;
     updatedDate: post.data.updatedDate,
     tags: post.data.tags,
     wordCount,
+    contentLang,
   }}
   breadcrumbs={[
-    { name: t(lang, 'nav.home'), url: getRelativeLocaleUrl(lang, '/') },
-    { name: t(lang, 'nav.posts'), url: getRelativeLocaleUrl(lang, '/posts') },
+    { name: tUi('nav.home'), url: getRelativeLocaleUrl(lang, '/') },
+    { name: tUi('nav.posts'), url: getRelativeLocaleUrl(lang, '/posts') },
     { name: post.data.title },
   ]}
 >
   <Breadcrumbs
     lang={lang}
     items={[
-      { label: t(lang, 'nav.home'), href: getRelativeLocaleUrl(lang, '/') },
-      { label: t(lang, 'nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
+      { label: tUi('nav.home'), href: getRelativeLocaleUrl(lang, '/') },
+      { label: tUi('nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
       { label: post.data.title },
     ]}
   />
   <div class:list={['post-layout', { 'has-toc': hasToc }]}>
     <Toc headings={headings} lang={lang} />
-    <article>
+    <article lang={contentLang}>
       {/* Pagefind index hints. `data-pagefind-filter="tag:foo"` adds the post
           to the "tag" filter group with value "foo"; multiple tags need
           separate elements. The `style="display:none"` keeps them out of the
@@ -98,19 +102,19 @@ const hasToc = tocHeadingCount >= 2;
       {post.data.tags?.map((tag) => (
         <span data-pagefind-filter={`tag:${tag}`} style="display:none"></span>
       ))}
-      <span data-pagefind-filter={`year:${post.data.pubDate.getFullYear()}`} style="display:none"></span>
+      <span data-pagefind-filter={`year:${post.data.pubDate.getUTCFullYear()}`} style="display:none"></span>
       <header class="post-header">
-        {post.data.draft && <p class="draft">[{t(lang, 'posts.draft')}]</p>}
+        {post.data.draft && <p class="draft">[{tUi('posts.draft')}]</p>}
         <h1>{post.data.title}</h1>
         {post.data.description && (
           <p class="lede">{post.data.description}</p>
         )}
         <p class="muted">
-          {t(lang, 'posts.published')}: {formatDate(post.data.pubDate, lang)}
+          {tUi('posts.published')}: {formatDate(post.data.pubDate)}
           {post.data.updatedDate && (
-            <> · {t(lang, 'posts.updated')}: {formatDate(post.data.updatedDate, lang)}</>
+            <> · {tUi('posts.updated')}: {formatDate(post.data.updatedDate)}</>
           )}
-          <> · {readingMinutes} {t(lang, 'posts.readingTime')}</>
+          <> · {readingMinutes} {tUi('posts.readingTime')}</>
         </p>
         {post.data.tags && (
           <div class="tags">
@@ -137,7 +141,7 @@ const hasToc = tocHeadingCount >= 2;
       <PostNav prev={prev} next={next} lang={lang} />
       <hr />
       <p class="muted license">
-        {t(lang, 'posts.license.text')}
+        {tUi('posts.license.text')}
         <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
       </p>
     </article>
@@ -246,7 +250,7 @@ const hasToc = tocHeadingCount >= 2;
      available space instead of pulling the article to the left. */
   @media (min-width: 90rem) {
     .post-layout.has-toc {
-      --toc-space: min(16rem, calc((100vw - var(--max-width)) / 2));
+      --toc-space: min(19rem, calc((100vw - var(--max-width)) / 2));
       display: grid;
       grid-template-columns:
         calc(100% - var(--toc-space))

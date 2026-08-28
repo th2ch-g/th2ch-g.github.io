@@ -1,12 +1,12 @@
 ---
 import { siX, siBluesky, siHatenabookmark, siFacebook } from 'simple-icons';
-import { t, type Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 
 interface Props {
   lang: Lang;
   title: string;
 }
-const { lang, title } = Astro.props;
+const { title } = Astro.props;
 
 // Build the share URL against Astro.site (production host) so links shared
 // from a dev preview still resolve to the public page, not localhost.
@@ -18,25 +18,25 @@ const tt = encodeURIComponent(title);
 const targets = [
   {
     key: 'x',
-    label: t(lang, 'share.x'),
+    label: tUi('share.x'),
     href: `https://twitter.com/intent/tweet?text=${tt}&url=${u}`,
     icon: siX,
   },
   {
     key: 'bluesky',
-    label: t(lang, 'share.bluesky'),
+    label: tUi('share.bluesky'),
     href: `https://bsky.app/intent/compose?text=${tt}%20${u}`,
     icon: siBluesky,
   },
   {
     key: 'hatena',
-    label: t(lang, 'share.hatena'),
+    label: tUi('share.hatena'),
     href: `https://b.hatena.ne.jp/entry?url=${u}`,
     icon: siHatenabookmark,
   },
   {
     key: 'facebook',
-    label: t(lang, 'share.facebook'),
+    label: tUi('share.facebook'),
     href: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
     icon: siFacebook,
   },
@@ -44,8 +44,8 @@ const targets = [
 
 const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
 ---
-<div class="share" aria-label={t(lang, 'share.title')}>
-  <span class="share-label">{t(lang, 'share.title')}</span>
+<div class="share" aria-label={tUi('share.title')}>
+  <span class="share-label">{tUi('share.title')}</span>
   <ul class="share-list">
     {targets.map((target) => (
       <li>
@@ -76,8 +76,8 @@ const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
         href={linkedinHref}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={t(lang, 'share.linkedin')}
-        title={t(lang, 'share.linkedin')}
+        aria-label={tUi('share.linkedin')}
+        title={tUi('share.linkedin')}
       >
         {/* LinkedIn glyph from Bootstrap Icons (MIT) — simple-icons no longer
             ships LinkedIn due to trademark constraints. */}
@@ -105,11 +105,11 @@ const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
         type="button"
         class="share-btn share-copy"
         data-share-url={shareUrl}
-        data-label-copy={t(lang, 'share.copy')}
-        data-label-copied={t(lang, 'share.copied')}
-        data-label-failed={t(lang, 'share.copy.failed')}
-        aria-label={t(lang, 'share.copy')}
-        title={t(lang, 'share.copy')}
+        data-label-copy={tUi('share.copy')}
+        data-label-copied={tUi('share.copied')}
+        data-label-failed={tUi('share.copy.failed')}
+        aria-label={tUi('share.copy')}
+        title={tUi('share.copy')}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

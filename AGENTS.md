@@ -35,7 +35,7 @@ Docker: `docker compose up dev` (HMR on 4321) or `up prod` (nginx on 8080).
 
 When adding a page, create both: `src/pages/foo.astro` and `src/pages/en/foo.astro`. Shared rendering goes in `src/components/FooPage.astro`.
 
-UI strings are in `src/i18n/ui.ts`. All keys must exist in both `ja` and `en`. Use `t(lang, key)`; `tEn(key)` returns the English label regardless of locale (used for `<title>` chrome).
+UI strings are English-only and live in `src/i18n/ui.ts`; use `tUi(key)` for all visible and accessible interface labels in both routes. `lang` selects content, routes, document language, and locale metadata only. Keep localized prose in content collections or `profile.yaml`, not in the UI dictionary. Render grouped post-list dates as `MM-DD` beneath an ISO year heading, and standalone component dates as `YYYY-MM-DD`.
 
 ### Content collections
 
@@ -44,7 +44,7 @@ Defined in `src/content.config.ts`. Four collections:
 - `cv` — `src/content/cv/{ja,en}.md`. Frontmatter carries `orcid` (the iD the `orcid-cv-sync` skill pulls from; both locales must declare the same one) plus optional `github` / `kaggle` / `huggingface` URLs rendered in the CV header. Funding / publication / presentation lists are wrapped in `<!-- cv:section <kind> -->` … `<!-- /cv:section -->` markers, `kind` ∈ `funding` / `peer-reviewed` / `preprints` / `presentations`. Those markers are the **only** contract for "which list is what": `remark-cv-sections` turns them into `data-cv-section` attributes that `CVPage.astro` reads, and the sync script inserts new entries right after the matching start marker. Heading text is free-form — renaming or translating a heading changes nothing.
 - `legal` — `src/content/legal/{ja,en}/<slug>.md` with `title` / `description` / `updatedDate` frontmatter. The slug after the locale becomes the URL (`/<slug>` and `/en/<slug>`), so keep it short and stable.
 - `profileMeta` — single file `src/content/profile.yaml`. Per-locale fields use `{ ja, en }` sub-objects; shared values stay flat. Read via `getProfileMeta(lang)` (in `src/lib/content.ts`), which flattens to a per-locale plain object. Throws if the file is missing — fail loudly at build time rather than degrade silently.
-- `posts` — `src/content/posts/{ja,en}/<slug>.md` with optional co-located image files. Slug must match across locales (the language switcher and `getStaticPaths` rely on it). `entry.id` looks like `ja/<slug>` — `localeSlug(id)` strips the prefix.
+- `posts` — shared Japanese content under `src/content/posts/<slug>.md`, with optional co-located images. The same entries render at `/posts/` and `/en/posts/`; route locale changes interface chrome and URL prefixes only. `entry.id` is the slug directly.
 
 The gallery at `/gallery` is **not** a collection — loose images under `src/content/gallery/` are loaded via `import.meta.glob` from `PhotosListPage.astro`.
 
@@ -104,7 +104,7 @@ Reading-time: English uses the `reading-time` package; Japanese uses a char-coun
 
 `.claude/skills/` ships three skills used in this repo:
 - `orcid-cv-sync` — pull new publications and funding from ORCID into `src/content/cv/{ja,en}.md`. Never rewrites an existing entry; its one deletion rule drops a preprint once its peer-reviewed version is listed in the same file (CrossRef `is-preprint-of`, falling back to title match). Trigger when refreshing publications or funding.
-- `translate-ja-md-to-en` — produce the `en/<slug>.md` mirror for any `src/content/<collection>/ja/<slug>.md`. Slug, frontmatter keys, code blocks, DOIs, and BibTeX are preserved verbatim.
+- `translate-ja-md-to-en` — produce an English mirror for locale-specific content under `src/content/<collection>/ja/`. Posts are shared and are not translation targets. Slug, frontmatter keys, code blocks, DOIs, and BibTeX are preserved verbatim.
 - `commit-push-monitor-ci` — validate completed changes, create a co-authored commit (trailer matches the agent actually running), push to `main`, and monitor every CI workflow for the pushed SHA until it is green. On failure it diagnoses, fixes in-scope, re-pushes, and re-monitors — bounded at 3 attempts, and it stops immediately if the same failure recurs, because every push to `main` is a production deploy.
 
 All three are auto-discoverable; prefer them over hand-rolled equivalents.
