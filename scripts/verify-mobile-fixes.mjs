@@ -51,6 +51,39 @@ async function assertTocAnchorClearsHeader(path) {
   await page.close();
 }
 
+async function assertCvBibtexCopy() {
+  const page = await newLocalPage({ width: 1280, height: 900 });
+  await page.goto(`${url}/cv/`, { waitUntil: 'networkidle' });
+
+  const papers = page.locator('li.cv-has-bibtex');
+  assert.ok(await papers.count(), 'CV has no per-paper BibTeX menus');
+  const firstPaper = papers.first();
+  const trigger = firstPaper.locator('summary.cv-copy-btn');
+  const opacity = Number.parseFloat(await trigger.evaluate((element) => getComputedStyle(element).opacity));
+  assert.ok(opacity >= 0.65, `CV BibTeX menu is hidden before hover (opacity ${opacity})`);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async (text) => {
+          globalThis.__cvCopiedBibtex = text;
+        },
+      },
+    });
+  });
+  await trigger.click();
+  assert.deepEqual(
+    await firstPaper.locator('.cv-menu-item').allTextContents(),
+    ['テキスト', 'BibTeX'],
+    'CV paper copy menu does not expose text and BibTeX actions',
+  );
+  await firstPaper.getByRole('button', { name: 'BibTeX', exact: true }).click();
+  const copied = await page.evaluate(() => globalThis.__cvCopiedBibtex ?? '');
+  assert.match(copied, /^@article\{/, 'CV paper BibTeX action did not copy a BibTeX entry');
+  await page.close();
+}
+
 async function assertFirefoxTouchAutoplay() {
   const firefoxBrowser = await firefox.launch({ headless: true });
   try {
@@ -97,6 +130,7 @@ async function assertFirefoxTouchAutoplay() {
 try {
   await assertTocAnchorClearsHeader('/posts/dotfiles-2026-summer/');
   await assertTocAnchorClearsHeader('/cv/');
+  await assertCvBibtexCopy();
   await assertFirefoxTouchAutoplay();
 
   const galleryPage = await newLocalPage({ width: 393, height: 852 });
@@ -216,50 +250,121 @@ try {
     (element) => element.getBoundingClientRect().top,
   );
   assert.equal(heroTopAfter, heroTopBefore, 'Mobile navigation pushes page content down');
+
+  const mobileNavLabels = await mobilePage.locator('.nav-list a').allTextContents();
+  assert.deepEqual(
+    mobileNavLabels.map((label) => label.trim()),
+    ['Posts', 'CV', 'Gallery', 'Contact'],
+    'Mobile navigation order does not match the primary site sections',
+  );
+  const homePostRows = mobilePage.locator('[data-post-row]');
+  const homePostCount = await homePostRows.count();
+  assert.ok(homePostCount > 0, 'Home does not show any posts');
+  assert.ok(homePostCount <= 7, `Home shows more than seven posts (${homePostCount})`);
+  const homePostTypography = await homePostRows.first().evaluate((row) => {
+    const title = row.querySelector('a');
+    const date = row.querySelector('time');
+    return {
+      root: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+      title: title ? Number.parseFloat(getComputedStyle(title).fontSize) : 0,
+      date: date ? Number.parseFloat(getComputedStyle(date).fontSize) : 0,
+    };
+  });
+  assert.ok(
+    homePostTypography.title > homePostTypography.root,
+    'Home post titles are not larger than the base text',
+  );
+  assert.ok(
+    homePostTypography.date > homePostTypography.root * 0.9,
+    'Home post dates are not using the enlarged list treatment',
+  );
   await mobilePage.close();
 
-  const cardPage = await newLocalPage({ width: 696, height: 900 });
-  await cardPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
-  const mobileCards = await cardPage.evaluate(() => {
-    const grid = document.querySelector('.post-grid');
-    const card = grid?.querySelector('.post-card');
-    if (!grid || !card) return null;
-    const gridRect = grid.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-    return { gridWidth: gridRect.width, cardWidth: cardRect.width };
+  const listPage = await newLocalPage({ width: 393, height: 852 });
+  await listPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
+  assert.equal(await listPage.locator('.post-card').count(), 0, 'Post cards still render');
+  assert.equal(await listPage.locator('[data-posts-filter]').count(), 1, 'Post filters are missing');
+  const mobileRow = await listPage.locator('[data-post-row]').first().evaluate((row) => {
+    const date = row.querySelector('time')?.getBoundingClientRect();
+    const title = row.querySelector('a')?.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    if (!date || !title) return null;
+    return {
+      dateBottom: date.bottom,
+      titleTop: title.top,
+      dateLeft: date.left,
+      titleLeft: title.left,
+      rowRight: rowRect.right,
+      viewportWidth: window.innerWidth,
+      rootFontSize: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+      titleFontSize: Number.parseFloat(getComputedStyle(row.querySelector('a')).fontSize),
+    };
   });
-  assert.ok(mobileCards, 'Post grid or card is missing at mobile width');
+  assert.ok(mobileRow, 'Post archive row is missing at mobile width');
   assert.ok(
-    Math.abs(mobileCards.cardWidth - mobileCards.gridWidth) < 1,
-    `Mobile card does not fill its grid (${mobileCards.cardWidth}px / ${mobileCards.gridWidth}px)`,
+    mobileRow.titleTop >= mobileRow.dateBottom,
+    'Mobile post date and title do not stack vertically',
   );
-  await cardPage.screenshot({ path: '/tmp/th2ch-mobile-posts.png', fullPage: true });
-  await cardPage.close();
+  assert.ok(
+    Math.abs(mobileRow.dateLeft - mobileRow.titleLeft) < 1,
+    'Mobile post date and title do not share the same left edge',
+  );
+  assert.ok(mobileRow.rowRight <= mobileRow.viewportWidth, 'Mobile post row overflows the viewport');
+  assert.ok(
+    mobileRow.titleFontSize > mobileRow.rootFontSize,
+    'Posts page titles are not larger than the base text',
+  );
+
+  const firstTagChip = listPage.locator('[data-facet="tag"][data-value]:not([data-value=""])').first();
+  const selectedTag = await firstTagChip.getAttribute('data-value');
+  assert.ok(selectedTag, 'No post tag is available for filter verification');
+  await firstTagChip.click();
+  const filteredRows = listPage.locator('[data-post-row]:visible');
+  assert.ok(await filteredRows.count(), `Tag filter hides every post for ${selectedTag}`);
+  const filteredTags = await filteredRows.evaluateAll((rows) =>
+    rows.map((row) => JSON.parse(row.getAttribute('data-tags') ?? '[]')),
+  );
+  assert.ok(
+    filteredTags.every((tags) => tags.includes(selectedTag)),
+    `Tag filter shows a post outside ${selectedTag}`,
+  );
+  await listPage.locator('[data-facet="tag"][data-value=""]').click();
+
+  const newestDate = await listPage.locator('[data-post-row]:visible time').first().getAttribute('datetime');
+  await listPage.locator('[data-sort-toggle]').click();
+  const oldestDate = await listPage.locator('[data-post-row]:visible time').first().getAttribute('datetime');
+  assert.ok(newestDate && oldestDate && oldestDate < newestDate, 'Post sort does not switch to oldest first');
+  await listPage.locator('[data-sort-toggle]').click();
+  await listPage.screenshot({ path: '/tmp/th2ch-mobile-posts.png', fullPage: true });
+  await listPage.close();
 
   const desktopPage = await newLocalPage({ width: 1280, height: 900 });
   await desktopPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
-  const desktopLayout = await desktopPage.locator('.post-card').evaluateAll((cards) => {
-    const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const desktopNavLabels = await desktopPage.locator('.nav-list a').allTextContents();
+  assert.deepEqual(
+    desktopNavLabels.map((label) => label.trim()),
+    ['Posts', 'CV', 'Gallery', 'Contact'],
+    'Desktop navigation order does not match the primary site sections',
+  );
+  const desktopLayout = await desktopPage.locator('[data-post-row]').first().evaluate((row) => {
+    const date = row.querySelector('time')?.getBoundingClientRect();
+    const title = row.querySelector('a')?.getBoundingClientRect();
+    if (!date || !title) return null;
     return {
-      expectedCardWidth: 19.5 * rootFontSize,
-      cards: cards.slice(0, 2).map((card) => {
-        const rect = card.getBoundingClientRect();
-        return { left: rect.left, width: rect.width };
-      }),
+      dateRight: date.right,
+      titleLeft: title.left,
+      alignItems: getComputedStyle(row).alignItems,
     };
   });
-  assert.equal(desktopLayout.cards.length, 2, 'Expected at least two desktop post cards');
+  assert.ok(desktopLayout, 'Post archive row is missing at desktop width');
   assert.ok(
-    Math.abs(desktopLayout.cards[0].width - desktopLayout.expectedCardWidth) < 1,
-    `Desktop card width changed (${desktopLayout.cards[0].width}px)`,
+    desktopLayout.titleLeft > desktopLayout.dateRight,
+    'Desktop post date and title do not form separate columns',
   );
-  assert.ok(
-    desktopLayout.cards[1].left > desktopLayout.cards[0].left,
-    'Desktop post cards do not form multiple columns',
-  );
+  assert.equal(desktopLayout.alignItems, 'baseline', 'Desktop post row is not baseline-aligned');
   await desktopPage.close();
 
-  console.log('✓ Chromium/Firefox mobile gallery, TOC, navigation, and post-card checks passed');
+  console.log('✓ Chromium/Firefox mobile gallery, TOC, navigation, and post-list checks passed');
 } finally {
   await browser.close();
   await close();

@@ -42,15 +42,6 @@ const httpUrl = z.url().refine(
   { message: 'URL protocol must be http or https' },
 );
 
-// Zod's emoji validator accepts a sequence containing multiple emoji.
-// Segment the value into Unicode grapheme clusters as a second guard so
-// combined emoji such as "🧑‍💻" remain valid while "🧬🚀" is rejected.
-const emojiSegmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-const singleEmoji = z.emoji().refine(
-  (value) => Array.from(emojiSegmenter.segment(value)).length === 1,
-  { message: 'emoji must contain exactly one grapheme cluster' },
-);
-
 // Per-locale CV prose lives in cv/<lang>.md. The frontmatter keeps the ORCID
 // sync identity and CV-only profile links beside the document they describe.
 // Sync destinations remain declared in the body as `<!-- cv:section … -->`
@@ -231,10 +222,6 @@ const posts = defineCollection({
     // order. Free-form so authors can name a series without registering
     // it elsewhere; the slug is used both as a key and a display label.
     series: nullable(z.string()),
-    // Required visual identity for post cards and detail headers.
-    // A grapheme-aware validator allows composed emoji while rejecting
-    // multiple adjacent emoji.
-    emoji: singleEmoji,
   }),
 });
 

@@ -6,7 +6,6 @@ tags:
   - dotfiles
   - claudecode
 draft: false
-emoji: 🐚
 ---
 
 # 2026年夏時点で、最近取り入れた特筆すべき設定たち

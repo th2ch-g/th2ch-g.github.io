@@ -7,7 +7,6 @@ tags:
   - ansible
   - twitter
 draft: false
-emoji: ⚙️
 ---
 
 # 全然反応がなかった記事

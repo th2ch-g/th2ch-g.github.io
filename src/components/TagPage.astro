@@ -1,6 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
-import PostEntry from './PostEntry.astro';
+import PostArchiveList from './PostArchiveList.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
 import { t, tEn, type Lang } from '@/i18n/ui';
 import { getPublishedByLang, sortByDateDesc } from '@/lib/content';
@@ -76,12 +76,7 @@ const availableLocales: Lang[] = otherHasTag ? ['ja', 'en'] : [lang];
   </div>
 
   {posts.length > 0 ? (
-    <section>
-      <h2>{t(lang, 'tags.posts')}</h2>
-      <div class="post-grid">
-        {posts.map((post) => <PostEntry post={post} lang={lang} />)}
-      </div>
-    </section>
+    <PostArchiveList posts={posts} lang={lang} />
   ) : (
     <p class="muted">{t(lang, 'list.empty')}</p>
   )}

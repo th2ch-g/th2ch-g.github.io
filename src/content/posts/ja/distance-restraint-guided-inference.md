@@ -9,7 +9,6 @@ tags:
   - molecular-dynamics-simulation
   - twitter
 draft: false
-emoji: 🧲
 ---
 
 # 論文

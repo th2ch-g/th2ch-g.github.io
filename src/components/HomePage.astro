@@ -1,6 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
-import PostEntry from './PostEntry.astro';
+import PostArchiveList from './PostArchiveList.astro';
 import { t, type Lang } from '@/i18n/ui';
 import {
   getProfileMeta,
@@ -16,7 +16,7 @@ const meta = await getProfileMeta(lang);
 const recentPosts = sortByDateDesc(
   await getPublishedByLang('posts', lang),
   'pubDate',
-).slice(0, 3);
+).slice(0, 7);
 ---
 {/* Home page is titled with the site brand (meta.name), not "Home": this
     collapses `documentTitle` to just the brand and makes og:title /
@@ -39,11 +39,9 @@ const recentPosts = sortByDateDesc(
   </section>
 
   {recentPosts.length > 0 && (
-    <section>
-      <h2>{t(lang, 'home.recent.posts')}</h2>
-      <div class="post-grid">
-        {recentPosts.map((post) => <PostEntry post={post} lang={lang} />)}
-      </div>
+    <section class="posts-section">
+      <h2>{t(lang, 'nav.posts')}</h2>
+      <PostArchiveList posts={recentPosts} lang={lang} yearHeadingLevel="h3" size="large" />
       <p class="see-all">
         <a href={getRelativeLocaleUrl(lang, '/posts')}>
           {t(lang, 'home.see.all')}
@@ -159,6 +157,7 @@ const recentPosts = sortByDateDesc(
     .avatar-tip { max-width: calc(100vw - 2rem); }
   }
   .bio { font-size: 1.1rem; color: var(--color-muted); margin: 0.25rem 0 0.5rem; }
+  .posts-section > h2 { font-size: 1.65rem; }
   /* "See all" pill link at the bottom of each section. Pill-shaped to
      echo the social-icon row in the hero; sliding arrow on hover gives
      the affordance that this leads somewhere without yelling about it. */
@@ -175,7 +174,7 @@ const recentPosts = sortByDateDesc(
     border: 1px solid var(--color-border);
     background: transparent;
     color: var(--color-fg);
-    font-size: 0.9rem;
+    font-size: 1rem;
     line-height: 1;
     transition:
       color 160ms ease,

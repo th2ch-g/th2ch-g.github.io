@@ -10,7 +10,6 @@ tags:
   - claudecode
   - twitter
 draft: false
-emoji: 🪦
 ---
 
 # mogura: ClaudeCode無き時代に作ったRust製Visualizer

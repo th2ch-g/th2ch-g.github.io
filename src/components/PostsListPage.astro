@@ -1,9 +1,8 @@
 ---
 import Base from '@/layouts/Base.astro';
-import PostEntry from './PostEntry.astro';
+import PostArchiveList from './PostArchiveList.astro';
 import { t, tEn, type Lang } from '@/i18n/ui';
 import { collectTags, getPublishedByLang, sortByDateDesc } from '@/lib/content';
-import { getRelativeLocaleUrl } from 'astro:i18n';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -12,16 +11,13 @@ const posts = sortByDateDesc(
   await getPublishedByLang('posts', lang, { includeDevDrafts: true }),
   'pubDate',
 );
-
 const allTags = collectTags(posts);
 ---
 <Base lang={lang} title={tEn('nav.posts')} image={lang === 'en' ? '/en/og/posts.png' : '/og/posts.png'}>
-  <div class="page-head">
-    <h1>{t(lang, 'nav.posts')}</h1>
-    <a class="archive-link muted" href={getRelativeLocaleUrl(lang, '/posts/archive')}>
-      {t(lang, 'archive.title')} →
-    </a>
-  </div>
+  <h1>
+    {t(lang, 'nav.posts')}
+    {posts.length > 0 && <span class="count-badge">{posts.length}</span>}
+  </h1>
   {posts.length === 0 ? (
     <p class="muted">{t(lang, 'list.empty')}</p>
   ) : (
@@ -58,33 +54,17 @@ const allTags = collectTags(posts);
           <span class="sort-arrow" aria-hidden="true">↓</span>
         </button>
       </div>
-      <div class="post-grid" data-post-list data-sort="desc">
-        {posts.map((post) => <PostEntry post={post} lang={lang} />)}
-      </div>
+      <PostArchiveList posts={posts} lang={lang} largeTitles />
       <p class="muted empty-msg" hidden data-empty-msg>{t(lang, 'list.empty.filter')}</p>
     </>
   )}
 </Base>
 
 <script>
-  import { setupListFilter } from '@/lib/list-filter';
+  import { setupPostListFilter } from '@/lib/post-list-filter';
   import { onReady } from '@/lib/dom-ready';
 
-  onReady(() => {
-    const labels = document.querySelector<HTMLButtonElement>('[data-sort-toggle]');
-    setupListFilter({
-      rootSelector: '[data-posts-filter]',
-      listSelector: '[data-post-list]',
-      emptyMsgSelector: '[data-empty-msg]',
-      facets: [{ key: 'tag', match: 'json-array' }],
-      sort: {
-        defaultDir: 'desc',
-        labelDesc: labels?.dataset.labelNewest ?? 'Newest first',
-        labelAsc: labels?.dataset.labelOldest ?? 'Oldest first',
-      },
-      collapsible: true,
-    });
-  });
+  onReady(setupPostListFilter);
 </script>
 
 <style>
@@ -100,6 +80,39 @@ const allTags = collectTags(posts);
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
+  }
+  .tag-chips :global(.chip) {
+    padding: 0.2rem 0.7rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-card);
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+  .tag-chips :global(.chip:hover),
+  .tag-chips :global(.chip:focus-visible) {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .tag-chips :global(.chip.is-active) {
+    color: var(--color-bg);
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .tag-chips :global(.chip-toggle) {
+    border-style: dashed;
+    background: transparent;
+  }
+  .tag-chips :global(.chip-hidden) { display: none; }
+  .tag-chips[data-collapse-wired="1"] :global(.chip[style*="--reveal-i"]:not(.chip-hidden)) {
+    animation: chip-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1)
+      calc(var(--reveal-i, 0) * 35ms) both;
+  }
+  @keyframes chip-reveal {
+    from { opacity: 0; transform: scale(0.92) translateY(-2px); }
+    to { opacity: 1; transform: none; }
   }
   .sort-toggle {
     display: inline-flex;
@@ -119,21 +132,11 @@ const allTags = collectTags(posts);
     border-color: var(--color-accent);
     color: var(--color-accent);
   }
-  .sort-arrow {
-    font-weight: 700;
-    line-height: 1;
-  }
-  .page-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .archive-link {
-    font-size: 0.9rem;
-    color: var(--color-muted);
-  }
-  .archive-link:hover { color: var(--color-accent); }
+  .sort-arrow { font-weight: 700; line-height: 1; }
   .empty-msg { margin-top: 1rem; }
+  @media (prefers-reduced-motion: reduce) {
+    .tag-chips[data-collapse-wired="1"] :global(.chip[style*="--reveal-i"]:not(.chip-hidden)) {
+      animation: none;
+    }
+  }
 </style>

@@ -1,0 +1,118 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { t, type Lang } from '@/i18n/ui';
+import { formatDate, localeSlug } from '@/lib/content';
+
+interface Props {
+  posts: CollectionEntry<'posts'>[];
+  lang: Lang;
+  yearHeadingLevel?: 'h2' | 'h3';
+  size?: 'default' | 'large';
+  largeTitles?: boolean;
+}
+
+const {
+  posts,
+  lang,
+  yearHeadingLevel = 'h2',
+  size = 'default',
+  largeTitles = false,
+} = Astro.props;
+
+// Preserve the input order within each year. Callers pass posts sorted by
+// publication date, so the output stays newest-first without client-side JS.
+const byYear = new Map<number, CollectionEntry<'posts'>[]>();
+posts.forEach((post) => {
+  const year = post.data.pubDate.getFullYear();
+  const items = byYear.get(year) ?? [];
+  items.push(post);
+  byYear.set(year, items);
+});
+---
+<div
+  class:list={[
+    'post-archive-list',
+    {
+      large: size === 'large',
+      'large-titles': size === 'large' || largeTitles,
+    },
+  ]}
+  data-post-list
+>
+  {Array.from(byYear.entries()).map(([year, items]) => (
+    <section class="year" data-post-year>
+      {yearHeadingLevel === 'h3' ? (
+        <h3>{year} <span class="count-inline muted" data-year-count>({items.length})</span></h3>
+      ) : (
+        <h2>{year} <span class="count-inline muted" data-year-count>({items.length})</span></h2>
+      )}
+      <ul class="bare" data-year-items>
+        {items.map((post) => (
+          <li
+            class="row"
+            data-post-row
+            data-tags={JSON.stringify(post.data.tags ?? [])}
+          >
+            <time
+              class="date muted"
+              datetime={post.data.pubDate.toISOString()}
+            >
+              {formatDate(post.data.pubDate, lang)}
+            </time>
+            <a href={getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}`)}>
+              {post.data.title}
+              {post.data.draft && <span class="draft-badge">{t(lang, 'posts.draft')}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</div>
+
+<style>
+  .year { margin-top: 1.5rem; }
+  .year:first-child { margin-top: 1rem; }
+  .year h3 {
+    font-size: 1.2rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.25rem;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: 0.5rem 1rem;
+    padding: 0.25rem 0;
+    align-items: baseline;
+  }
+  .row[hidden] { display: none; }
+  .date {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+  }
+  .draft-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.02rem 0.4rem;
+    border: 1px solid var(--color-warn);
+    border-radius: 999px;
+    color: var(--color-warn);
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.4;
+    vertical-align: middle;
+  }
+  .post-archive-list.large .year h3 { font-size: 1.35rem; }
+  .post-archive-list.large .count-inline { font-size: 0.8em; }
+  .post-archive-list.large .row { padding-block: 0.35rem; }
+  .post-archive-list.large-titles .row > a {
+    font-size: 1.05rem;
+    line-height: 1.65;
+  }
+  .post-archive-list.large .date { font-size: 0.92rem; }
+  @media (max-width: 540px) {
+    .row { grid-template-columns: 1fr; gap: 0.1rem; }
+    .date { font-size: 0.75rem; }
+  }
+</style>

@@ -2,7 +2,6 @@
 import Base from '@/layouts/Base.astro';
 import { t, type Lang } from '@/i18n/ui';
 import { formatDate, getReadingMinutes, getWordCount } from '@/lib/content';
-import { getPostVisualHue } from '@/lib/post-visual';
 import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content';
 import ShareButtons from '@/components/ShareButtons.astro';
@@ -56,7 +55,6 @@ const tocHeadingCount = headings.filter(
   (heading) => heading.depth >= tocMinDepth && heading.depth <= tocMinDepth + 2,
 ).length;
 const hasToc = tocHeadingCount >= 2;
-const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
 ---
 <Base
   lang={lang}
@@ -101,9 +99,8 @@ const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
         <span data-pagefind-filter={`tag:${tag}`} style="display:none"></span>
       ))}
       <span data-pagefind-filter={`year:${post.data.pubDate.getFullYear()}`} style="display:none"></span>
-      <header class="post-header" style={visualStyle}>
+      <header class="post-header">
         {post.data.draft && <p class="draft">[{t(lang, 'posts.draft')}]</p>}
-        <div class="post-emoji" aria-hidden="true">{post.data.emoji}</div>
         <h1>{post.data.title}</h1>
         {post.data.description && (
           <p class="lede">{post.data.description}</p>
@@ -236,25 +233,6 @@ const visualStyle = `--post-visual-hue: ${getPostVisualHue(slug)}`;
   }
   .post-header {
     margin-bottom: 2rem;
-  }
-  .post-emoji {
-    display: grid;
-    place-items: center;
-    width: 7.5rem;
-    aspect-ratio: 1;
-    margin: 0 auto 1.5rem;
-    border-radius: var(--radius);
-    background:
-      radial-gradient(circle at 75% 20%, rgba(255, 255, 255, 0.18), transparent 42%),
-      hsl(var(--post-visual-hue) 25% 36%);
-    font-size: 4.25rem;
-    line-height: 1;
-    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.14));
-  }
-  :global(:root[data-theme="light"]) .post-emoji {
-    background:
-      radial-gradient(circle at 75% 20%, rgba(255, 255, 255, 0.6), transparent 42%),
-      hsl(var(--post-visual-hue) 38% 80%);
   }
   .lede {
     border-left: 3px solid var(--color-border);

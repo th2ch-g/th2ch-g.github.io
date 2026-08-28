@@ -673,7 +673,7 @@ const cvLinks = [
     margin: 0.5rem 0 1.5rem;
     padding: 0;
     list-style: none;
-    font-size: 0.9rem;
+    font-size: 1.05rem;
   }
   .cv-profile-links a {
     color: var(--color-fg);
@@ -826,6 +826,11 @@ const cvLinks = [
     cursor: pointer;
     opacity: 0;
     transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease;
+  }
+  /* Keep publication copy menus discoverable without requiring hover. Other
+     CV entries retain the quieter hover-only copy affordance. */
+  .cv-prose :global(li.cv-has-bibtex .cv-copy-btn) {
+    opacity: 0.7;
   }
   .cv-prose :global(li.cv-copyable:hover .cv-copy-btn),
   .cv-prose :global(li.cv-copyable:focus-within .cv-copy-btn),

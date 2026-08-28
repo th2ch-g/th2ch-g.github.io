@@ -141,19 +141,6 @@ ul.bare {
   border-color: var(--color-accent);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
 }
-.post-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19.5rem), 19.5rem));
-  grid-auto-rows: 19rem;
-  gap: 1.25rem;
-  align-items: stretch;
-  justify-content: start;
-}
-@media (max-width: 720px) {
-  .post-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 /* Page navigation deliberately uses NO browser-native cross-document View
    Transitions. We previously opted in via `@view-transition { navigation:
    auto }` but every Chromium-side variation produced a brief white flash
@@ -169,8 +156,7 @@ ul.bare {
   .card { transition: none; }
 }
 
-/* Gallery masonry keeps its own image feedback. Post cards no longer contain
-   images, so no global card-image hover selectors are needed. */
+/* Gallery masonry keeps its own image feedback. */
 .photo-btn:hover .photo { transform: scale(1.18); }
 @media (prefers-reduced-motion: reduce) {
   .photo-btn:hover .photo { transform: none; }

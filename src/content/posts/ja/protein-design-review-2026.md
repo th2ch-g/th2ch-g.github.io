@@ -7,7 +7,6 @@ tags:
   - protein-design
   - review
 draft: false
-emoji: 🧬
 ---
 
 `分類` 列の値は以下のいずれかに対応します:

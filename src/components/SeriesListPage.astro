@@ -1,10 +1,11 @@
 ---
 import Base from '@/layouts/Base.astro';
-import PostEntry from './PostEntry.astro';
+import PostArchiveList from './PostArchiveList.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
 import { t, tEn, type Lang } from '@/i18n/ui';
 import type { CollectionEntry } from 'astro:content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
+import { sortByDateDesc } from '@/lib/content';
 
 interface Props {
   lang: Lang;
@@ -13,6 +14,7 @@ interface Props {
 }
 const { lang, name, posts } = Astro.props;
 const heading = `${tEn('series.heading')}: ${name}`;
+const displayPosts = sortByDateDesc(posts, 'pubDate');
 ---
 <Base lang={lang} title={heading}>
   <Breadcrumbs
@@ -30,9 +32,7 @@ const heading = `${tEn('series.heading')}: ${name}`;
   {posts.length === 0 ? (
     <p class="muted">{t(lang, 'list.empty')}</p>
   ) : (
-    <div class="post-grid">
-      {posts.map((post) => <PostEntry post={post} lang={lang} />)}
-    </div>
+    <PostArchiveList posts={displayPosts} lang={lang} />
   )}
 </Base>
 
