@@ -27,7 +27,7 @@ const recentPosts = sortByDateDesc(
     <div class="hero-head">
       {meta.icon && (
         <div class="avatar-wrap">
-          <img class="avatar ring ring-primary ring-offset-base-100 ring-offset-2" src="/icon.png" alt={meta.name} width="72" height="72" loading="eager" />
+          <img class="avatar" src="/icon.png" alt={meta.name} width="72" height="72" loading="eager" />
           {meta.iconComment && (
             <span class="avatar-tip" role="tooltip">{meta.iconComment}</span>
           )}
@@ -53,7 +53,7 @@ const recentPosts = sortByDateDesc(
 </Base>
 
 <style>
-  /* Centred profile card. Stacking the hero as a flex column lets each
+  /* Stacking the hero as a flex column lets each
      row auto-shrink to its content width and centre as a unit, instead of
      left-aligning to main's padding edge. `text-align: center` propagates
      so multi-line paragraphs stay centred too. */
@@ -64,28 +64,7 @@ const recentPosts = sortByDateDesc(
     text-align: center;
     position: relative;
     margin-bottom: 2.5rem;
-    padding: 2.25rem 1.5rem;
-    overflow: hidden;
-    border: 1px solid var(--color-border);
-    border-radius: calc(var(--radius) + 0.25rem);
-    background:
-      linear-gradient(145deg, color-mix(in oklab, var(--color-card) 94%, transparent), var(--color-card)),
-      var(--color-card);
-    box-shadow: var(--shadow-soft);
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    width: 11rem;
-    height: 11rem;
-    right: -5rem;
-    bottom: -7rem;
-    border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent);
-    border-radius: 50%;
-    box-shadow:
-      0 0 0 1.5rem color-mix(in oklab, var(--color-accent) 5%, transparent),
-      0 0 0 3rem color-mix(in oklab, var(--color-accent) 3%, transparent);
-    pointer-events: none;
+    padding: 0;
   }
   /* Avatar + name share a single horizontal row. The wrapper absorbs the
      vertical spacing that <h1> would otherwise contribute (h1's default
@@ -113,15 +92,12 @@ const recentPosts = sortByDateDesc(
     height: 72px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid var(--color-accent);
+    border: 0;
     background: var(--color-card);
     display: block;
-    transition:
-      border-color 200ms ease,
-      box-shadow 260ms ease;
+    transition: box-shadow 260ms ease;
   }
   .avatar:hover {
-    border-color: var(--color-accent);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
   }
   /* Comment bubble shown on avatar hover. The avatar <img> isn't focusable,

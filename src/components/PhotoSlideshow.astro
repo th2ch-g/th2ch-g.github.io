@@ -46,12 +46,12 @@ const { images, intervalMs = 5000 } = Astro.props;
     <div class="controls">
       {images.length > 1 && (
         <div class="speed" role="group" aria-label="Slideshow speed">
-          <button type="button" class="speed-btn btn btn-ghost btn-xs" data-speed="3000" aria-label="Fast (3s)">3s</button>
-          <button type="button" class="speed-btn btn btn-ghost btn-xs active" data-speed="5000" aria-label="Normal (5s)">5s</button>
-          <button type="button" class="speed-btn btn btn-ghost btn-xs" data-speed="8000" aria-label="Slow (8s)">8s</button>
+          <button type="button" class="speed-btn" data-speed="3000" aria-label="Fast (3s)">3s</button>
+          <button type="button" class="speed-btn active" data-speed="5000" aria-label="Normal (5s)">5s</button>
+          <button type="button" class="speed-btn" data-speed="8000" aria-label="Slow (8s)">8s</button>
         </div>
       )}
-      <button type="button" class="fullscreen-btn btn btn-ghost btn-circle btn-sm" aria-label="Toggle fullscreen">
+      <button type="button" class="fullscreen-btn" aria-label="Toggle fullscreen">
         <svg class="enter" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path
             d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"
@@ -76,7 +76,7 @@ const { images, intervalMs = 5000 } = Astro.props;
     </div>
     {images.length > 1 && (
       <>
-        <button type="button" class="nav prev btn btn-circle" data-dir="-1" aria-label="Previous">
+        <button type="button" class="nav prev" data-dir="-1" aria-label="Previous">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path
               d="M15 6l-6 6 6 6"
@@ -88,7 +88,7 @@ const { images, intervalMs = 5000 } = Astro.props;
             />
           </svg>
         </button>
-        <button type="button" class="nav next btn btn-circle" data-dir="1" aria-label="Next">
+        <button type="button" class="nav next" data-dir="1" aria-label="Next">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path
               d="M9 6l6 6-6 6"
@@ -100,21 +100,21 @@ const { images, intervalMs = 5000 } = Astro.props;
             />
           </svg>
         </button>
-        <div class="progress">
+        <div class="slideshow-progress">
           <div
-            class="progress-bar"
+            class="slideshow-progress-bar"
             role="progressbar"
             aria-valuemin="1"
             aria-valuemax={images.length}
             aria-valuenow="1"
             aria-label="Slide position"
           >
-            <div class="progress-fill" style={`width: ${100 / images.length}%`} />
+            <div class="slideshow-progress-fill" style={`width: ${100 / images.length}%`} />
           </div>
-          <div class="progress-count" aria-live="polite">
-            <span class="progress-current">1</span>
-            <span class="progress-sep"> / </span>
-            <span class="progress-total">{images.length}</span>
+          <div class="slideshow-progress-count" aria-live="polite">
+            <span class="slideshow-progress-current">1</span>
+            <span class="slideshow-progress-sep"> / </span>
+            <span class="slideshow-progress-total">{images.length}</span>
           </div>
         </div>
       </>
@@ -160,7 +160,7 @@ const { images, intervalMs = 5000 } = Astro.props;
     object-fit: cover;
     display: block;
   }
-  .progress {
+  .slideshow-progress {
     position: absolute;
     bottom: 0.6rem;
     left: 50%;
@@ -176,7 +176,7 @@ const { images, intervalMs = 5000 } = Astro.props;
     -webkit-backdrop-filter: blur(6px);
     pointer-events: none;
   }
-  .progress-bar {
+  .slideshow-progress-bar {
     position: relative;
     width: 120px;
     height: 3px;
@@ -184,7 +184,7 @@ const { images, intervalMs = 5000 } = Astro.props;
     border-radius: 2px;
     overflow: hidden;
   }
-  .progress-fill {
+  .slideshow-progress-fill {
     position: absolute;
     top: 0;
     left: 0;
@@ -193,7 +193,7 @@ const { images, intervalMs = 5000 } = Astro.props;
     border-radius: 2px;
     transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .progress-count {
+  .slideshow-progress-count {
     color: rgba(255, 255, 255, 0.95);
     font-size: 0.72rem;
     font-variant-numeric: tabular-nums;
@@ -201,7 +201,7 @@ const { images, intervalMs = 5000 } = Astro.props;
     white-space: nowrap;
     line-height: 1;
   }
-  .progress-sep { opacity: 0.6; padding: 0 0.05rem; }
+  .slideshow-progress-sep { opacity: 0.6; padding: 0 0.05rem; }
   .nav {
     position: absolute;
     top: 50%;
@@ -292,9 +292,9 @@ const { images, intervalMs = 5000 } = Astro.props;
   .photo-slideshow:fullscreen .fullscreen-btn .enter { display: none; }
   .photo-slideshow:fullscreen .fullscreen-btn .exit { display: block; }
   .photo-slideshow:fullscreen .nav { width: 48px; height: 48px; }
-  .photo-slideshow:fullscreen .progress-bar { width: 200px; height: 4px; }
-  .photo-slideshow:fullscreen .progress-count { font-size: 0.85rem; }
-  .photo-slideshow:fullscreen .progress { bottom: 1rem; }
+  .photo-slideshow:fullscreen .slideshow-progress-bar { width: 200px; height: 4px; }
+  .photo-slideshow:fullscreen .slideshow-progress-count { font-size: 0.85rem; }
+  .photo-slideshow:fullscreen .slideshow-progress { bottom: 1rem; }
   @media (prefers-reduced-motion: reduce) {
     .slide { transition: none; }
   }

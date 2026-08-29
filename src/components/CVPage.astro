@@ -655,9 +655,6 @@ const cvLinks = [
   .cv-layout {
     margin-top: clamp(3rem, 7.5vw, 3.975rem);
   }
-  :global(html[data-design="classic"]) .cv-layout {
-    margin-top: 3rem;
-  }
   .cv-header {
     display: flex;
     align-items: baseline;
@@ -682,12 +679,16 @@ const cvLinks = [
     list-style: none;
     font-size: 0.95rem;
   }
-  .cv-profile-links a {
+  .cv-profile-links a.btn {
     color: var(--color-fg);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 0.4rem 0.7rem;
     text-underline-offset: 0.15em;
   }
-  .cv-profile-links a:hover,
-  .cv-profile-links a:focus-visible {
+  .cv-profile-links a.btn:hover,
+  .cv-profile-links a.btn:focus-visible {
     color: var(--color-accent);
   }
   .cv-profile-links li:not(:last-child)::after { content: none; }
@@ -707,7 +708,7 @@ const cvLinks = [
     font-size: 0.85rem;
     padding: 0.3rem 0.6rem;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    border-radius: 999px;
     color: var(--color-fg);
     background: var(--color-bg);
     cursor: pointer;
@@ -825,7 +826,7 @@ const cvLinks = [
     line-height: 1.2;
     padding: 0.25rem;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    border-radius: 999px;
     color: var(--color-fg);
     background: var(--color-bg);
     font-family: inherit;
@@ -907,10 +908,11 @@ const cvLinks = [
     font-weight: 400;
     line-height: 1.3;
     padding: 0.2rem 0.6rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    border: 0;
+    border-radius: 999px;
     color: var(--color-fg);
-    background: var(--color-bg);
+    background: transparent;
+    box-shadow: none;
     font-family: inherit;
     cursor: pointer;
     opacity: 0;
@@ -929,7 +931,8 @@ const cvLinks = [
   .cv-prose :global(.cv-section-btn:hover),
   .cv-prose :global(.cv-section-btn.is-copied) {
     color: var(--color-accent);
-    border-color: var(--color-accent);
+    background: transparent;
+    box-shadow: none;
     text-decoration: none;
   }
   .cv-prose :global(.cv-section-btn.is-failed) {
@@ -951,6 +954,7 @@ const cvLinks = [
     border: none;
     border-radius: 0;
     background: none;
+    box-shadow: none;
   }
   .cv-prose :global(.cv-menu[open]) {
     padding: 0;
@@ -985,7 +989,18 @@ const cvLinks = [
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.25rem;
+    width: 2rem;
+    min-width: 2rem;
+    height: 2rem;
+    min-height: 2rem;
+    padding: 0;
+  }
+  .cv-prose :global(.cv-copy-btn:not(.cv-menu-trigger)) {
+    width: 2rem;
+    min-width: 2rem;
+    height: 2rem;
+    min-height: 2rem;
+    padding: 0;
   }
   .cv-prose :global(.cv-menu-trigger::-webkit-details-marker) {
     display: none;
@@ -1006,11 +1021,9 @@ const cvLinks = [
   }
   .cv-prose :global(.cv-menu.is-copied .cv-menu-trigger) {
     color: var(--color-accent);
-    border-color: var(--color-accent);
   }
   .cv-prose :global(.cv-menu.is-failed .cv-menu-trigger) {
     color: #c0392b;
-    border-color: #c0392b;
   }
   .cv-prose :global(.cv-menu-list) {
     position: absolute;

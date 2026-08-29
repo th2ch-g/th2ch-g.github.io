@@ -13,9 +13,9 @@ const INITIAL_AUTOPLAY_DELAY = 15_000;
 
 function initSlideshow(root: SlideshowEl) {
   const slides = Array.from(root.querySelectorAll<HTMLElement>('.slide'));
-  const progressFill = root.querySelector<HTMLElement>('.progress-fill');
-  const progressBar = root.querySelector<HTMLElement>('.progress-bar');
-  const progressCurrent = root.querySelector<HTMLElement>('.progress-current');
+  const progressFill = root.querySelector<HTMLElement>('.slideshow-progress-fill');
+  const progressBar = root.querySelector<HTMLElement>('.slideshow-progress-bar');
+  const progressCurrent = root.querySelector<HTMLElement>('.slideshow-progress-current');
   if (slides.length < 2) return;
 
   let interval = Number(root.dataset.interval ?? 5000);

@@ -16,6 +16,28 @@
   margin: 1rem 0;
 }
 
+/* Tailwind's preflight removes native list markers. Restore Markdown list
+   semantics inside rendered prose without affecting navigation or UI lists. */
+.prose :where(ul, ol) {
+  margin: 1rem 0;
+  padding-left: 1.75rem;
+}
+.prose ul {
+  list-style-type: disc;
+}
+.prose ol {
+  list-style-type: decimal;
+}
+.prose :where(ul, ol) :where(ul, ol) {
+  margin: 0.35rem 0;
+}
+.prose ul ul {
+  list-style-type: circle;
+}
+.prose ul ul ul {
+  list-style-type: square;
+}
+
 /* Inline Markdown links need a non-color cue inside text blocks. Generated
    cards and heading anchors carry classes and keep their component styles. */
 .prose :is(p, li) a:not([class]) {
@@ -371,6 +393,9 @@
    no badge (`content: none` below), so it's excluded. */
 .prose pre:is([data-language], [data-filename]):not(.mermaid) {
   margin-top: 2.4rem;
+  /* Join the label tab to the block instead of leaving a rounded notch under
+     it. The other corners keep the regular code-block radius. */
+  border-top-left-radius: 0;
   /* Release the clip so the tab (translated above the top edge) shows instead
      of being cut off. Safe ONLY because the layout.css rule makes <code> the
      horizontal scroller — the pre never holds overflow content of its own, so
@@ -387,8 +412,8 @@
      off the top edge, flush-left. The block's `margin-top` (rule above) keeps
      it clear of the preceding paragraph. The copy button lives INSIDE the box
      at its upper-right — a different height — so the two never collide. */
-  top: 0;
-  left: 0;
+  top: -1px;
+  left: -1px;
   transform: translateY(-100%);
   padding: 0.12rem 0.6rem;
   font-family: var(--font-mono);
