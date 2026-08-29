@@ -53,7 +53,7 @@ const cvLinks = [
           <ul class="cv-profile-links">
             {cvLinks.map((link) => (
               <li>
-                <a href={link.url} target="_blank" rel="noopener noreferrer">
+                <a class="btn btn-ghost btn-sm" href={link.url} target="_blank" rel="noopener noreferrer">
                   {link.label}
                 </a>
               </li>
@@ -417,7 +417,7 @@ const cvLinks = [
       const entry = citations[doi];
       if (!entry || typeof entry.count !== 'number' || entry.count <= 0) return;
       const badge = document.createElement('span');
-      badge.className = 'citation-badge';
+      badge.className = 'citation-badge badge badge-outline badge-sm';
       badge.textContent = citationLabel.replace('{n}', String(entry.count));
       badge.title = `${citationSource} · ${entry.fetchedAt.slice(0, 10)}`;
       a.insertAdjacentElement('afterend', badge);
@@ -443,7 +443,7 @@ const cvLinks = [
       details.className = 'cv-menu';
 
       const summary = document.createElement('summary');
-      summary.className = `${triggerSizingClass} cv-menu-trigger`;
+      summary.className = `${triggerSizingClass} cv-menu-trigger btn btn-ghost btn-sm`;
       summary.innerHTML = triggerIcon;
       summary.setAttribute('aria-label', triggerAria);
       details.appendChild(summary);
@@ -465,7 +465,7 @@ const cvLinks = [
       for (const mi of menuItems) {
         const item = document.createElement('button');
         item.type = 'button';
-        item.className = 'cv-menu-item';
+        item.className = 'cv-menu-item btn btn-ghost btn-sm';
         item.textContent = mi.label;
         item.addEventListener('click', async (e) => {
           e.preventDefault();
@@ -513,7 +513,7 @@ const cvLinks = [
       } else {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'cv-copy-btn';
+        btn.className = 'cv-copy-btn btn btn-ghost btn-sm';
         btn.innerHTML = COPY_ICON;
         btn.setAttribute('aria-label', copyLabel);
         btn.addEventListener('click', async (e) => {
@@ -582,7 +582,7 @@ const cvLinks = [
         // label survives as the aria-label so the icon stays accessible.
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
-        copyBtn.className = 'cv-section-btn cv-section-copy';
+        copyBtn.className = 'cv-section-btn cv-section-copy btn btn-ghost btn-sm';
         copyBtn.innerHTML = COPY_ICON;
         copyBtn.setAttribute('aria-label', sectionCopyLabel);
         copyBtn.addEventListener('click', async (e) => {
@@ -652,6 +652,12 @@ const cvLinks = [
   .cv-content {
     min-width: 0;
   }
+  .cv-layout {
+    margin-top: clamp(3rem, 7.5vw, 3.975rem);
+  }
+  :global(html[data-design="classic"]) .cv-layout {
+    margin-top: 3rem;
+  }
   .cv-header {
     display: flex;
     align-items: baseline;
@@ -659,6 +665,7 @@ const cvLinks = [
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
   }
+  .cv-header h1 { margin: 0; }
   .cv-header-actions {
     display: flex;
     align-items: center;
@@ -669,11 +676,11 @@ const cvLinks = [
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.4rem;
-    margin: 0.5rem 0 1.5rem;
+    gap: 0.3rem;
+    margin: 0.75rem 0 1.5rem;
     padding: 0;
     list-style: none;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
   }
   .cv-profile-links a {
     color: var(--color-fg);
@@ -683,11 +690,7 @@ const cvLinks = [
   .cv-profile-links a:focus-visible {
     color: var(--color-accent);
   }
-  .cv-profile-links li:not(:last-child)::after {
-    content: '|';
-    margin-left: 0.4rem;
-    color: var(--color-border);
-  }
+  .cv-profile-links li:not(:last-child)::after { content: none; }
   /* Page-level toolbar menu (copy all / copy .bib). Built
      client-side and appended into `.cv-header-actions`, which is OUTSIDE
      `.cv-prose`, so it carries no scoped-style hash — the menu selectors must
@@ -785,7 +788,10 @@ const cvLinks = [
     text-decoration: none;
   }
   /* Suppress the whole toolbar in printed output. */
-  @media print { .cv-header-actions { display: none; } }
+  @media print {
+    .cv-layout { margin-top: 0; }
+    .cv-header-actions { display: none; }
+  }
 
   /* Per-item copy buttons. Markdown rendered by <Content /> doesn't carry
      this component's scope hash, so the descendant selectors must be

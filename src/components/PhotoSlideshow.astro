@@ -46,12 +46,12 @@ const { images, intervalMs = 5000 } = Astro.props;
     <div class="controls">
       {images.length > 1 && (
         <div class="speed" role="group" aria-label="Slideshow speed">
-          <button type="button" class="speed-btn" data-speed="3000" aria-label="Fast (3s)">3s</button>
-          <button type="button" class="speed-btn active" data-speed="5000" aria-label="Normal (5s)">5s</button>
-          <button type="button" class="speed-btn" data-speed="8000" aria-label="Slow (8s)">8s</button>
+          <button type="button" class="speed-btn btn btn-ghost btn-xs" data-speed="3000" aria-label="Fast (3s)">3s</button>
+          <button type="button" class="speed-btn btn btn-ghost btn-xs active" data-speed="5000" aria-label="Normal (5s)">5s</button>
+          <button type="button" class="speed-btn btn btn-ghost btn-xs" data-speed="8000" aria-label="Slow (8s)">8s</button>
         </div>
       )}
-      <button type="button" class="fullscreen-btn" aria-label="Toggle fullscreen">
+      <button type="button" class="fullscreen-btn btn btn-ghost btn-circle btn-sm" aria-label="Toggle fullscreen">
         <svg class="enter" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path
             d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"
@@ -76,7 +76,7 @@ const { images, intervalMs = 5000 } = Astro.props;
     </div>
     {images.length > 1 && (
       <>
-        <button type="button" class="nav prev" data-dir="-1" aria-label="Previous">
+        <button type="button" class="nav prev btn btn-circle" data-dir="-1" aria-label="Previous">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path
               d="M15 6l-6 6 6 6"
@@ -88,7 +88,7 @@ const { images, intervalMs = 5000 } = Astro.props;
             />
           </svg>
         </button>
-        <button type="button" class="nav next" data-dir="1" aria-label="Next">
+        <button type="button" class="nav next btn btn-circle" data-dir="1" aria-label="Next">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <path
               d="M9 6l6 6-6 6"
@@ -127,10 +127,12 @@ const { images, intervalMs = 5000 } = Astro.props;
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
-    border-radius: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
     overflow: hidden;
     background: var(--color-border);
     margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-soft);
   }
   /* Root is programmatically focused (tabindex="-1") so arrow keys work the
      instant fullscreen begins; suppress the UA focus ring on the container

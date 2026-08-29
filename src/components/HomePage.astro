@@ -27,7 +27,7 @@ const recentPosts = sortByDateDesc(
     <div class="hero-head">
       {meta.icon && (
         <div class="avatar-wrap">
-          <img class="avatar" src="/icon.png" alt={meta.name} width="72" height="72" loading="eager" />
+          <img class="avatar ring ring-primary ring-offset-base-100 ring-offset-2" src="/icon.png" alt={meta.name} width="72" height="72" loading="eager" />
           {meta.iconComment && (
             <span class="avatar-tip" role="tooltip">{meta.iconComment}</span>
           )}
@@ -43,7 +43,7 @@ const recentPosts = sortByDateDesc(
       <h2>{tUi('nav.posts')}</h2>
       <PostArchiveList posts={recentPosts} lang={lang} yearHeadingLevel="h3" size="large" />
       <p class="see-all">
-        <a href={getRelativeLocaleUrl(lang, '/posts')}>
+        <a class="btn btn-outline btn-primary btn-sm" href={getRelativeLocaleUrl(lang, '/posts')}>
           {tUi('home.see.all')}
           <span class="arrow" aria-hidden="true">→</span>
         </a>
@@ -62,7 +62,30 @@ const recentPosts = sortByDateDesc(
     flex-direction: column;
     align-items: center;
     text-align: center;
-    margin-bottom: 2rem;
+    position: relative;
+    margin-bottom: 2.5rem;
+    padding: 2.25rem 1.5rem;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background:
+      linear-gradient(145deg, color-mix(in oklab, var(--color-card) 94%, transparent), var(--color-card)),
+      var(--color-card);
+    box-shadow: var(--shadow-soft);
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    width: 11rem;
+    height: 11rem;
+    right: -5rem;
+    bottom: -7rem;
+    border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 1.5rem color-mix(in oklab, var(--color-accent) 5%, transparent),
+      0 0 0 3rem color-mix(in oklab, var(--color-accent) 3%, transparent);
+    pointer-events: none;
   }
   /* Avatar + name share a single horizontal row. The wrapper absorbs the
      vertical spacing that <h1> would otherwise contribute (h1's default
@@ -90,7 +113,7 @@ const recentPosts = sortByDateDesc(
     height: 72px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid var(--color-border);
+    border: 2px solid var(--color-accent);
     background: var(--color-card);
     display: block;
     transition:
@@ -157,7 +180,7 @@ const recentPosts = sortByDateDesc(
     .avatar-tip { max-width: calc(100vw - 2rem); }
   }
   .bio { font-size: 1.1rem; color: var(--color-muted); margin: 0.25rem 0 0.5rem; }
-  .posts-section > h2 { font-size: 1.65rem; }
+  .posts-section > h2 { font-size: 1.65rem; margin-top: 0; }
   /* "See all" pill link at the bottom of each section. Pill-shaped to
      echo the social-icon row in the hero; sliding arrow on hover gives
      the affordance that this leads somewhere without yelling about it. */

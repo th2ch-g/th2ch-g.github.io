@@ -42,7 +42,7 @@ if (meta.contactForm) {
       {/* Fallback for browsers/extensions that block the frame, and for
           visitors who prefer the full-page form. Uses the plain URL. */}
       <p class="fallback">
-        <a href={meta.contactForm} target="_blank" rel="noopener noreferrer">
+        <a class="btn btn-outline btn-primary btn-sm" href={meta.contactForm} target="_blank" rel="noopener noreferrer">
           {tUi('contact.cta')}
         </a>
       </p>
@@ -65,6 +65,7 @@ if (meta.contactForm) {
     margin-top: 0.5rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
     /* The embedded form is always Google's light theme; pinning the scheme
        keeps its form controls and scrollbar consistent on the dark site. */
     color-scheme: light;

@@ -2,6 +2,8 @@
 import { defineConfig, passthroughImageService } from 'astro/config';
 import { readFileSync } from 'node:fs';
 import sitemap from '@astrojs/sitemap';
+import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
 import { unified } from '@astrojs/markdown-remark';
 import rehypeExternalLinks from 'rehype-external-links';
 import rehypeSlug from 'rehype-slug';
@@ -54,6 +56,7 @@ export default defineConfig({
     format: 'directory',
   },
   integrations: [
+    react(),
     // Generates `/sitemap-index.xml` + per-locale shards. The i18n option
     // marks each URL with its `hreflang` and emits xhtml:link alternates
     // so search engines understand the ja/en bilingual structure.
@@ -64,6 +67,9 @@ export default defineConfig({
       },
     }),
   ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
   // Skip sharp-based image optimization to avoid native build deps in CI.
   // Swap to the default service later by removing this if image optimization is needed.
   image: {

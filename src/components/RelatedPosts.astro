@@ -19,7 +19,7 @@ const { posts, lang } = Astro.props;
         const href = getRelativeLocaleUrl(lang, `/posts/${slug}`);
         return (
           <li>
-            <a class="related-card" href={href}>
+            <a class="related-card card" href={href}>
               <span class="related-title">{post.data.title}</span>
               <span class="related-date muted">{formatDate(post.data.pubDate)}</span>
             </a>
@@ -58,15 +58,17 @@ const { posts, lang } = Astro.props;
     padding: 0.6rem 0.85rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: var(--color-card);
+    background: color-mix(in oklab, var(--color-card) 78%, transparent);
     color: var(--color-fg);
-    transition: border-color 160ms ease, transform 160ms ease;
+    box-shadow: var(--shadow-soft);
+    transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
   }
   .related-card:hover,
   .related-card:focus-visible {
     border-color: var(--color-accent);
     text-decoration: none;
     transform: translateY(-2px);
+    box-shadow: var(--shadow-float);
   }
   .related-title {
     font-weight: 600;

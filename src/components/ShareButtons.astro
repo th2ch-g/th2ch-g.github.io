@@ -50,7 +50,7 @@ const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
     {targets.map((target) => (
       <li>
         <a
-          class={`share-btn share-btn--${target.key}`}
+          class={`share-btn share-btn--${target.key} btn btn-circle btn-sm`}
           href={target.href}
           target="_blank"
           rel="noopener noreferrer"
@@ -72,7 +72,7 @@ const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
     ))}
     <li>
       <a
-        class="share-btn share-btn--linkedin"
+        class="share-btn share-btn--linkedin btn btn-circle btn-sm"
         href={linkedinHref}
         target="_blank"
         rel="noopener noreferrer"
@@ -103,7 +103,7 @@ const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
       <span class="share-toast" data-share-toast aria-live="polite" hidden></span>
       <button
         type="button"
-        class="share-btn share-copy"
+        class="share-btn share-copy btn btn-circle btn-sm"
         data-share-url={shareUrl}
         data-label-copy={tUi('share.copy')}
         data-label-copied={tUi('share.copied')}

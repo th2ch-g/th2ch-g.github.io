@@ -8,6 +8,12 @@
    (white-space: pre + their own scroll), so code blocks keep scrolling. */
 .prose {
   overflow-wrap: break-word;
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.prose > p {
+  margin: 1rem 0;
 }
 
 /* Inline Markdown links need a non-color cue inside text blocks. Generated
@@ -21,6 +27,8 @@
   max-width: 100%;
   height: auto;
   border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
 }
 
 /* Single-image paragraph (bare image URL promoted by remark-link-card, or
@@ -62,8 +70,9 @@
   padding: 0.55rem 1rem;
   margin: 1rem 0;
   color: var(--color-muted);
-  background: var(--color-card);
+  background: color-mix(in oklab, var(--color-card) 76%, transparent);
   border-radius: 0 var(--radius) var(--radius) 0;
+  box-shadow: var(--shadow-soft);
 }
 .prose blockquote > :first-child { margin-top: 0; }
 .prose blockquote > :last-child { margin-bottom: 0; }
@@ -99,16 +108,18 @@
   margin: 1.25rem auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  background: var(--color-card);
+  background: color-mix(in oklab, var(--color-card) 82%, transparent);
   color: var(--color-fg);
   text-decoration: none;
   overflow: hidden;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 .link-card:hover {
   border-color: var(--color-accent);
   text-decoration: none;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-float);
+  transform: translateY(-2px);
 }
 .link-card-thumb {
   display: block;
@@ -351,6 +362,8 @@
    inside the Search dialog) is unaffected. */
 .prose pre {
   position: relative;
+  border: 1px solid color-mix(in oklab, white 16%, transparent);
+  box-shadow: var(--shadow-soft);
 }
 /* Labelled blocks: lift the label OUT of the code box and present it as a tab
    sitting directly ABOVE the code, Zenn-style. Reserve top margin so that tab
@@ -422,10 +435,10 @@
   font-size: 0.65em;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  border: 1px solid var(--color-border);
+  border: 1px solid color-mix(in oklab, var(--color-accent) 45%, transparent);
   border-radius: 999px;
-  color: var(--color-muted);
-  background: var(--color-card);
+  color: var(--color-accent);
+  background: color-mix(in oklab, var(--color-accent) 10%, transparent);
 }
 
 /* GitHub-style callouts produced by `src/plugins/remark-callouts.mjs`.
@@ -436,9 +449,10 @@
   border: 1px solid var(--color-border);
   border-left-width: 4px;
   border-radius: var(--radius);
-  background: var(--color-card);
+  background: color-mix(in oklab, var(--color-card) 78%, transparent);
   padding: 0.75rem 1rem;
   margin: 1rem 0;
+  box-shadow: var(--shadow-soft);
 }
 .prose .callout > :first-child { margin-top: 0; }
 .prose .callout > :last-child { margin-bottom: 0; }
@@ -453,14 +467,14 @@
 }
 .prose .callout-note { border-left-color: var(--color-accent); }
 .prose .callout-note .callout-header { color: var(--color-accent); }
-.prose .callout-tip { border-left-color: #2f9e6d; }
-.prose .callout-tip .callout-header { color: #2f9e6d; }
-.prose .callout-important { border-left-color: #8a4baf; }
-.prose .callout-important .callout-header { color: #8a4baf; }
-.prose .callout-warning { border-left-color: #d6932a; }
-.prose .callout-warning .callout-header { color: #d6932a; }
-.prose .callout-caution { border-left-color: #c14545; }
-.prose .callout-caution .callout-header { color: #c14545; }
+.prose .callout-tip { border-left-color: var(--color-success); }
+.prose .callout-tip .callout-header { color: var(--color-success); }
+.prose .callout-important { border-left-color: var(--color-info); }
+.prose .callout-important .callout-header { color: var(--color-info); }
+.prose .callout-warning { border-left-color: var(--color-warning); }
+.prose .callout-warning .callout-header { color: var(--color-warning); }
+.prose .callout-caution { border-left-color: var(--color-error); }
+.prose .callout-caution .callout-header { color: var(--color-error); }
 
 /* --- GitHub-flavored Markdown surface ------------------------------------
    Astro's default `gfm: true` already parses tables, task lists, autolinks,
@@ -484,6 +498,9 @@
   border-spacing: 0;
   font-size: 0.95rem;
   overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
 }
 .prose table th,
 .prose table td {
@@ -600,7 +617,8 @@
   padding: 0.5rem 0.85rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  background: var(--color-card);
+  background: color-mix(in oklab, var(--color-card) 78%, transparent);
+  box-shadow: var(--shadow-soft);
 }
 .prose details[open] {
   padding-bottom: 0.85rem;

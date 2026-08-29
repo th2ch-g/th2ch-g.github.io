@@ -42,6 +42,7 @@ const { items } = Astro.props;
     margin: 0 0 1rem;
     font-size: 0.85rem;
     color: var(--color-muted);
+    font-family: var(--font-mono);
   }
   .breadcrumbs ol {
     list-style: none;
@@ -52,9 +53,9 @@ const { items } = Astro.props;
     gap: 0.35rem;
   }
   .breadcrumbs li + li::before {
-    content: '/';
+    content: '›';
     margin-right: 0.35rem;
-    color: var(--color-border);
+    color: var(--color-accent);
   }
   .breadcrumbs a {
     color: var(--color-muted);

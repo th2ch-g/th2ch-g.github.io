@@ -13,7 +13,7 @@ const galleryUrl = getRelativeLocaleUrl(lang, '/gallery');
 const cvUrl = getRelativeLocaleUrl(lang, '/cv');
 ---
 <dialog class="shortcuts-dialog" data-shortcuts-dialog aria-label={tUi('shortcuts.title')}>
-  <div class="shortcuts-shell">
+  <div class="shortcuts-shell modal-box">
     <h2>{tUi('shortcuts.title')}</h2>
     <dl class="shortcuts-list">
       <dt><kbd>/</kbd></dt><dd>{tUi('shortcuts.search')}</dd>
@@ -25,7 +25,7 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
       <dt><kbd>?</kbd></dt><dd>{tUi('shortcuts.help')}</dd>
       <dt><kbd>Esc</kbd></dt><dd>{tUi('shortcuts.close')}</dd>
     </dl>
-    <button type="button" class="shortcuts-close" data-shortcuts-close>{tUi('shortcuts.close')}</button>
+    <button type="button" class="shortcuts-close btn btn-outline btn-primary btn-sm" data-shortcuts-close>{tUi('shortcuts.close')}</button>
   </div>
 </dialog>
 
@@ -132,7 +132,7 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     padding: 1.25rem 1.5rem 1rem;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--shadow-float);
   }
   .shortcuts-shell h2 { margin-top: 0; font-size: 1.1rem; }
   .shortcuts-list {

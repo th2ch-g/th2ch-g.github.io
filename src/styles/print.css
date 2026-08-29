@@ -16,8 +16,10 @@
   html,
   body {
     background: #fff;
+    background-image: none;
     color: #111;
   }
+  h1::before { display: none; }
   /* Hide page chrome and interactive widgets. */
   .site-header,
   footer,

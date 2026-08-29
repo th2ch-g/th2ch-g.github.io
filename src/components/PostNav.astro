@@ -17,7 +17,7 @@ const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)
 {(prev || next) && (
   <nav class="post-nav" aria-label="Post navigation">
     {prev && prevHref ? (
-      <a class="nav-card nav-prev" href={prevHref}>
+      <a class="nav-card nav-prev card" href={prevHref}>
         <span class="nav-direction muted">← {tUi('posts.prev')}</span>
         <span class="nav-title">{prev.data.title}</span>
       </a>
@@ -27,7 +27,7 @@ const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)
       <span class="nav-spacer" aria-hidden="true"></span>
     )}
     {next && nextHref ? (
-      <a class="nav-card nav-next" href={nextHref}>
+      <a class="nav-card nav-next card" href={nextHref}>
         <span class="nav-direction muted">{tUi('posts.next')} →</span>
         <span class="nav-title">{next.data.title}</span>
       </a>
@@ -51,9 +51,10 @@ const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)
     padding: 0.75rem 1rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: var(--color-card);
+    background: color-mix(in oklab, var(--color-card) 78%, transparent);
     color: var(--color-fg);
-    transition: border-color 160ms ease, transform 160ms ease;
+    box-shadow: var(--shadow-soft);
+    transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
   }
   .nav-next {
     text-align: right;
@@ -63,6 +64,7 @@ const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)
     border-color: var(--color-accent);
     text-decoration: none;
     transform: translateY(-2px);
+    box-shadow: var(--shadow-float);
   }
   .nav-direction {
     font-size: 0.8rem;

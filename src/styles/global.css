@@ -1,7 +1,115 @@
-/* Global stylesheet aggregator. Each section lives in its own file for
-   readability; the import order matters because layout/prose/print all
-   consume CSS variables defined in tokens.css. */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.125rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+}
+
+@plugin "daisyui" {
+  themes: false;
+  logs: false;
+}
+
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #fafafa;
+  --color-base-200: #f4f4f5;
+  --color-base-300: #d4d4d8;
+  --color-base-content: #18181b;
+  --color-primary: #15803d;
+  --color-primary-content: #ffffff;
+  --color-secondary: #3f3f46;
+  --color-secondary-content: #ffffff;
+  --color-accent: #15803d;
+  --color-accent-content: #ffffff;
+  --color-neutral: #27272a;
+  --color-neutral-content: #fafafa;
+  --color-info: #0369a1;
+  --color-info-content: #ffffff;
+  --color-success: #15803d;
+  --color-success-content: #ffffff;
+  --color-warning: #a16207;
+  --color-warning-content: #ffffff;
+  --color-error: #b91c1c;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.625rem;
+  --radius-box: 0.875rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: #09090b;
+  --color-base-200: #18181b;
+  --color-base-300: #3f3f46;
+  --color-base-content: #f4f4f5;
+  --color-primary: #4ade80;
+  --color-primary-content: #052e16;
+  --color-secondary: #a1a1aa;
+  --color-secondary-content: #09090b;
+  --color-accent: #4ade80;
+  --color-accent-content: #052e16;
+  --color-neutral: #27272a;
+  --color-neutral-content: #fafafa;
+  --color-info: #38bdf8;
+  --color-info-content: #082f49;
+  --color-success: #4ade80;
+  --color-success-content: #052e16;
+  --color-warning: #fbbf24;
+  --color-warning-content: #451a03;
+  --color-error: #f87171;
+  --color-error-content: #450a0a;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.625rem;
+  --radius-box: 0.875rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Global stylesheet aggregator. Local layers preserve the specialized prose
+   and print behavior while Tailwind and daisyUI supply shared UI primitives. */
 @import './tokens.css';
 @import './layout.css';
 @import './prose.css';
 @import './print.css';
+@import './designs/classic.css';
+@import './designs/shadcn.css';

@@ -60,7 +60,9 @@ function initSlideshow(root: SlideshowEl) {
   };
   const start = (delay = interval) => {
     stop();
-    if (!autoplayEnabled || document.hidden || hoverPaused || focusPaused) return;
+    const inFullscreen = document.fullscreenElement === root;
+    const interactionPaused = !inFullscreen && (hoverPaused || focusPaused);
+    if (!autoplayEnabled || document.hidden || interactionPaused) return;
     timer = window.setTimeout(() => {
       show(current + 1);
       start();
@@ -156,7 +158,19 @@ function initSlideshow(root: SlideshowEl) {
   // which is fine — but explicit focus also keeps `:focus-visible` styles
   // on nested controls coherent when the user tabs around in fullscreen.
   document.addEventListener('fullscreenchange', () => {
-    if (document.fullscreenElement === root) root.focus();
+    if (document.fullscreenElement === root) {
+      // A fullscreen element permanently covers the pointer, so treating
+      // `:hover` as a pause would disable autoplay until fullscreen exits.
+      hoverPaused = false;
+      root.focus();
+      start();
+      return;
+    }
+
+    hoverPaused = root.matches(':hover')
+      && window.matchMedia('(hover: hover)').matches;
+    if (hoverPaused) stop();
+    else start();
   });
 
   // `pointerenter` also fires after `pointerdown` on touch-only devices.
@@ -164,7 +178,7 @@ function initSlideshow(root: SlideshowEl) {
   // Firefox for Android, where boundary-event ordering differs from desktop
   // browsers. Only hover-capable pointers should control hover pausing.
   root.addEventListener('pointerenter', (event) => {
-    if (event.pointerType === 'touch') return;
+    if (event.pointerType === 'touch' || document.fullscreenElement === root) return;
     hoverPaused = true;
     stop();
   });

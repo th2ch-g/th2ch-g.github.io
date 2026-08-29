@@ -57,14 +57,14 @@ const availableLocales: Lang[] = otherHasTag ? ['ja', 'en'] : [lang];
     ]}
   />
   <div class="tag-head">
-    <h1>
+    <h1 class="count-heading">
       #{tag}
       {posts.length > 0 && (
-        <span class="count-badge">{posts.length}</span>
+        <span class="count-badge badge badge-primary badge-outline">{posts.length}</span>
       )}
     </h1>
     {tagFeedExists && (
-      <a class="tag-feed" href={tagFeed} aria-label={tUi('feed.tag.title')}>
+      <a class="tag-feed btn btn-ghost btn-sm" href={tagFeed} aria-label={tUi('feed.tag.title')}>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <path d="M4 11a9 9 0 0 1 9 9" />
           <path d="M4 4a16 16 0 0 1 16 16" />

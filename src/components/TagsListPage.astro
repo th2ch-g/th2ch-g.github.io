@@ -26,7 +26,7 @@ const tags = await getAllTags(lang);
     <ul class="tag-cloud">
       {tags.map(({ tag, count }) => (
         <li>
-          <a href={getRelativeLocaleUrl(lang, `/tags/${tag}/`)}>
+          <a class="tag-pill badge badge-outline" href={getRelativeLocaleUrl(lang, `/tags/${tag}/`)}>
             <span class="tag-name">#{tag}</span>
             <span class="tag-count">
               {tUi('tags.index.count').replace('{n}', String(count))}
@@ -49,8 +49,10 @@ const tags = await getAllTags(lang);
   }
   .tag-cloud a {
     display: inline-flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.45rem;
+    height: auto;
+    min-height: 2rem;
     padding: 0.35rem 0.8rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
@@ -65,10 +67,13 @@ const tags = await getAllTags(lang);
   }
   .tag-name {
     font-weight: 600;
+    line-height: 1.2;
   }
   .tag-count {
-    font-size: 0.8rem;
+    font-family: inherit;
+    font-size: 0.78em;
+    font-weight: 500;
+    line-height: 1;
     color: var(--color-muted);
-    font-family: var(--font-mono);
   }
 </style>

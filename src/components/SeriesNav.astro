@@ -13,7 +13,7 @@ interface Props {
 const { series, posts, currentId, lang } = Astro.props;
 ---
 {posts.length > 1 && (
-  <aside class="series-nav" aria-label={tUi('posts.series')}>
+  <aside class="series-nav card" aria-label={tUi('posts.series')}>
     <p class="series-label">
       <span class="muted">{tUi('posts.series')}:</span>
       <a
@@ -47,7 +47,8 @@ const { series, posts, currentId, lang } = Astro.props;
     padding: 0.85rem 1rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: var(--color-card);
+    background: color-mix(in oklab, var(--color-card) 78%, transparent);
+    box-shadow: var(--shadow-soft);
   }
   .series-label {
     margin: 0 0 0.5rem;

@@ -1,0 +1,201 @@
+:root[data-design="shadcn"],
+:root[data-design="shadcn"][data-theme="light"] {
+  color-scheme: light;
+  --background: oklch(0.985 0.006 145);
+  --foreground: oklch(0.2 0.015 145);
+  --card: oklch(0.998 0.002 145);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.998 0.002 145);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.47 0.15 145);
+  --primary-foreground: oklch(0.985 0.006 145);
+  --secondary: oklch(0.945 0.016 145);
+  --secondary-foreground: oklch(0.27 0.04 145);
+  --muted: oklch(0.95 0.01 145);
+  --muted-foreground: oklch(0.5 0.025 145);
+  --accent: oklch(0.925 0.035 145);
+  --accent-foreground: oklch(0.29 0.08 145);
+  --destructive: oklch(0.58 0.22 27);
+  --border: oklch(0.885 0.018 145);
+  --input: var(--border);
+  --ring: oklch(0.55 0.15 145);
+  --color-bg: var(--background);
+  --color-fg: var(--foreground);
+  --color-muted: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-translucent: color-mix(in oklab, var(--background) 82%, transparent);
+  --color-accent: var(--primary);
+  --color-accent-hover: oklch(0.38 0.14 145);
+  --color-warn: oklch(0.58 0.14 75);
+  --color-success: oklch(0.5 0.15 145);
+  --color-info: oklch(0.5 0.13 240);
+  --color-warning: oklch(0.62 0.14 75);
+  --color-error: var(--destructive);
+  --radius: 0.75rem;
+  --radius-box: 0.75rem;
+  --radius-field: 0.5rem;
+  --shadow-soft: 0 1px 2px rgb(20 35 25 / 0.04), 0 10px 28px rgb(20 35 25 / 0.06);
+  --shadow-float: 0 18px 55px rgb(20 35 25 / 0.16);
+}
+
+:root[data-design="shadcn"][data-theme="dark"] {
+  color-scheme: dark;
+  --background: oklch(0.16 0.014 145);
+  --foreground: oklch(0.94 0.01 145);
+  --card: oklch(0.205 0.016 145);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.205 0.016 145);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.72 0.17 145);
+  --primary-foreground: oklch(0.16 0.03 145);
+  --secondary: oklch(0.255 0.02 145);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.245 0.014 145);
+  --muted-foreground: oklch(0.7 0.02 145);
+  --accent: oklch(0.275 0.035 145);
+  --accent-foreground: oklch(0.94 0.018 145);
+  --destructive: oklch(0.68 0.19 25);
+  --border: oklch(1 0 0 / 13%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.67 0.16 145);
+  --color-accent-hover: oklch(0.82 0.14 145);
+  --color-card-translucent: color-mix(in oklab, var(--background) 78%, transparent);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.24), 0 12px 32px rgb(0 0 0 / 0.2);
+  --shadow-float: 0 22px 60px rgb(0 0 0 / 0.45);
+}
+
+html[data-design="shadcn"] body {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-border) 24%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-border) 18%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 50% -10rem, color-mix(in oklab, var(--color-accent) 15%, transparent), transparent 34rem);
+  background-size: 5rem 5rem, 5rem 5rem, auto;
+  background-attachment: fixed;
+}
+
+html[data-design="shadcn"] main {
+  position: relative;
+}
+
+html[data-design="shadcn"] h1 {
+  text-wrap: balance;
+}
+
+html[data-design="shadcn"] h1::before {
+  border-radius: 999px;
+  box-shadow: 0 0 0 0.3rem color-mix(in oklab, var(--color-accent) 12%, transparent);
+}
+
+html[data-design="shadcn"] .card {
+  background: color-mix(in oklab, var(--color-card) 94%, transparent);
+  border-color: color-mix(in oklab, var(--color-border) 86%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+html[data-design="shadcn"] .card:hover {
+  transform: translateY(-3px);
+}
+
+html[data-design="shadcn"] .btn {
+  min-height: 0;
+  height: auto;
+  box-shadow: none;
+  text-transform: none;
+}
+
+html[data-design="shadcn"] .badge {
+  min-height: 0;
+  height: auto;
+  line-height: 1.35;
+}
+
+html[data-design="shadcn"] .tag,
+html[data-design="shadcn"] .tag-pill,
+html[data-design="shadcn"] .chip {
+  border-color: color-mix(in oklab, var(--color-border) 90%, transparent);
+  background: color-mix(in oklab, var(--color-card) 88%, transparent);
+  box-shadow: 0 1px 1px rgb(20 35 25 / 0.03);
+}
+
+html[data-design="shadcn"] .prose blockquote,
+html[data-design="shadcn"] .link-card {
+  backdrop-filter: blur(8px);
+}
+
+html[data-design="shadcn"] .shadcn-header {
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--color-accent) 8%, transparent);
+}
+
+html[data-design="shadcn"] .shadcn-header a {
+  text-decoration: none;
+}
+
+html[data-design="shadcn"] .shadcn-header .shadcn-brand {
+  color: var(--foreground);
+}
+
+html[data-design="shadcn"] .shadcn-nav-link {
+  color: var(--muted-foreground);
+}
+
+html[data-design="shadcn"] .shadcn-nav-link:hover,
+html[data-design="shadcn"] .shadcn-nav-link[aria-current="page"] {
+  color: var(--accent-foreground);
+}
+
+html[data-design="shadcn"] .shadcn-locale-link {
+  color: var(--muted-foreground);
+}
+
+html[data-design="shadcn"] .shadcn-locale-link:hover {
+  color: var(--accent-foreground);
+}
+
+html[data-design="shadcn"] .shadcn-locale-link[aria-current="page"] {
+  color: var(--primary-foreground);
+}
+
+#pagefind-search-shadcn {
+  --pagefind-ui-primary: var(--primary);
+  --pagefind-ui-text: var(--foreground);
+  --pagefind-ui-background: var(--popover);
+  --pagefind-ui-border: var(--border);
+  --pagefind-ui-tag: var(--muted);
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 0.5rem;
+  --pagefind-ui-font: var(--font-sans);
+}
+
+#pagefind-search-shadcn .pagefind-ui__search-input {
+  height: 3rem;
+  box-shadow: none;
+}
+
+#pagefind-search-shadcn .pagefind-ui__result-link,
+#pagefind-search-shadcn .pagefind-ui__result-title {
+  color: var(--foreground);
+}
+
+#pagefind-search-shadcn .pagefind-ui__result-excerpt {
+  color: var(--muted-foreground);
+}
+
+#pagefind-search-shadcn mark {
+  border-radius: 0.2rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding-inline: 0.12em;
+}
+
+@media (max-width: 540px) {
+  html[data-design="shadcn"] body {
+    background-size: 3rem 3rem, 3rem 3rem, auto;
+  }
+}
+
+@media print {
+  html[data-design="shadcn"] body {
+    background-image: none;
+  }
+}

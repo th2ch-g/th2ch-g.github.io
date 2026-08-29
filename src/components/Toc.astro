@@ -79,7 +79,8 @@ const tree = buildTree(flat);
       aria-expanded="false"
       aria-label={tUi('posts.toc.open')}
     >
-      {tUi('posts.toc')}
+      <span class="toc-toggle-full">{tUi('posts.toc')}</span>
+      <span class="toc-toggle-short" aria-hidden="true">TOC</span>
     </button>
     <button
       class="toc-backdrop"
@@ -97,7 +98,7 @@ const tree = buildTree(flat);
       <div class="toc-head">
         <p class="toc-title">{tUi('posts.toc')}</p>
         <button
-          class="toc-close"
+          class="toc-close btn btn-ghost btn-circle btn-sm"
           type="button"
           data-toc-close
           aria-label={tUi('posts.toc.close')}
@@ -225,18 +226,25 @@ const tree = buildTree(flat);
     top: 7rem;
     right: 0;
     z-index: 70;
+    width: auto;
+    min-width: 2.25rem;
+    height: auto;
+    min-height: 0;
     writing-mode: vertical-rl;
+    white-space: nowrap;
     padding: 0.7rem 0.4rem;
     border: 1px solid var(--color-border);
     border-right: 0;
     border-radius: var(--radius) 0 0 var(--radius);
-    background: var(--color-card);
-    color: var(--color-fg);
+    background: var(--color-accent);
+    color: var(--color-primary-content);
     font-size: 0.75rem;
     font-weight: 700;
+    line-height: 1.2;
     letter-spacing: 0.08em;
     cursor: pointer;
   }
+  .toc-toggle-short { display: none; }
   .toc-backdrop {
     position: fixed;
     inset: 0;
@@ -260,12 +268,12 @@ const tree = buildTree(flat);
     height: 100dvh;
     overflow-y: auto;
     border: 1px solid var(--color-border);
-    background: var(--color-card);
+    background: color-mix(in oklab, var(--color-card) 96%, var(--color-bg));
     padding: 1.25rem;
     font-size: 0.9rem;
     transform: translateX(100%);
     transition: transform 180ms ease;
-    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.22);
+    box-shadow: var(--shadow-float);
   }
   .toc.is-open {
     transform: translateX(0);
@@ -392,6 +400,23 @@ const tree = buildTree(flat);
   }
   :global(body.toc-drawer-open) {
     overflow: hidden;
+  }
+  @media (max-width: 540px) {
+    .toc-toggle {
+      top: auto;
+      right: max(0.75rem, env(safe-area-inset-right));
+      bottom: max(0.75rem, env(safe-area-inset-bottom));
+      min-width: 3rem;
+      min-height: 3rem;
+      writing-mode: horizontal-tb;
+      padding: 0.55rem 0.75rem;
+      border-right: 1px solid var(--color-border);
+      border-radius: 999px;
+      line-height: 1;
+      box-shadow: var(--shadow-float);
+    }
+    .toc-toggle-full { display: none; }
+    .toc-toggle-short { display: inline; }
   }
   @media (min-width: 90rem) {
     .toc-toggle,

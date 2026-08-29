@@ -9,7 +9,7 @@ interface Props { lang: Lang }
 ---
 <button
   type="button"
-  class="search-trigger"
+  class="search-trigger btn btn-ghost btn-sm"
   data-search-open
   aria-label={tUi('search.title')}
   title={tUi('search.title')}
@@ -33,7 +33,7 @@ interface Props { lang: Lang }
 </button>
 
 <dialog class="search-dialog" data-search-dialog aria-label={tUi('search.title')}>
-  <div class="search-shell">
+  <div class="search-shell modal-box">
     <div id="pagefind-search" data-pagefind-ui data-placeholder={tUi('search.placeholder')}></div>
     <p class="search-error muted" data-search-error hidden>
       Search index unavailable. Run <code>npm run build</code> to generate it
@@ -185,7 +185,7 @@ interface Props { lang: Lang }
     padding: 0.3rem 0.6rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: var(--color-card);
+    background: color-mix(in oklab, var(--color-card) 76%, transparent);
     color: var(--color-muted);
     cursor: pointer;
     transition: color 160ms ease, border-color 160ms ease;
@@ -217,9 +217,9 @@ interface Props { lang: Lang }
   .search-shell {
     background: var(--color-card);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: 1rem;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    border-radius: calc(var(--radius) + 0.2rem);
+    padding: 1.1rem;
+    box-shadow: var(--shadow-float);
   }
   .search-error {
     margin: 0.75rem 0 0;

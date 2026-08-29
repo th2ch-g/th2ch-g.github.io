@@ -79,13 +79,24 @@ posts.forEach((post) => {
     border-bottom: 1px solid var(--color-border);
     padding-bottom: 0.25rem;
   }
+  .year > ul {
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: color-mix(in oklab, var(--color-card) 72%, transparent);
+    box-shadow: var(--shadow-soft);
+  }
   .row {
     display: grid;
     grid-template-columns: 4rem minmax(0, 1fr);
     gap: 0.5rem 1rem;
-    padding: 0.25rem 0;
+    padding: 0.65rem 0.8rem;
     align-items: baseline;
+    border-bottom: 1px solid var(--color-border);
+    transition: background 160ms ease;
   }
+  .row:last-child { border-bottom: 0; }
+  .row:hover { background: color-mix(in oklab, var(--color-accent) 7%, transparent); }
   .row[hidden] { display: none; }
   .date {
     font-variant-numeric: tabular-nums;
@@ -105,7 +116,7 @@ posts.forEach((post) => {
   }
   .post-archive-list.large .year h3 { font-size: 1.35rem; }
   .post-archive-list.large .count-inline { font-size: 0.8em; }
-  .post-archive-list.large .row { padding-block: 0.35rem; }
+  .post-archive-list.large .row { padding-block: 0.75rem; }
   .post-archive-list.large-titles .row > a {
     font-size: 1.05rem;
     line-height: 1.65;
@@ -114,5 +125,8 @@ posts.forEach((post) => {
   @media (max-width: 540px) {
     .row { grid-template-columns: 1fr; gap: 0.1rem; }
     .date { font-size: 0.75rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .row { transition: none; }
   }
 </style>

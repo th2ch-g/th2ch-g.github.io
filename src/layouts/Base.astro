@@ -4,12 +4,14 @@ import '@/styles/global.css';
 // correctly. Imported globally so any page (CV, posts) can contain math.
 import 'katex/dist/katex.min.css';
 import Header from '@/components/Header.astro';
+import ShadcnHeader from '@/components/shadcn/ShadcnHeader.astro';
 import Footer from '@/components/Footer.astro';
 import Lightbox from '@/components/Lightbox.astro';
 import Shortcuts from '@/components/Shortcuts.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import { getProfileMeta } from '@/lib/content';
 import type { ImageMetadata } from 'astro';
+import { ACTIVE_DESIGN } from '@/config/design';
 
 interface Props {
   title: string;
@@ -222,7 +224,7 @@ const jsonLd = {
 };
 ---
 <!doctype html>
-<html lang={lang} data-theme="dark">
+<html lang={lang} data-theme="dark" data-design={ACTIVE_DESIGN} class="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -428,10 +430,12 @@ const jsonLd = {
           const saved = localStorage.getItem('theme');
           if (saved === 'light' || saved === 'dark') {
             document.documentElement.dataset.theme = saved;
+            document.documentElement.classList.toggle('dark', saved === 'dark');
             return;
           }
           if (window.matchMedia('(prefers-color-scheme: light)').matches) {
             document.documentElement.dataset.theme = 'light';
+            document.documentElement.classList.remove('dark');
           }
         } catch {
           // localStorage / matchMedia unavailable — keep the markup default.
@@ -442,7 +446,9 @@ const jsonLd = {
   </head>
   <body>
     <a class="skip-link" href="#main-content">{tUi('a11y.skipToMain')}</a>
-    <Header lang={lang} availableLocales={locales} />
+    {ACTIVE_DESIGN === 'shadcn'
+      ? <ShadcnHeader lang={lang} availableLocales={locales} />
+      : <Header lang={lang} availableLocales={locales} />}
     <main id="main-content" tabindex="-1">
       <slot />
     </main>

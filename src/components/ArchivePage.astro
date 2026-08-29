@@ -14,7 +14,7 @@ const posts = sortByDateDesc(
 
 ---
 <Base lang={lang} title={tUi('archive.title')}>
-  <h1>
+  <h1 class="count-heading">
     {tUi('archive.title')}
     {posts.length > 0 && <span class="count-badge">{posts.length}</span>}
   </h1>

@@ -89,7 +89,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
       </h2>
       <ul class="tag-list">
         {tags.map((tag) => (
-          <li>
+          <li class="badge badge-outline">
             <a href={getRelativeLocaleUrl(lang, `/tags/${tag}/`)}>{tag}</a>
           </li>
         ))}
@@ -149,10 +149,15 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
     list-style: none;
     padding: 0;
     margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: color-mix(in oklab, var(--color-card) 72%, transparent);
+    box-shadow: var(--shadow-soft);
   }
   ul.list li {
-    padding: 0.4rem 0;
-    border-bottom: 1px dashed var(--color-border);
+    padding: 0.65rem 0.8rem;
+    border-bottom: 1px solid var(--color-border);
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -173,7 +178,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
     padding: 0.25rem 0.7rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: var(--color-card);
+    background: color-mix(in oklab, var(--color-card) 78%, transparent);
   }
   ul.tag-list a {
     color: var(--color-fg);
