@@ -1,6 +1,6 @@
 ---
 title: 🪦👋 RIP mogura
-description: PyMOL-rsが出ていたのでmoguraをそっ閉じました😇
+description: PyMOL-rsが出ていたのでmoguraをそっ閉じ😇
 pubDate: 2026-05-12
 tags:
   - rust

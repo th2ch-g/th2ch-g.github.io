@@ -25,5 +25,5 @@ https://x.com/cuemolnohito/status/2053742544279019875
 
 https://x.com/cuemolnohito/status/2058825601021280557
 
-# チャッピーで適当に作らせたグラフィカルアブストラクトです😎
+# チャッピーで適当に作らせたグラフィカルアブストラクト😎
 ![脳汁溢れるグラフィカルアブストラクト](./assets/distance-restraint-guided-inference.jpg)
