@@ -47,12 +47,16 @@ jobs:
 
       - name: Type check
         run: npm run check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Security regression checks
         run: npm run check:security
 
       - name: Build
         run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       # Each check serves dist/ on its own port and launches independent
       # browser processes. Run them together so Lighthouse does not serialize
