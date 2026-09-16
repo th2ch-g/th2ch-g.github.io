@@ -111,6 +111,8 @@ const profileMeta = defineCollection({
     // button and the "Contact" nav item. Validated as a URL only when
     // present; blank disables the button and shows a placeholder instead.
     contactForm: nullable(httpUrl),
+    // Disable embedding for forms that require sign-in; keep the CTA.
+    contactFormEmbed: nullable(z.boolean()),
     // Avatar source plus an optional per-locale hover tooltip. The URL is
     // also consumed by `scripts/build-icon.mjs` to bake `public/icon.png`.
     icon: z

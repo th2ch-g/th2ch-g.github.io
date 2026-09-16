@@ -11,11 +11,8 @@ huggingface: https://huggingface.co/wasarou
 
 ## 学歴
 - 東京工業大学生命理工学院生命理工学系卒, 学士(理学), 2019/4/1-2023/3/31
-  - [伊藤武彦 教授](https://researchmap.jp/read0149281)のもとで、ワサビのゲノム構築と解析について研究
 - 東京科学大学生命理工学院生命理工学系生命理工学コース修了, 修士(理学), 2023/4/1-2025/3/31
-  - [北尾彰朗 教授](https://strdb.s.isct.ac.jp/html/100001770_ja.html)のもとで、タンパク質の分子動力学計算について研究
 - 東京科学大学医歯学総合研究科博士課程生命医療科学専攻計算創薬科学分野所属, 博士(理学), 2025/4/1-2028/3/31（予定）
-  - [石谷隆一郎 教授](https://cddlab.io/member/ishitani.html)のもとで、構造バイオインフォマティクスについて研究
 
 ## 職歴
 - [株式会社digzyme](https://www.digzyme.com/), 2023/10/1-2025/5/31, 学生インターン
@@ -77,18 +74,3 @@ huggingface: https://huggingface.co/wasarou
 1. ◯ **<u>堀立樹</u>**, **Tran Phuoc Duy**, **松岡佑真**, **堂浦智裕**, **荒谷剛史**, **浅田秀基**, **岩田想**, **清中茂樹**, **北尾彰朗**.
    "Molecular dynamics simulation of association and dissociation between Adenosine A<sub>2A</sub> receptor and ligand"
    [学術変革領域研究(A)「蛋白質新機能生成」](https://p-func.kuchem.kyoto-u.ac.jp/) [第二回領域会議](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), 淡路夢舞台国際会議場（兵庫県淡路市）, 2024年12月16–17日.
-
-## 受賞歴
-- 生命理工同窓会学士論文研究優秀賞 (東京工業大学生命理工学院より学部の卒業研究の優秀者に贈られる), 2023年3月
-
-## プレスリリース
-- わさびゲノム
-  - [東工大](https://www.titech.ac.jp/news/2023/067182)
-  - [岐阜大](https://www.gifu-u.ac.jp/news/research/2019/10/entry09-7478.html)
-  - [日経](https://www.nikkei.com/article/DGXZQOUF083DD0Y3A101C2000000/)
-  - [マイナビ](https://news.mynavi.jp/techplus/article/20230714-2727593/)
-  - [日経バイオテク](https://bio.nikkeibp.co.jp/atcl/release/23/07/13/17200/)
-  - [JA](https://www.jacom.or.jp/saibai/news/2023/07/230719-68156.php)
-- PaCS-Toolkit
-  - [東工大](https://www.titech.ac.jp/news/2024/069220)
-  - [マイナビ](https://news.mynavi.jp/techplus/article/20240514-2945485/)

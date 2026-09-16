@@ -19,7 +19,7 @@ const description = tUi('contact.description');
 // API appends it without caring whether the URL already carries a query.
 // The form host must also be allow-listed in `frame-src` (src/layouts/Base.astro).
 let embedSrc: string | null = null;
-if (meta.contactForm) {
+if (meta.contactForm && meta.contactFormEmbed) {
   const u = new URL(meta.contactForm);
   u.searchParams.set('embedded', 'true');
   embedSrc = u.toString();
@@ -27,18 +27,18 @@ if (meta.contactForm) {
 ---
 <Base lang={lang} title={title} description={description}>
   <h1>{title}</h1>
-  {embedSrc ? (
+  {meta.contactForm ? (
     <>
       {/* Do NOT add a `sandbox` attribute: Google Forms needs its own
           scripts and same-origin context to load and submit, and sandboxing
           silently breaks submission. The iframe carries no resize protocol,
           so the height is fixed (see `.contact-form` below). */}
-      <iframe
+      {embedSrc && <iframe
         class="contact-form"
         src={embedSrc}
         title={tUi('contact.embedTitle')}
         loading="lazy"
-      >…</iframe>
+      >…</iframe>}
       {/* Fallback for browsers/extensions that block the frame, and for
           visitors who prefer the full-page form. Uses the plain URL. */}
       <p class="fallback">
