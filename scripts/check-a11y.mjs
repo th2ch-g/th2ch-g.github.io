@@ -72,31 +72,54 @@ const pages = [
   firstTagPath('/en/'),
 ].filter(Boolean);
 
-const browser = await chromium.launch();
-const context = await browser.newContext();
+let browser;
 let totalViolations = 0;
-for (const path of pages) {
-  const page = await context.newPage();
-  await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
-  // wcag2a + wcag2aa is the practical bar for personal sites; stricter
-  // tags (wcag21aaa) tend to flag stylistic preferences as violations.
-  const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
-  if (result.violations.length > 0) {
-    totalViolations += result.violations.length;
-    console.error(`\n[a11y] ${path}`);
-    for (const v of result.violations) {
-      console.error(`  - ${v.id} (${v.impact}): ${v.help}`);
-      console.error(`    ${v.helpUrl}`);
-      v.nodes.slice(0, 3).forEach((n) => console.error(`    target: ${n.target.join(' ')}`));
-    }
-  } else {
-    console.log(`[a11y] ${path}: ok`);
-  }
-  await page.close();
-}
+try {
+  browser = await chromium.launch();
+  const context = await browser.newContext();
+  const localOrigin = new URL(base).origin;
+  // Audit the built site without waiting for third-party services, matching
+  // the network isolation used by the mobile regression checks.
+  await context.route('**/*', (route) => {
+    const requestUrl = new URL(route.request().url());
+    return requestUrl.origin === localOrigin ? route.continue() : route.abort();
+  });
 
-await browser.close();
-await close();
+  for (const path of pages) {
+    const page = await context.newPage();
+    try {
+      await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded' });
+      await page.locator('main').waitFor({ state: 'visible', timeout: 30_000 });
+      // Font metrics affect contrast and layout checks. Wait for rendering
+      // readiness instead of requiring every network connection to go idle.
+      await page.waitForFunction(() => document.fonts.status === 'loaded', null, { timeout: 30_000 });
+      // wcag2a + wcag2aa is the practical bar for personal sites; stricter
+      // tags (wcag21aaa) tend to flag stylistic preferences as violations.
+      const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+      if (result.violations.length > 0) {
+        totalViolations += result.violations.length;
+        console.error(`\n[a11y] ${path}`);
+        for (const v of result.violations) {
+          console.error(`  - ${v.id} (${v.impact}): ${v.help}`);
+          console.error(`    ${v.helpUrl}`);
+          v.nodes.slice(0, 3).forEach((n) => console.error(`    target: ${n.target.join(' ')}`));
+        }
+      } else {
+        console.log(`[a11y] ${path}: ok`);
+      }
+    } catch (error) {
+      throw new Error(`[a11y] ${path}: ${error.message}`, { cause: error });
+    } finally {
+      await page.close();
+    }
+  }
+} finally {
+  try {
+    await browser?.close();
+  } finally {
+    await close();
+  }
+}
 
 if (totalViolations > 0) {
   console.error(`\n[a11y] FAIL — ${totalViolations} violation(s) across ${pages.length} pages.`);

@@ -22,7 +22,9 @@ export function remarkTwitterEmbed() {
       // legally contain `"` or `>` — escapeHtml is a defense-in-depth pass
       // so the URL can't break out of the `href="..."` attribute.
       const safe = escapeHtml(url);
-      const html = `<div class="tweet-embed"><blockquote class="twitter-tweet" data-dnt="true"><a href="${safe}"></a></blockquote></div>`;
+      // Keep the source URL readable and accessible when widgets.js is
+      // blocked or unavailable, and while the rich preview is loading.
+      const html = `<div class="tweet-embed"><blockquote class="twitter-tweet" data-dnt="true"><a href="${safe}">${safe}</a></blockquote></div>`;
       replaceWithHtml(parent, index, html);
     });
   };

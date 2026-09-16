@@ -11,11 +11,8 @@ huggingface: https://huggingface.co/wasarou
 
 ## Education
 - B.Sc. (Science), Department of Life Science and Technology, School of Life Science and Technology, Tokyo Institute of Technology, 2019/4/1-2023/3/31
-  - Research on the assembly and analysis of the wasabi genome under [Prof. Takehiko Itoh](https://researchmap.jp/read0149281)
 - M.Sc. (Science), Life Science and Technology Course, Department of Life Science and Technology, School of Life Science and Technology, Institute of Science Tokyo, 2023/4/1-2025/3/31
-  - Research on molecular dynamics simulations of proteins under [Prof. Akio Kitao](https://strdb.s.isct.ac.jp/html/100001770_en.html)
 - Ph.D. (Science), Department of Computational Drug Discovery and Design, Department of Biomedical Sciences (Doctoral Program), Graduate School of Medical and Dental Sciences, Institute of Science Tokyo, 2025/4/1-2028/3/31 (expected)
-  - Research on structural bioinformatics under [Prof. Ryuichiro Ishitani](https://cddlab.io/member/ishitani.html)
 
 ## Employment
 - [digzyme Inc.](https://www.digzyme.com/), 2023/10/1-2025/5/31, Student Intern
@@ -79,18 +76,3 @@ huggingface: https://huggingface.co/wasarou
 1. ◯ **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
    "Molecular dynamics simulation of association and dissociation between Adenosine A<sub>2A</sub> receptor and ligand"
    [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [2nd Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 16-17, 2024.
-
-## Awards
-- Outstanding Bachelor's Thesis Research Award, Alumni Association of the School of Life Science and Technology (presented by the School of Life Science and Technology, Tokyo Institute of Technology, to outstanding undergraduate thesis researchers), March 2023
-
-## Press Releases
-- Wasabi genome
-  - [Tokyo Tech](https://www.titech.ac.jp/news/2023/067182)
-  - [Gifu University](https://www.gifu-u.ac.jp/news/research/2019/10/entry09-7478.html)
-  - [Nikkei](https://www.nikkei.com/article/DGXZQOUF083DD0Y3A101C2000000/)
-  - [Mynavi](https://news.mynavi.jp/techplus/article/20230714-2727593/)
-  - [Nikkei Biotech](https://bio.nikkeibp.co.jp/atcl/release/23/07/13/17200/)
-  - [JA](https://www.jacom.or.jp/saibai/news/2023/07/230719-68156.php)
-- PaCS-Toolkit
-  - [Tokyo Tech](https://www.titech.ac.jp/news/2024/069220)
-  - [Mynavi](https://news.mynavi.jp/techplus/article/20240514-2945485/)
