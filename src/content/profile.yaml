@@ -33,7 +33,7 @@ icon:
 contactForm: https://docs.google.com/forms/d/e/1FAIpQLScQEsOKEI56HkpHkB6H5v8tgUbh3mZj8Gj_ravXrSWN3uRgOw/viewform
 # Set false for forms that require sign-in or cannot be embedded.
 # Omit or leave blank to keep the embedded form and its fallback link.
-contactFormEmbed: false
+contactFormEmbed: true
 
 # Third-party service integrations. Leave any field blank (or remove the
 # whole block) to gracefully disable the corresponding feature at render
