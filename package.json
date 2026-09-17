@@ -75,10 +75,12 @@
     "chrome-launcher": "^1.2.1",
     "js-yaml": "^4.3.2",
     "lighthouse": "^13.4.1",
+    "lodash-es": "^4.18.1",
     "nanoid": "^3.3.17",
+    "qs": "^6.16.0",
     "uuid": "^11.1.1",
     "yaml": "^2.9.0",
     "tmp": "^0.2.7"
   },
-  "_overridesNote": "lighthouse >=13.4.1 removes the vulnerable extract-zip tree still pinned by @lhci/cli@0.15.1. js-yaml >=4.3.1 and the scoped @lhci/utils js-yaml >=3.15.1 cut GHSA-5p4m-2wfm-xmqj. nanoid >=3.3.17 cuts GHSA-2v37-7h3g-55p8. chrome-launcher >=1.2.1 removes the vulnerable rimraf->glob->minimatch->brace-expansion tree still pinned by @lhci/cli. uuid >=11.1.1 cuts GHSA-w5hq-g745-h8pq, also still pinned by @lhci/cli. yaml >=2.8.3 cuts GHSA-48c2-rrv3-qjmp which volar-service-yaml@0.0.70 still pins. tmp >=0.2.4 cuts GHSA-52f5-9888-hmc6 which @lhci/cli still pins via inquirer->external-editor. Remove each override once the corresponding upstream ships a fixed dependency tree."
+  "_overridesNote": "lighthouse >=13.4.1 removes the vulnerable extract-zip tree still pinned by @lhci/cli@0.15.1. js-yaml >=4.3.1 and the scoped @lhci/utils js-yaml >=3.15.1 cut GHSA-5p4m-2wfm-xmqj. lodash-es >=4.18.1 fixes GHSA-r5fr-rjxr-66jc and GHSA-f23m-r3pf-42rh in Mermaid's Chevrotain dependency tree. qs >=6.16.0 fixes GHSA-x5fp-wj9c-mxmx and GHSA-4mjr-xmp4-gh2g in @lhci/cli's Express and body-parser dependency tree. nanoid >=3.3.17 cuts GHSA-2v37-7h3g-55p8. chrome-launcher >=1.2.1 removes the vulnerable rimraf->glob->minimatch->brace-expansion tree still pinned by @lhci/cli. uuid >=11.1.1 cuts GHSA-w5hq-g745-h8pq, also still pinned by @lhci/cli. yaml >=2.8.3 cuts GHSA-48c2-rrv3-qjmp which volar-service-yaml@0.0.70 still pins. tmp >=0.2.4 cuts GHSA-52f5-9888-hmc6 which @lhci/cli still pins via inquirer->external-editor. Remove each override once the corresponding upstream ships a fixed dependency tree."
 }
