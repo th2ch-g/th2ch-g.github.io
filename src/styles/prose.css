@@ -9,18 +9,41 @@
 .prose {
   overflow-wrap: break-word;
   font-size: 1rem;
-  line-height: 1.75;
+  line-height: 1.5;
 }
 
-.prose > p {
-  margin: 1rem 0;
+.prose :where(p, blockquote, ul, ol, dl, table, pre, details):not(:where(.link-card, .link-card *, .cv-menu, .cv-menu *)) {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+.prose > :first-child:not(.link-card) { margin-top: 0; }
+.prose > :last-child:not(.link-card) { margin-bottom: 0; }
+.prose :where(strong, b):not(:where(.link-card *)) { font-weight: 600; }
+
+.prose :is(h1, h2, h3, h4, h5, h6) {
+  position: relative;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+.prose h1 { font-size: 2em; }
+.prose h2 { font-size: 1.5em; }
+.prose h3 { font-size: 1.25em; }
+.prose h4 { font-size: 1em; }
+.prose h5 { font-size: 0.875em; }
+.prose h6 { font-size: 0.85em; color: var(--color-muted); }
+.prose :is(h1, h2) {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Tailwind's preflight removes native list markers. Restore Markdown list
    semantics inside rendered prose without affecting navigation or UI lists. */
 .prose :where(ul, ol) {
-  margin: 1rem 0;
-  padding-left: 1.75rem;
+  margin: 0 0 1rem;
+  padding-left: 2em;
 }
 .prose ul {
   list-style-type: disc;
@@ -29,7 +52,7 @@
   list-style-type: decimal;
 }
 .prose :where(ul, ol) :where(ul, ol) {
-  margin: 0.35rem 0;
+  margin: 0;
 }
 .prose ul ul {
   list-style-type: circle;
@@ -40,7 +63,8 @@
 
 /* Inline Markdown links need a non-color cue inside text blocks. Generated
    cards and heading anchors carry classes and keep their component styles. */
-.prose :is(p, li) a:not([class]) {
+.prose :is(p, li) a:not([class]),
+.prose :is(td, th) a {
   text-decoration: underline;
   text-underline-offset: 0.14em;
 }
@@ -51,6 +75,11 @@
   border-radius: var(--radius);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-soft);
+}
+.prose img:not(:where(.link-card *)) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Single-image paragraph (bare image URL promoted by remark-link-card, or
@@ -79,7 +108,7 @@
 .prose .md-figcaption {
   margin: 0.6rem 0 0;
   color: var(--color-muted);
-  font-size: 1.2rem;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
@@ -87,7 +116,7 @@
 .prose blockquote {
   border-left: 4px solid var(--color-border);
   padding: 0 1rem;
-  margin: 1rem 0;
+  margin: 0 0 1rem;
   color: var(--color-muted);
   background: transparent;
 }
@@ -120,6 +149,7 @@
    URL. When the target page has no og:image the card collapses to a
    text-only variant via `.link-card--no-image`. */
 .link-card {
+  line-height: 1.75;
   display: block;
   max-width: 36rem;
   margin: 1.25rem auto;
@@ -215,16 +245,21 @@
   }
 }
 
-/* GitHub code-permalink embed. Produced by `remark-github-permalink.mjs` for a
-   standalone `…/blob/<ref>/<path>#L<a>-L<b>` URL: a header (octocat + path +
-   line range) above the referenced lines, highlighted with the same Shiki
-   `github-dark` theme as Markdown code blocks. The card stays dark in both
-   site themes because the code body always is (Shiki runs a single theme, not
-   a light/dark pair) — site light/dark tokens would clash with it — so the
-   chrome below uses GitHub's own dark palette. */
+/* Match GitHub syntax highlighting to the selected site theme. */
+@media screen {
+  :root[data-theme="dark"] :is(.astro-code, .shiki) {
+    background-color: var(--shiki-dark-bg) !important;
+  }
+  :root[data-theme="dark"] :is(.astro-code, .shiki),
+  :root[data-theme="dark"] :is(.astro-code, .shiki) span {
+    color: var(--shiki-dark) !important;
+  }
+}
+
+/* GitHub permalink cards share the Markdown code palette and scroll behavior. */
 .gh-permalink-card {
   margin: 1.25rem 0;
-  border: 1px solid #30363d;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   overflow: hidden;
 }
@@ -233,8 +268,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.8rem;
-  background: #161b22;
-  border-bottom: 1px solid #30363d;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
   font-family: var(--font-mono);
   font-size: 0.82rem;
   line-height: 1.4;
@@ -245,10 +280,10 @@
 }
 .gh-permalink-icon {
   flex: none;
-  color: #8b949e;
+  color: var(--color-muted);
 }
 .gh-permalink-path {
-  color: #58a6ff;
+  color: var(--color-accent);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -257,7 +292,7 @@
 .gh-permalink-meta {
   margin-left: auto;
   flex: none;
-  color: #8b949e;
+  color: var(--color-muted);
   font-size: 0.92em;
 }
 /* Body row: a non-scrolling line-number gutter beside the code. Only the code
@@ -266,7 +301,7 @@
 .gh-permalink-body {
   display: flex;
   align-items: stretch;
-  background: var(--gh-code-bg, #24292e);
+  background: var(--color-bg);
 }
 .gh-permalink-nums {
   flex: none;
@@ -277,8 +312,8 @@
   line-height: 1.6;
   text-align: right;
   white-space: pre;
-  color: #6e7681;
-  background: var(--gh-code-bg, #24292e);
+  color: var(--color-muted);
+  background: var(--color-bg);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -310,9 +345,9 @@
 .gh-permalink-more {
   display: block;
   padding: 0.5rem 0.9rem;
-  background: #161b22;
-  border-top: 1px solid #30363d;
-  color: #58a6ff;
+  background: var(--color-card);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-accent);
   font-size: 0.8rem;
   text-decoration: none;
 }
@@ -329,9 +364,6 @@
      visual breathing room between the header and the target heading. */
   scroll-margin-top: 4.5rem;
 }
-.prose :is(h2, h3, h4) {
-  position: relative;
-}
 .prose .heading-anchor {
   position: absolute;
   /* Small negative left offset so the `#` sits just outside the text column.
@@ -346,8 +378,8 @@
   transition: opacity 160ms ease, color 160ms ease;
   cursor: pointer;
 }
-.prose :is(h2, h3, h4):hover .heading-anchor,
-.prose :is(h2, h3, h4):focus-within .heading-anchor,
+.prose :is(h1, h2, h3, h4, h5, h6):hover .heading-anchor,
+.prose :is(h1, h2, h3, h4, h5, h6):focus-within .heading-anchor,
 .prose .heading-anchor:focus-visible {
   opacity: 1;
 }
@@ -369,78 +401,43 @@
   }
 }
 
-/* Code block language label. Astro / Shiki emits `<pre data-language="ts">`
-   on every fenced code block. Authors can additionally write
-   `​```ts title="src/foo.ts"` to surface a filename — the Shiki transformer
-   in `astro.config.mjs` extracts that into `data-filename`. We project the
-   combination as a small pill in the upper-left corner. The `pre` is set
-   to `position: relative` only inside `.prose` so non-content code (e.g.
-   inside the Search dialog) is unaffected. */
+/* GitHub Markdown code surfaces; keep filenames in a flat file header. */
 .prose pre {
   position: relative;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-soft);
 }
-/* Labelled blocks: lift the label OUT of the code box and present it as a tab
-   sitting directly ABOVE the code, Zenn-style. Reserve top margin so that tab
-   has room to clear the preceding paragraph. Mermaid renders to SVG and carries
-   no badge (`content: none` below), so it's excluded. */
-.prose pre:is([data-language], [data-filename]):not(.mermaid) {
-  margin-top: 2.4rem;
-  /* Join the label tab to the block instead of leaving a rounded notch under
-     it. The other corners keep the regular code-block radius. */
-  border-top-left-radius: 0;
-  /* Release the clip so the tab (translated above the top edge) shows instead
-     of being cut off. Safe ONLY because the layout.css rule makes <code> the
-     horizontal scroller — the pre never holds overflow content of its own, so
-     going visible changes nothing about scrolling; it just stops clipping the
-     tab. overflow-x must be overridden too (a lone `overflow-y: visible`
-     computes back to auto when overflow-x isn't visible), and Astro bakes
-     `overflow-x: auto` inline on every astro-code pre — hence !important. */
-  overflow: visible !important;
+.prose pre:not(.gh-permalink-pre):not(.mermaid) {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-card) !important;
+  box-shadow: none;
+  font-size: 0.85em;
+  line-height: 1.45;
 }
-.prose pre:is([data-language], [data-filename])::before {
-  content: attr(data-language);
-  position: absolute;
-  /* Sit the label as a tab ABOVE the code box: translateY(-100%) lifts it fully
-     off the top edge, flush-left. The block's `margin-top` (rule above) keeps
-     it clear of the preceding paragraph. The copy button lives INSIDE the box
-     at its upper-right — a different height — so the two never collide. */
-  top: -1px;
-  left: -1px;
-  transform: translateY(-100%);
-  padding: 0.12rem 0.6rem;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  line-height: 1.4;
-  letter-spacing: 0.04em;
-  text-transform: lowercase;
-  color: var(--color-muted);
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  /* Drop the bottom edge and round only the TOP corners so the tab reads as
-     joined to the code box below it (folder-tab silhouette). */
-  border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0;
-  pointer-events: none;
-  /* The tab sits above the box (not beside the copy button), so it can span
-     the full width; cap at 100% to avoid overflow on long filenames. */
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.prose pre > code {
+  font-size: inherit;
+  line-height: inherit;
+  border-radius: var(--radius);
+}
+.prose pre[data-filename]:not(.mermaid) {
+  padding-top: 3.25rem;
 }
 .prose pre[data-filename]::before {
   content: attr(data-filename);
-  /* Filenames are case-sensitive and may include uppercase characters
-     (e.g. `README.md`). Drop the lowercase forcing for filename mode. */
-  text-transform: none;
-}
-.prose pre[data-filename][data-language]::before {
-  content: attr(data-filename) " · " attr(data-language);
-}
-.prose pre.mermaid::before {
-  content: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* GitHub-style callouts produced by `src/plugins/remark-callouts.mjs`.
@@ -448,13 +445,9 @@
    callout-note">` etc. Color tokens use the muted scale rather than
    theme-saturated hues so callouts read as gentle annotations, not alarms. */
 .prose .callout {
-  border: 1px solid var(--color-border);
-  border-left-width: 4px;
-  border-radius: var(--radius);
-  background: var(--color-bg);
-  padding: 0.75rem 1rem;
-  margin: 1rem 0;
-  box-shadow: var(--shadow-soft);
+  border-left: 4px solid var(--color-border);
+  padding: 0.5rem 1rem;
+  margin: 0 0 1rem;
 }
 .prose .callout > :first-child { margin-top: 0; }
 .prose .callout > :last-child { margin-bottom: 0; }
@@ -462,9 +455,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  margin-bottom: 0.4rem;
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1;
+  margin-bottom: 1rem;
   color: var(--color-fg);
 }
 .prose .callout-note { border-left-color: var(--color-accent); }
@@ -493,56 +487,48 @@
    horizontally on narrow viewports rather than overflowing the column. */
 .prose table {
   display: block;
-  width: 100%;
+  width: max-content;
   max-width: 100%;
-  margin: 1rem 0;
+  margin: 0 0 1rem;
   border-collapse: collapse;
   border-spacing: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   overflow-x: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
 }
 .prose table th,
 .prose table td {
-  padding: 0.45rem 0.85rem;
+  padding: 0.375rem 0.8125rem;
   border: 1px solid var(--color-border);
   text-align: left;
   vertical-align: top;
 }
-.prose table thead {
-  background: var(--color-card);
+.prose table tr {
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
 }
 .prose table th {
   font-weight: 600;
 }
-/* Zebra rows on the body only — header band keeps its own bg above. */
+/* Alternate body rows retain the header's plain background. */
 .prose table tbody tr:nth-child(2n) {
   background: var(--color-card);
 }
 
-/* Horizontal rule — thin, slightly muted band; GitHub uses the border
-   token as a single-pixel divider rather than a full <hr> shadow. */
+/* Markdown rules use GitHub's thicker separator. */
 .prose hr {
-  height: 1px;
+  height: 0.25em;
   border: 0;
   background: var(--color-border);
-  margin: 1.75rem 0;
+  margin: 1.5rem 0;
 }
 
 /* Lists — match GFM tight intra-list spacing (0.25rem between siblings)
    while keeping prose-default block margins around the whole list. */
-.prose ul,
-.prose ol {
-  padding-left: 1.6rem;
-  margin: 0.85rem 0;
-}
 .prose li + li {
   margin-top: 0.25rem;
 }
 .prose li > p {
-  margin: 0.4rem 0;
+  margin-top: 1rem;
 }
 
 /* Task lists — remark-gfm emits `<ul class="contains-task-list">` with
@@ -550,33 +536,29 @@
    and align the checkbox in the gutter instead. */
 .prose ul.contains-task-list {
   list-style: none;
-  padding-left: 0.5rem;
 }
 .prose .task-list-item {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  list-style: none;
 }
 .prose .task-list-item > input[type="checkbox"] {
-  margin: 0;
-  flex: none;
-  transform: translateY(0.1rem);
+  margin: 0 0.2em 0.25em -1.4em;
+  vertical-align: middle;
 }
 
 /* Inline code — softer pill than the page-global `code { background:
    var(--color-border) }` so it reads as a code chip rather than a
    highlight. `:not(pre) > code` excludes shiki-rendered blocks. */
 .prose :not(pre) > code {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  padding: 0.08em 0.35em;
-  font-size: 0.88em;
+  background: var(--color-counter);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.2em 0.4em;
+  font-size: 0.85em;
 }
 
 /* Strikethrough (GFM `~~foo~~` -> `<del>`) and inserted text via raw HTML. */
 .prose del {
-  color: var(--color-muted);
+  color: inherit;
   text-decoration: line-through;
 }
 .prose ins {
@@ -596,50 +578,29 @@
   background: rgba(187, 128, 9, 0.45);
 }
 
-/* <kbd> — small pill with a 2px bottom border for a subtle key bevel. */
+/* Keyboard keys use a small inset bottom edge. */
 .prose kbd {
   display: inline-block;
-  padding: 0.05em 0.45em;
+  padding: 0.25rem;
   font-family: var(--font-mono);
-  font-size: 0.85em;
-  line-height: 1.4;
+  font-size: 0.6875rem;
+  line-height: 0.625rem;
   color: var(--color-fg);
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-bottom-width: 2px;
-  border-radius: 4px;
-  vertical-align: 0.05em;
+  border-radius: var(--radius);
+  box-shadow: inset 0 -1px 0 var(--color-border);
+  vertical-align: middle;
 }
 
-/* Collapsible <details> blocks (raw HTML in markdown is allowed). The
-   default summary triangle is replaced with a CSS chevron so it animates
-   when the block opens. */
-.prose details {
-  margin: 1rem 0;
-  padding: 0.5rem 0.85rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: color-mix(in oklab, var(--color-card) 78%, transparent);
-  box-shadow: var(--shadow-soft);
+/* Keep native disclosure markers in Markdown, excluding CV action menus. */
+.prose details:not(.cv-menu) {
+  margin: 0 0 1rem;
 }
-.prose details[open] {
-  padding-bottom: 0.85rem;
-}
-.prose summary {
+.prose summary:not(.cv-menu-trigger) {
   cursor: pointer;
-  font-weight: 600;
-  list-style: none;
+  display: list-item;
+  font-weight: 400;
+  list-style: disclosure-closed inside;
 }
-.prose summary::-webkit-details-marker {
-  display: none;
-}
-.prose summary::before {
-  content: "▸";
-  display: inline-block;
-  margin-right: 0.45rem;
-  color: var(--color-muted);
-  transition: transform 160ms ease;
-}
-.prose details[open] > summary::before {
-  transform: rotate(90deg);
-}
+.prose details[open] > summary:not(.cv-menu-trigger) { list-style-type: disclosure-open; }

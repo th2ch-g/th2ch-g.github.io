@@ -24,6 +24,7 @@ async function assertTocAnchorClearsHeader(path) {
   const toggle = page.locator('[data-toc-toggle]');
   assert.equal(await toggle.isVisible(), true, `TOC toggle is missing on ${path}`);
   await toggle.click();
+  await assertModalKeyboard(page, '[data-toc-panel]');
 
   const firstLink = page.locator('[data-toc-link]').first();
   const targetId = await firstLink.getAttribute('data-toc-link');
@@ -44,10 +45,58 @@ async function assertTocAnchorClearsHeader(path) {
     };
   }, targetId);
   assert.ok(anchorLayout, `TOC target or navbar is missing on ${path}`);
+  assert.equal(
+    await page.evaluate((id) => document.activeElement?.id === id, targetId),
+    true,
+    `TOC link leaves keyboard focus in the hidden drawer on ${path}`,
+  );
   assert.ok(
     anchorLayout.headingTop > anchorLayout.headerBottom,
     `TOC target is hidden by the navbar on ${path} (${anchorLayout.headingTop}px / ${anchorLayout.headerBottom}px)`,
   );
+  await page.close();
+}
+
+async function assertModalKeyboard(page, selector) {
+  const modal = page.locator(selector);
+  const focusableCount = await modal.locator('a[href], button').count();
+  for (const key of ['Tab', 'Shift+Tab']) {
+    for (let step = 0; step < focusableCount + 2; step++) {
+      await page.keyboard.press(key);
+      assert.equal(
+        await modal.evaluate((element) => element.contains(document.activeElement)),
+        true,
+        `${key} moves focus outside ${selector}`,
+      );
+    }
+  }
+  for (const key of ['/', 'Control+k']) {
+    await page.keyboard.press(key);
+    assert.equal(await page.locator('[data-search-dialog]').evaluate((dialog) => dialog.open), false,
+      `${key} opens search while ${selector} is open`);
+  }
+}
+
+async function assertStableFirstPaint() {
+  const page = await newLocalPage({ width: 1280, height: 900 });
+  await page.route('**/*.woff2', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.continue();
+  });
+  await page.addInitScript(() => {
+    globalThis.__layoutShiftTotal = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (!entry.hadRecentInput) globalThis.__layoutShiftTotal += entry.value;
+      }
+    }).observe({ type: 'layout-shift', buffered: true });
+  });
+  for (const path of ['/', '/cv/']) {
+    await page.goto(`${url}${path}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1000);
+    const shift = await page.evaluate(() => globalThis.__layoutShiftTotal);
+    assert.ok(shift < 0.001, `Delayed fonts or controls move content on ${path} (CLS ${shift})`);
+  }
   await page.close();
 }
 
@@ -128,6 +177,7 @@ async function assertFirefoxTouchAutoplay() {
 }
 
 try {
+  await assertStableFirstPaint();
   await assertTocAnchorClearsHeader('/posts/dotfiles-2026-summer/');
   await assertTocAnchorClearsHeader('/cv/');
   await assertCvBibtexCopy();
@@ -196,6 +246,12 @@ try {
     secondLightboxSrc,
     'Mobile gallery lightbox does not respond to horizontal swipes',
   );
+  await assertModalKeyboard(galleryPage, '#lightbox');
+  await galleryPage.keyboard.press('Escape');
+  await lightbox.waitFor({ state: 'hidden' });
+  assert.equal(await galleryPage.locator('.photo-btn').first().evaluate(
+    (button) => button === document.activeElement,
+  ), true, 'Closing the lightbox does not restore focus to its image button');
   await galleryPage.close();
 
   const mobilePage = await newLocalPage({ width: 393, height: 852 });
@@ -242,6 +298,9 @@ try {
     (element) => element.getBoundingClientRect().top,
   );
   assert.equal(heroTopAfter, heroTopBefore, 'Mobile navigation pushes page content down');
+  await mobilePage.keyboard.press('Escape');
+  assert.equal(await mobilePage.locator('[data-nav-toggle]').getAttribute('aria-expanded'), 'false',
+    'Escape does not close mobile navigation');
 
   const mobileNavLabels = await mobilePage.locator('.nav-list a').allTextContents();
   assert.deepEqual(

@@ -61,10 +61,9 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
       // browser actions; only act on plain key presses.
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (isTyping(e.target)) return;
-      // Don't fight an open dialog (search / shortcuts) — Esc handling
-      // for those lives in their own scripts.
-      const inDialog = document.querySelector('dialog[open]');
-      if (inDialog) return;
+      // Native dialogs, the image preview, and the TOC own their keyboard input.
+      const inDialog = document.querySelector('dialog[open], [aria-modal="true"]:not([hidden]):not([aria-hidden="true"])');
+      if (inDialog) { clearG(); return; }
 
       // First key of a chord: `g`. Latches a 1.2s window to receive the
       // second character. ESC or any non-mapped key clears the latch.
@@ -128,7 +127,7 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
     backdrop-filter: blur(2px);
   }
   .shortcuts-shell {
-    background: var(--color-bg);
+    background: var(--color-overlay);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     padding: 1.25rem 1.5rem 1rem;
@@ -152,7 +151,7 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
     font-family: var(--font-mono);
     font-size: 0.75rem;
     padding: 0.05rem 0.4rem;
-    background: var(--color-bg);
+    background: var(--color-card);
     border: 1px solid var(--color-border);
     border-radius: 4px;
     color: var(--color-fg);
@@ -163,14 +162,16 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
     padding: 0.3rem 0.8rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: var(--color-bg);
+    background: var(--color-button);
     color: var(--color-fg);
     font-size: 0.85rem;
     cursor: pointer;
   }
   .shortcuts-close:hover,
   .shortcuts-close:focus-visible {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    border-color: var(--color-border-strong);
+    background: var(--color-hover);
+    color: var(--color-fg);
   }
+  .shortcuts-close:active { background: var(--color-button-active); }
 </style>

@@ -113,17 +113,10 @@ const profileMeta = defineCollection({
     contactForm: nullable(httpUrl),
     // Disable embedding for forms that require sign-in; keep the CTA.
     contactFormEmbed: nullable(z.boolean()),
-    // Avatar source plus an optional per-locale hover tooltip. The URL is
-    // also consumed by `scripts/build-icon.mjs` to bake `public/icon.png`.
+    // Avatar source also used by the generated site icon.
     icon: z
       .object({
         url: z.preprocess(blankToUndefined, httpUrl.nullish()),
-        comment: z
-          .object({
-            ja: z.string().nullish(),
-            en: z.string().nullish(),
-          })
-          .nullish(),
       })
       .nullish(),
     bio: z

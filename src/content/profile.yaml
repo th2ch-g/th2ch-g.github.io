@@ -1,102 +1,37 @@
 name: th
-# Stable site brand / GitHub handle. Used as the brand text in the header,
-# the copyright line in the footer, and the `<siteHandle> posts` titles
-# of RSS feeds. Kept separate from `name` so the human display name and
-# the site identifier can drift independently.
 siteHandle: th2ch-g
-# `<owner>/<name>` GitHub slug for the source repository. Used to derive
-# the source / license URLs in the footer AND, by default, the giscus
-# comment repo (see `giscus:` block below).
 repo: th2ch-g/th2ch-g.github.io
-# Canonical deployment URL of this site. Consumed by:
-#   - astro.config.mjs (via `siteUrl()`) -> `site`, canonical/OG/sitemap/RSS
-#   - scripts/build-qr.mjs -> public/qr.png
-#   - SitemapPage -> shows a QR section when this field is set
-# Use the bare origin (no trailing slash, no path). Forks: change this to
-# your own deploy URL — also enough to regenerate the QR at next build.
-# Leave null / empty to skip QR generation entirely (no PNG, no section).
 site: https://th2ch-g.github.io
 bio:
   ja: 日本人🇯🇵
   en: Japanese
 icon:
   url: https://avatars.githubusercontent.com/u/76892059
-  comment:
-    ja: わさびゲノムのCircos plotです😃
-    en: Circos plot of the wasabi genome 😃
-# Contact form URL (e.g. a Google Form). Shown on the /contact page with
-# an "open in a new tab" link and an optional iframe, and drives the
-# "Contact" nav item. Leave blank to show a placeholder message instead —
-# the page still renders. NOTE: use the form's canonical viewform URL, not
-# the forms.gle shortlink — the embed appends `?embedded=true`, and the
-# host here must be allow-listed in `frame-src` (see src/layouts/Base.astro).
+# Use a canonical viewform URL for Google Forms.
 contactForm: https://docs.google.com/forms/d/e/1FAIpQLScQEsOKEI56HkpHkB6H5v8tgUbh3mZj8Gj_ravXrSWN3uRgOw/viewform
-# Set false for forms that require sign-in or cannot be embedded.
-# Omit or leave blank to keep the embedded form and its fallback link.
 contactFormEmbed: true
 
-# Third-party service integrations. Leave any field blank (or remove the
-# whole block) to gracefully disable the corresponding feature at render
-# time — empty here means "no comments" / "no analytics" / "no IndexNow".
-
-# Giscus comments (https://giscus.app). The repo defaults to the
-# top-level `repo` above; override here only if comments live in a
-# different repo. Visit https://giscus.app/ to derive `repoId` and
-# `categoryId` (GraphQL Node IDs, immutable across rename).
+# Leave optional integration fields blank to disable them.
 giscus:
   repoId: R_kgDOSWDKhA
   category: Announcements
   categoryId: DIC_kwDOSWDKhM4C8k4s
   mapping: pathname
 
-# Webmention.io endpoints (https://webmention.io). Register your domain
-# there to get an `endpoint` URL; the `apiTarget` is the domain used to
-# fetch received mentions.
 webmention:
   endpoint:
   pingback:
   apiTarget:
 
-# Analytics integrations. Each ID is independently optional; leaving
-# both blank disables the tracker scripts entirely (no fetch, no data
-# leak).
-#
-# - `goatcounterEndpoint`: GoatCounter (https://www.goatcounter.com).
-#   Privacy-respecting, cookie-free. Endpoint looks like
-#   `https://<handle>.goatcounter.com`.
-# - `googleAnalyticsId`: GA4 measurement ID (form `G-XXXXXXXXXX`).
-#   Cookie-based; if you set this, also update the privacy policy
-#   under src/content/legal/{ja,en}/privacy.md to disclose it.
 analytics:
   goatcounterEndpoint:
   googleAnalyticsId: G-2QTGY03ENF
 
-# IndexNow key (Bing / Yandex / Seznam crawler ping). Generate with
-# `openssl rand -hex 16` and set here; the site exposes it at
-# `/indexnow-key.txt` so search engines can verify ownership.
 indexnow:
   key:
 
-# Google AdSense (https://www.google.com/adsense).
-# Setting `clientId` here (form `ca-pub-XXXXXXXXXXXXXXXX`) enables:
-#   - `<meta name="google-adsense-account">` in <head> (verification)
-#   - `/ads.txt` route exposing the AdSense ownership record
-#   - `adsbygoogle.js` Auto Ads loader on the canonical production host
-# Leave blank until your AdSense application is approved — loading the
-# script before approval wastes the perf budget for no benefit. After
-# approval, set the clientId and the loader injects automatically in production. Also
-# update the privacy policy (src/content/legal/{ja,en}/privacy.md §2.5)
-# to reflect that AdSense is now active, and expect the Lighthouse perf
-# budget in lighthouserc.json to need loosening.
 adsense:
   clientId: ca-pub-3059839485466897
 
-# Google Search Console site verification (https://search.google.com/search-console).
-# Use the "HTML tag" method: in Search Console pick "HTML tag", copy ONLY
-# the token inside content="…" (not the whole <meta> element), and paste it
-# below. The site then emits `<meta name="google-site-verification">` in
-# <head>. NOTE: the "Google Analytics" verification method does NOT work
-# here — gtag.js receives the measurement ID as a variable, which Search
-# Console's verifier cannot read — so the tag method is the way in.
 searchConsole:
   verification: bxwzCEMK_IUP8oEAAzNpxT0ZUtrZBpZrVhoYjrl68Wc

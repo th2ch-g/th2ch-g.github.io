@@ -113,6 +113,7 @@ const tree = buildTree(flat);
 
 <script>
   import { onReady } from '@/lib/dom-ready';
+  import { containModalFocus, hasOpenModal } from '@/lib/modal-focus';
 
   let activeObserver: IntersectionObserver | null = null;
   const desktopMedia = window.matchMedia('(min-width: 90rem)');
@@ -132,9 +133,17 @@ const tree = buildTree(flat);
     const tocBackdrop = backdrop;
 
     let isOpen = false;
+    let releaseFocus: (() => void) | null = null;
 
     function syncA11y() {
       const isDesktop = desktopMedia.matches;
+      if (!isDesktop && isOpen) {
+        tocPanel.setAttribute('role', 'dialog');
+        tocPanel.setAttribute('aria-modal', 'true');
+      } else {
+        tocPanel.removeAttribute('role');
+        tocPanel.removeAttribute('aria-modal');
+      }
       tocToggle.setAttribute('aria-expanded', String(!isDesktop && isOpen));
       if (isDesktop) {
         tocPanel.removeAttribute('aria-hidden');
@@ -148,16 +157,19 @@ const tree = buildTree(flat);
     }
 
     function openDrawer() {
-      if (desktopMedia.matches) return;
+      if (desktopMedia.matches || isOpen || hasOpenModal()) return;
       isOpen = true;
       tocPanel.classList.add('is-open');
       tocBackdrop.classList.add('is-open');
       syncA11y();
+      releaseFocus = containModalFocus(tocPanel, tocBackdrop);
       tocCloseButton.focus();
     }
 
     function closeDrawer(restoreFocus = true) {
       const wasOpen = isOpen;
+      releaseFocus?.();
+      releaseFocus = null;
       isOpen = false;
       tocPanel.classList.remove('is-open');
       tocBackdrop.classList.remove('is-open');
@@ -169,11 +181,20 @@ const tree = buildTree(flat);
     tocCloseButton.addEventListener('click', () => closeDrawer());
     tocBackdrop.addEventListener('click', () => closeDrawer());
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && isOpen) closeDrawer();
+      if (event.key === 'Escape' && isOpen) {
+        event.preventDefault();
+        closeDrawer();
+      }
     });
     tocPanel.querySelectorAll<HTMLAnchorElement>('[data-toc-link]').forEach((link) => {
       link.addEventListener('click', () => {
-        if (!desktopMedia.matches) closeDrawer(false);
+        if (desktopMedia.matches) return;
+        closeDrawer(false);
+        const heading = document.getElementById(link.dataset.tocLink ?? '');
+        if (heading) {
+          if (!heading.hasAttribute('tabindex')) heading.tabIndex = -1;
+          heading.focus({ preventScroll: true });
+        }
       });
     });
     desktopMedia.addEventListener('change', () => closeDrawer(false));

@@ -20,8 +20,8 @@
 // rather than @astrojs/markdown-remark's createShikiHighlighter, which 7.2.0
 // dropped from its public exports (its impl moved to the private
 // @astrojs/internal-helpers; depending on either internal surface just rebreaks
-// on the next Astro bump). We pin the same `github-dark` theme as the Markdown
-// pipeline (Astro's Shiki default) and replicate the two wrapper behaviours we
+// on the next Astro bump). We use the same GitHub themes as the Markdown
+// pipeline and replicate the two wrapper behaviours we
 // relied on: on-demand language loading with a plaintext fallback (shiki's
 // codeToHtml throws on an unloaded lang), and stripping the `data-language` our
 // own transformer leaves so prose.css's language tab doesn't double up with our
@@ -182,7 +182,7 @@ async function getSnippet(p) {
 // the instance, so highlighting each snippet against it is cheap.
 let _highlighter;
 const getHighlighter = () =>
-  (_highlighter ??= createHighlighter({ themes: ['github-dark'], langs: [] }));
+  (_highlighter ??= createHighlighter({ themes: ['github-light-default', 'github-dark-default'], langs: [] }));
 
 // shiki's codeToHtml throws on a language it hasn't loaded, so load on demand
 // and fall back to plaintext for unknown/unbundled langs — langFromPath can
@@ -204,16 +204,13 @@ async function resolveLang(highlighter, lang) {
 async function renderCard(url, p, snip) {
   const highlighter = await getHighlighter();
   const lang = await resolveLang(highlighter, snip.lang);
-  let codeBg = '#24292e'; // github-dark editor background; refined from Shiki below
   const inner = highlighter.codeToHtml(snip.code, {
     lang,
-    theme: 'github-dark',
+    themes: { light: 'github-light-default', dark: 'github-dark-default' },
     transformers: [
       {
         pre(node) {
           const style = String(node.properties.style ?? '');
-          const bg = /background(?:-color)?:\s*([^;]+)/i.exec(style);
-          if (bg) codeBg = bg[1].trim();
           // Strip the data-language Astro stamps on (prevents prose.css's
           // language tab from doubling our header) and relocate the
           // horizontal scroller from <pre> to <code> by dropping the pre's
@@ -247,7 +244,7 @@ async function renderCard(url, p, snip) {
       ? `<a class="gh-permalink-more" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${snip.remaining} more line${snip.remaining === 1 ? '' : 's'} on GitHub &rarr;</a>`
       : '';
   return (
-    `<figure class="gh-permalink-card" style="--gh-code-bg: ${esc(codeBg)}">` +
+    `<figure class="gh-permalink-card">` +
     `<a class="gh-permalink-header" href="${esc(url)}" target="_blank" rel="noopener noreferrer">` +
     ICON_MARK +
     `<span class="gh-permalink-path">${esc(`${p.owner}/${p.repo}/${p.path}`)}</span>` +

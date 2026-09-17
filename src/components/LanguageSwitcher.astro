@@ -18,7 +18,7 @@ const visible = availableLocales ?? (Object.keys(languages) as Lang[]);
 const currentPath = Astro.url.pathname.replace(/^\/(en|ja)(?=\/|$)/, '') || '/';
 const search = Astro.url.search;
 ---
-<div class="lang-switch join" aria-label={tUi('lang.switch')}>
+{visible.length > 1 && <div class="lang-switch join" aria-label={tUi('lang.switch')}>
   {(Object.keys(languages) as Lang[])
     .filter((code) => visible.includes(code))
     .map((code) => (
@@ -30,7 +30,7 @@ const search = Astro.url.search;
       lang="en"
     >{languages[code]}</a>
   ))}
-</div>
+</div>}
 
 <style>
   .lang-switch {

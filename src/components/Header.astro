@@ -175,16 +175,6 @@ const atHome = current === withSlash(homeHref);
     text-decoration: none;
   }
   .nav-list a.active { font-weight: 600; }
-  .nav-list a.active::before {
-    content: '';
-    position: absolute;
-    bottom: -0.8rem;
-    left: 0.5rem;
-    right: 0.5rem;
-    height: 3px;
-    border-radius: 2px;
-    background: var(--color-nav-marker);
-  }
   .nav-toggle {
     display: none;
     position: relative;
@@ -199,7 +189,8 @@ const atHome = current === withSlash(homeHref);
     color: var(--color-fg);
     cursor: pointer;
   }
-  .nav-toggle:hover { background: var(--color-hover); }
+  .nav-toggle:hover { background: var(--color-hover); border-color: var(--color-border-strong); }
+  .nav-toggle:active { background: var(--color-button-active); }
   .nav-toggle .bar {
     position: absolute;
     left: 0.45rem;
@@ -243,14 +234,6 @@ const atHome = current === withSlash(homeHref);
     .nav-list { flex-direction: column; gap: 0.25rem; }
     .nav-list a { width: 100%; padding: 0.65rem 0.85rem; }
     .nav-list a.active { background: var(--color-hover); }
-    .nav-list a.active::before {
-      top: 0.5rem;
-      bottom: 0.5rem;
-      left: -0.25rem;
-      right: auto;
-      width: 3px;
-      height: auto;
-    }
   }
   @media (prefers-reduced-motion: reduce) {
     .nav-list a,

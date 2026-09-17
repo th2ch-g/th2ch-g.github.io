@@ -1,6 +1,7 @@
 ---
 import '@/styles/global.css';
-import '@fontsource-variable/mona-sans/wght.css';
+import '@/styles/fonts.css';
+import monaSansLatin from '@fontsource-variable/mona-sans/files/mona-sans-latin-wght-normal.woff2?url';
 // KaTeX styles are required for `rehype-katex`-rendered formulae to display
 // correctly. Imported globally so any page (CV, posts) can contain math.
 import 'katex/dist/katex.min.css';
@@ -231,6 +232,7 @@ const jsonLd = {
         browser applies it to the rest of <head>. See `csp` const above
         for directive rationale. */}
     <meta http-equiv="Content-Security-Policy" content={csp} />
+    <link rel="preload" href={monaSansLatin} as="font" type="font/woff2" crossorigin="anonymous" />
     <meta name="generator" content={Astro.generator} />
     <title>{documentTitle}</title>
     {metaDescription && <meta name="description" content={metaDescription} />}

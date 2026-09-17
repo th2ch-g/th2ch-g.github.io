@@ -1,3 +1,5 @@
+import { hasOpenModal } from './modal-focus';
+
 export interface SearchIndexItem {
   slug: string;
   title: string;
@@ -222,16 +224,22 @@ export function setupSearch(): void {
   };
 
   const focusInput = () => {
+    if (!dialog.open) return;
     const input = fallbackInput
       ?? dialog.querySelector<HTMLInputElement>('input.pagefind-ui__search-input');
     input?.focus();
   };
 
   const open = () => {
+    if (dialog.open) {
+      focusInput();
+      return;
+    }
+    if (hasOpenModal()) return;
     previouslyFocused = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null;
-    if (!dialog.open) dialog.showModal();
+    dialog.showModal();
 
     const error = dialog.querySelector<HTMLElement>('[data-search-error]');
     error?.setAttribute('hidden', '');

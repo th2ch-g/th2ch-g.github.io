@@ -18,6 +18,7 @@ import { remarkLinkCard } from './src/plugins/remark-link-card.mjs';
 import { remarkFigureCaption } from './src/plugins/remark-figure-caption.mjs';
 import { remarkProfileVars } from './src/plugins/remark-profile-vars.mjs';
 import { remarkCvSections } from './src/plugins/remark-cv-sections.mjs';
+import { rehypeScrollableTables } from './src/plugins/rehype-scrollable-tables.mjs';
 
 // Resolve the deployment URL from src/content/profile.yaml so a fork only
 // has to edit profile.yaml — never this file. We keep this inline (rather
@@ -91,6 +92,7 @@ export default defineConfig({
         remarkMath,
       ],
       rehypePlugins: [
+        rehypeScrollableTables,
         [
           rehypeExternalLinks,
           {
@@ -113,9 +115,8 @@ export default defineConfig({
       ],
     }),
     shikiConfig: {
-      // Shiki transformers run on the produced HAST after highlighting.
-      // We tag every `<pre>` with its source language so `global.css` can
-      // surface a small label in the upper-right corner via `attr()`.
+      themes: { light: 'github-light-default', dark: 'github-dark-default' },
+      // Keep language metadata and optional filenames on highlighted blocks.
       transformers: [
         {
           pre(node) {

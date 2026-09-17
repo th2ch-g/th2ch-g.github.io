@@ -78,6 +78,10 @@ main:focus { outline: none; }
   border-radius: 2px;
 }
 
+/* Keep controls stationary when pressed, including daisyUI buttons. */
+.btn:active { translate: none; }
+.btn:focus-visible { outline-color: var(--color-accent); }
+
 h1,
 h2,
 h3,
@@ -238,11 +242,11 @@ ul.bare {
    pill look. */
 a.tag-link {
   color: var(--color-accent);
-  transition: color 160ms ease, border-color 160ms ease;
+  transition: color 120ms ease, background-color 120ms ease;
 }
 a.tag-link:hover,
 a.tag-link:focus-visible {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
+  color: var(--color-accent-content);
+  background: var(--color-accent);
   text-decoration: none;
 }

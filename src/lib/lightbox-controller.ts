@@ -1,6 +1,7 @@
 // Global image preview overlay controller. The corresponding markup is
 // rendered once by Lightbox.astro. Gallery buttons open it explicitly
 // through the `lightbox:open` custom event.
+import { containModalFocus, hasOpenModal } from './modal-focus';
 
 export function wireLightbox(): void {
   const lb = document.getElementById('lightbox') as HTMLElement | null;
@@ -16,6 +17,7 @@ export function wireLightbox(): void {
   let items: LightboxItem[] = [];
   let current = 0;
   let previouslyFocused: HTMLElement | null = null;
+  let releaseFocus: (() => void) | null = null;
   let swipeStart: { x: number; y: number; pointerId: number } | null = null;
 
   function show(index: number) {
@@ -38,13 +40,17 @@ export function wireLightbox(): void {
 
   function open(nextItems: LightboxItem[], index: number) {
     if (!lb || !lbImg || nextItems.length === 0) return;
+    if (lb.hidden && hasOpenModal()) return;
     items = nextItems;
     current = 0;
-    previouslyFocused =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!releaseFocus) {
+      previouslyFocused =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    }
     show(index);
     syncNavigation();
     lb.hidden = false;
+    releaseFocus ??= containModalFocus(lb);
     document.body.classList.add('lightbox-open');
     requestAnimationFrame(() => {
       lb.classList.add('open');
@@ -54,6 +60,8 @@ export function wireLightbox(): void {
 
   function close() {
     if (!lb) return;
+    releaseFocus?.();
+    releaseFocus = null;
     lb.classList.remove('open');
     setTimeout(() => {
       if (lb && !lb.classList.contains('open')) lb.hidden = true;
@@ -79,8 +87,11 @@ export function wireLightbox(): void {
     show(current + 1);
   });
   document.addEventListener('keydown', (e) => {
-    if (!lb || lb.hidden) return;
-    if (e.key === 'Escape') close();
+    if (!lb || !releaseFocus) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    }
     else if (e.key === 'ArrowLeft' && items.length > 1) {
       e.preventDefault();
       show(current - 1);

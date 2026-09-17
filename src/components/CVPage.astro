@@ -657,6 +657,8 @@ const cvLinks = [
   }
   .cv-header {
     display: flex;
+    /* Reserve the toolbar before its client-side copy menu is attached. */
+    min-height: 2rem;
     align-items: baseline;
     justify-content: flex-end;
     flex-wrap: wrap;
@@ -710,10 +712,10 @@ const cvLinks = [
     border: 1px solid var(--color-border);
     border-radius: var(--radius-field);
     color: var(--color-fg);
-    background: var(--color-bg);
+    background: var(--color-button);
     cursor: pointer;
     font-family: inherit;
-    transition: border-color 160ms ease, color 160ms ease;
+    transition: border-color 120ms ease, background-color 120ms ease;
   }
   .cv-header-actions :global(.cv-menu-trigger) {
     display: inline-flex;
@@ -737,7 +739,10 @@ const cvLinks = [
   }
   .cv-header-actions :global(.cv-menu[open] .cv-menu-trigger),
   .cv-header-actions :global(.cv-menu-trigger:hover),
-  .cv-header-actions :global(.cv-menu-trigger:focus-visible),
+  .cv-header-actions :global(.cv-menu-trigger:focus-visible) {
+    background: var(--color-hover);
+    border-color: var(--color-border-strong);
+  }
   .cv-header-actions :global(.cv-menu.is-copied .cv-menu-trigger) {
     color: var(--color-accent);
     border-color: var(--color-accent);
@@ -761,19 +766,23 @@ const cvLinks = [
     z-index: 10;
     display: flex;
     flex-direction: column;
-    min-width: 9rem;
+    width: max-content;
     padding: 0.25rem;
-    background: var(--color-bg);
+    background: var(--color-overlay);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-float);
   }
   .cv-header-actions :global(.cv-menu-item) {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
     font-size: 0.8rem;
     line-height: 1.4;
     text-align: left;
     white-space: nowrap;
-    padding: 0.35rem 0.55rem;
+    padding: 0.25rem 0.5rem;
     border: none;
     border-radius: calc(var(--radius) - 1px);
     background: transparent;
@@ -784,24 +793,24 @@ const cvLinks = [
   }
   .cv-header-actions :global(.cv-menu-item:hover),
   .cv-header-actions :global(.cv-menu-item:focus-visible) {
-    background: var(--color-card);
-    color: var(--color-accent);
+    background: var(--color-hover);
+    color: var(--color-fg);
     text-decoration: none;
   }
   /* Suppress the whole toolbar in printed output. */
   @media print {
     .cv-layout { margin-top: 0; }
+    .cv-header { min-height: 0; }
     .cv-header-actions { display: none; }
   }
 
   /* Per-item copy buttons. Markdown rendered by <Content /> doesn't carry
      this component's scope hash, so the descendant selectors must be
      :global(). The actions container is appended by the inline script. */
-  .cv-prose :global(li.cv-copyable) {
+  .cv-prose > :global(:is(ol, ul) > li) {
     position: relative;
-    /* Reserve room on the right so the floating button(s) never overlap
-       wrapped text on narrow viewports. Publication entries also carry a
-       BibTeX button, which roughly doubles the required width. */
+    /* Reserve action space before JavaScript adds copy controls, so text
+       keeps the same line breaks from the first paint. */
     padding-right: 3.5rem;
   }
   /* WCAG 2.4.4 / axe `link-in-text-block`: publication entries embed DOI
@@ -861,8 +870,7 @@ const cvLinks = [
   }
   /* Don't render the buttons in printed output. */
   @media print {
-    .cv-prose :global(li.cv-copyable),
-    .cv-prose :global(li.cv-copyable.cv-has-bibtex) { padding-right: 0; }
+    .cv-prose > :global(:is(ol, ul) > li) { padding-right: 0; }
     .cv-prose :global(.cv-copy-actions) { display: none; }
   }
 
@@ -871,7 +879,7 @@ const cvLinks = [
      strategy as `li.cv-copyable` above. One trigger/button is narrow, so a
      single reservation suffices; zeroed in print further down so printed
      headings don't carry phantom right padding. */
-  .cv-prose :global(.cv-section-heading) {
+  .cv-prose :global(:is(h1, h2, h3, h4, h5, h6)) {
     padding-right: 4rem;
     /* prose.css only sets `position: relative` on h2/h3/h4 (for the
        heading-anchor #). The class lands on whatever heading level the CV
@@ -1032,19 +1040,23 @@ const cvLinks = [
     z-index: 10;
     display: flex;
     flex-direction: column;
-    min-width: 9rem;
+    width: max-content;
     padding: 0.25rem;
-    background: var(--color-bg);
+    background: var(--color-overlay);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-float);
   }
   .cv-prose :global(.cv-menu-item) {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
     font-size: 0.8rem;
     line-height: 1.4;
     text-align: left;
     white-space: nowrap;
-    padding: 0.35rem 0.55rem;
+    padding: 0.25rem 0.5rem;
     border: none;
     border-radius: calc(var(--radius) - 1px);
     background: transparent;
@@ -1054,8 +1066,8 @@ const cvLinks = [
   }
   .cv-prose :global(.cv-menu-item:hover),
   .cv-prose :global(.cv-menu-item:focus-visible) {
-    background: var(--color-card);
-    color: var(--color-accent);
+    background: var(--color-hover);
+    color: var(--color-fg);
   }
 
   /* Touch devices have no hover — keep the buttons faintly visible, same
@@ -1064,7 +1076,7 @@ const cvLinks = [
     .cv-prose :global(.cv-section-btn) { opacity: 0.55; }
   }
   @media print {
-    .cv-prose :global(.cv-section-heading) { padding-right: 0; }
+    .cv-prose :global(:is(h1, h2, h3, h4, h5, h6)) { padding-right: 0; }
     .cv-prose :global(.cv-section-actions) { display: none; }
   }
 

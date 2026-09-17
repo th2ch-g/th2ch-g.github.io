@@ -85,18 +85,19 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
     background: var(--color-bg);
     color: var(--color-muted);
     cursor: pointer;
-    transition: color 160ms ease, border-color 160ms ease;
+    transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
   }
   .search-trigger:hover,
   .search-trigger:focus-visible {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
+    color: var(--color-fg);
+    border-color: var(--color-border-strong);
+    background: var(--color-hover);
   }
   .kbd {
     font-family: var(--font-mono);
     font-size: 0.7rem;
     padding: 0.05rem 0.3rem;
-    background: var(--color-bg);
+    background: var(--color-overlay);
     border: 1px solid var(--color-border);
     border-radius: 4px;
   }
@@ -117,7 +118,7 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
     backdrop-filter: blur(2px);
   }
   .search-shell {
-    background: var(--color-bg);
+    background: var(--color-overlay);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     padding: 1.1rem;
@@ -138,15 +139,18 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
     padding: 0.25rem 0.65rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-field);
-    background: transparent;
-    color: var(--color-muted);
+    background: var(--color-button);
+    color: var(--color-fg);
     cursor: pointer;
   }
   .search-close:hover,
   .search-close:focus-visible {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    border-color: var(--color-border-strong);
+    background: var(--color-hover);
+    color: var(--color-fg);
   }
+  .search-trigger:active,
+  .search-close:active { background: var(--color-button-active); }
   .search-error {
     margin: 0.75rem 0 0;
     font-size: 0.85rem;
@@ -161,7 +165,7 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
   #pagefind-search {
     --pagefind-ui-primary: var(--color-accent);
     --pagefind-ui-text: var(--color-fg);
-    --pagefind-ui-background: var(--color-card);
+    --pagefind-ui-background: var(--color-bg);
     --pagefind-ui-border: var(--color-border);
     --pagefind-ui-tag: var(--color-bg);
     --pagefind-ui-border-width: 1px;
@@ -176,7 +180,7 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
   }
   #pagefind-search .pagefind-ui__result-title,
   #pagefind-search .pagefind-ui__result-link {
-    color: var(--color-fg);
+    color: var(--color-accent);
   }
   #pagefind-search .pagefind-ui__result-excerpt {
     color: var(--color-muted);
@@ -194,14 +198,14 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
     padding: 0.65rem 0.85rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-field);
-    background: var(--color-card);
+    background: var(--color-bg);
     color: var(--color-fg);
     font: inherit;
   }
-  #pagefind-search .search-fallback__input:focus-visible {
+  #pagefind-search :is(.search-fallback__input, .pagefind-ui__search-input):focus-visible {
     border-color: var(--color-accent);
-    outline: 2px solid color-mix(in oklab, var(--color-accent) 30%, transparent);
-    outline-offset: 1px;
+    outline: 2px solid var(--color-accent);
+    outline-offset: -1px;
   }
   #pagefind-search .search-fallback__status {
     min-height: 1.25rem;
@@ -224,7 +228,7 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
     border-top: 0;
   }
   #pagefind-search .search-fallback__link {
-    color: var(--color-fg);
+    color: var(--color-accent);
     font-weight: 650;
   }
   #pagefind-search .search-fallback__link:hover {

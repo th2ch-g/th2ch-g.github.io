@@ -54,16 +54,17 @@ const tags = await getAllTags(lang);
     height: auto;
     min-height: 2rem;
     padding: 0.35rem 0.8rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    background: var(--color-card);
-    color: var(--color-fg);
-    transition: border-color 160ms ease, color 160ms ease;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--color-accent-subtle);
+    color: var(--color-accent);
+    transition: background-color 120ms ease, color 120ms ease;
   }
   .tag-cloud a:hover,
   .tag-cloud a:focus-visible {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-accent-content);
+    text-decoration: none;
   }
   .tag-name {
     font-weight: 600;
@@ -74,6 +75,6 @@ const tags = await getAllTags(lang);
     font-size: 0.78em;
     font-weight: 500;
     line-height: 1;
-    color: var(--color-muted);
+    color: inherit;
   }
 </style>

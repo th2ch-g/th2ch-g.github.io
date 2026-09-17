@@ -16,10 +16,22 @@ export function wireNavToggles(): void {
       const navId = btn.getAttribute('aria-controls');
       const nav = navId ? document.getElementById(navId) : null;
       if (!nav) return;
+      const close = () => {
+        btn.setAttribute('aria-expanded', 'false');
+        nav.dataset.open = 'false';
+      };
       btn.addEventListener('click', () => {
         const open = btn.getAttribute('aria-expanded') === 'true';
         btn.setAttribute('aria-expanded', String(!open));
         nav.dataset.open = String(!open);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || btn.getAttribute('aria-expanded') !== 'true') return;
+        close();
+        btn.focus();
+      });
+      document.addEventListener('click', (event) => {
+        if (event.target instanceof Node && !nav.contains(event.target) && !btn.contains(event.target)) close();
       });
     });
   });

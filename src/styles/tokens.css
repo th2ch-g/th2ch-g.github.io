@@ -6,11 +6,13 @@
   --color-border: var(--color-base-300);
   --color-card: var(--color-base-200);
   --color-button: #f6f8fa;
+  --color-button-active: #e6eaef;
+  --color-border-strong: #b7bfc8;
+  --color-overlay: #ffffff;
   --color-hover: #eff2f5;
   --color-counter: rgb(129 139 152 / 0.12);
   --color-accent-subtle: #ddf4ff;
   --color-accent-hover: #0550ae;
-  --color-nav-marker: #fd8c73;
   --color-warn: var(--color-warning);
   --font-sans:
     "Mona Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
@@ -26,6 +28,9 @@
 :root[data-theme="dark"] {
   --color-muted: #9198a1;
   --color-button: #212830;
+  --color-button-active: #2a313c;
+  --color-border-strong: #656c76;
+  --color-overlay: #151b23;
   --color-hover: #262c36;
   --color-counter: rgb(101 108 118 / 0.2);
   --color-accent-subtle: #152a43;
