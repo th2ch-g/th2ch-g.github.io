@@ -1,17 +1,26 @@
-// Two-stage clipboard write: Async Clipboard API first (modern, secure
-// contexts), then a `document.execCommand('copy')` fallback for older
-// browsers and non-secure contexts where `navigator.clipboard` rejects.
-// Returns false only if both paths fail, so callers can surface a
-// visible "copy failed" state instead of silently doing nothing.
-export async function copyToClipboard(text: string): Promise<boolean> {
+// Prefer rich content when supplied, then plain text and a legacy copy
+// fallback. Every caller receives a boolean for its own feedback UI.
+export async function copyToClipboard(text: string, html?: string): Promise<boolean> {
+  if (html !== undefined && 'ClipboardItem' in window && navigator.clipboard?.write) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      })]);
+      return true;
+    } catch {
+      // Preserve a plain-text copy when rich clipboard writes are rejected.
+    }
+  }
   try {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
     // execCommand path — works without HTTPS / Permissions API.
   }
+  const previouslyFocused = document.activeElement;
+  const ta = document.createElement('textarea');
   try {
-    const ta = document.createElement('textarea');
     ta.value = text;
     ta.setAttribute('readonly', '');
     ta.style.position = 'fixed';
@@ -27,10 +36,13 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     // type that omits the deprecation marker so `astro check` stays
     // clean without disabling the suggestion globally.
     const legacy = document as { execCommand(cmd: string): boolean };
-    const ok = legacy.execCommand('copy');
-    document.body.removeChild(ta);
-    return ok;
+    return legacy.execCommand('copy');
   } catch {
     return false;
+  } finally {
+    ta.remove();
+    if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+      previouslyFocused.focus({ preventScroll: true });
+    }
   }
 }

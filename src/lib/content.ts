@@ -42,8 +42,8 @@ export async function getByLang<C extends LangAware>(
   return entries as CollectionEntry<C>[];
 }
 
-// Filter to non-draft entries. Feed / sitemap callers omit `includeDevDrafts`
-// so drafts never leak into syndication artifacts (even in `npm run dev`).
+// Filter to non-draft entries. Public metadata callers omit `includeDevDrafts`
+// so drafts never leak into public metadata (even in `npm run dev`).
 // Internal page-route callers (series index, etc.) pass
 // `{ includeDevDrafts: true }` to preview drafts during local dev. Only
 // `posts` carries a `draft` field — the photo gallery is loaded via

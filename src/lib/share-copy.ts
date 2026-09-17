@@ -12,15 +12,19 @@ export function wireShareCopyButtons(): void {
     buttons.forEach((btn) => {
       const wrap = btn.closest<HTMLElement>('.share-copy-wrap');
       const toast = wrap?.querySelector<HTMLElement>('[data-share-toast]') ?? null;
+      let feedbackTimer: number | undefined;
+      let hideTimer: number | undefined;
       btn.addEventListener('click', async () => {
         const url = btn.dataset.shareUrl ?? location.href;
         const copied = btn.dataset.labelCopied ?? 'Copied';
         const failed = btn.dataset.labelFailed ?? 'Copy failed';
         const original = btn.dataset.labelCopy ?? btn.getAttribute('aria-label') ?? '';
         const ok = await copyToClipboard(url);
-        const stateClass = ok ? 'is-copied' : 'is-failed';
+        window.clearTimeout(feedbackTimer);
+        window.clearTimeout(hideTimer);
         const label = ok ? copied : failed;
-        btn.classList.add(stateClass);
+        btn.classList.toggle('is-copied', ok);
+        btn.classList.toggle('is-failed', !ok);
         btn.setAttribute('aria-label', label);
         btn.setAttribute('title', label);
         if (toast) {
@@ -33,15 +37,15 @@ export function wireShareCopyButtons(): void {
           void toast.offsetWidth;
           toast.classList.add('is-visible');
         }
-        window.setTimeout(() => {
-          btn.classList.remove(stateClass);
+        feedbackTimer = window.setTimeout(() => {
+          btn.classList.remove('is-copied', 'is-failed');
           btn.setAttribute('aria-label', original);
           btn.setAttribute('title', original);
           if (toast) {
             toast.classList.remove('is-visible');
             // Re-hide after the fade-out finishes so it's removed from the
             // a11y tree and document flow until the next click.
-            window.setTimeout(() => { toast.hidden = true; }, 220);
+            hideTimer = window.setTimeout(() => { toast.hidden = true; }, 220);
           }
         }, 1600);
       });

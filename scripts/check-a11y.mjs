@@ -1,25 +1,13 @@
-// Runs axe-core against representative pages of the built site. Fails the
+// Runs axe-core against every rendered page of the built site. Fails the
 // process with a non-zero exit code if any violation is found, so the GH
 // Actions a11y job goes red on regressions.
-import { readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startStaticServer } from './lib/static-server.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const distDir = resolve(ROOT, 'dist');
-
-function postPaths() {
-  return ['', '/ja'].flatMap((prefix) => {
-    try {
-      return readdirSync(resolve(distDir, prefix.slice(1), 'posts'), { withFileTypes: true })
-        .filter((entry) => entry.isDirectory())
-        .map((entry) => `${prefix}/posts/${entry.name}`);
-    } catch {
-      return [];
-    }
-  });
-}
 
 let chromium;
 let AxeBuilder;
@@ -32,20 +20,14 @@ try {
   process.exit(0);
 }
 
-const { url: base, close } = await startStaticServer(distDir);
+// Discover every rendered page in both locales, including legal and series
+// pages. Redirect documents have no main content and are checked separately.
+const pages = readdirSync(distDir, { recursive: true })
+  .filter((file) => file.endsWith('.html') && readFileSync(resolve(distDir, file), 'utf8').includes('<main'))
+  .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
+  .sort();
 
-// Cover shared page types and every post: tables and highlighted embeds vary
-// by content.
-const pages = [
-  '/',
-  '/ja/',
-  '/posts',
-  '/ja/posts',
-  ...postPaths(),
-  '/gallery',
-  '/contact',
-  '/404.html',
-];
+const { url: base, close } = await startStaticServer(distDir);
 
 let browser;
 let totalViolations = 0;

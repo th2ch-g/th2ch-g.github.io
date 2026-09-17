@@ -1,16 +1,13 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
-// Astro 6 ships Zod 4 under `astro/zod`. The legacy re-export of `z` from
-// `astro:content` is deprecated (and the bundled type namespace `z.ZodTypeAny`
-// is no longer resolvable through it), so pull `z` directly from this path.
+// Import the supported Zod namespace directly instead of astro:content.
 import { z } from 'astro/zod';
 
 // Helpers shared across collections so that "null / empty / missing"
 // always collapse to the same canonical absence value (undefined).
 //
-// Output types stay `T | undefined` rather than `T | null | undefined`
-// so consumers like `@astrojs/rss` (which type their inputs as
-// `string | undefined`) accept entries without any per-call massaging.
+// Output types stay `T | undefined` so consumers can use optional fields
+// without normalizing null values at every call site.
 
 // Coerce YAML's `key:` (null) and `key: ""` (empty string) to undefined.
 const blankToUndefined = (v: unknown) =>
@@ -19,7 +16,7 @@ const blankToUndefined = (v: unknown) =>
 // Wrap a schema with `blankToUndefined` preprocess + `.optional()` so that
 // null / '' both collapse to undefined and the output type stays
 // `T | undefined` (no leaking `| null`).
-const nullable = <T extends z.ZodTypeAny>(inner: T) =>
+const nullable = <T extends z.ZodType>(inner: T) =>
   z.preprocess(blankToUndefined, inner.optional());
 
 // `z.url()` accepts any URL scheme supported by the platform URL parser,
@@ -78,8 +75,7 @@ const profileMeta = defineCollection({
   loader: glob({ pattern: 'profile.yaml', base: './src/content' }),
   schema: z.object({
     name: z.string().nullish(),
-    // Stable site brand / GitHub handle. Used as the header brand text,
-    // the footer copyright line, and the `<siteHandle> posts` RSS titles.
+    // Stable site brand / GitHub handle used in the header and footer.
     // Kept separate from `name` so the human display name can drift
     // independently from the site identifier.
     siteHandle: z.string().nullish(),
@@ -194,11 +190,11 @@ const profileMeta = defineCollection({
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
-    // Title remains required — list pages, feed entries, OG cards, and
+    // Title remains required — list pages, OG cards, and
     // breadcrumbs all key off it. An empty <h1> would cascade visually.
     title: z.string(),
     description: nullable(z.string()),
-    // pubDate remains required because list ordering, feeds, and the
+    // pubDate remains required because list ordering and the
     // adjacent-post navigator all depend on it.
     pubDate: z.coerce.date(),
     updatedDate: nullable(z.coerce.date()),

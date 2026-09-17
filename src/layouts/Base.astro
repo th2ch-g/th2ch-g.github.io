@@ -121,7 +121,7 @@ const ogLocaleAlternate = lang === 'ja' ? 'en_US' : 'ja_JP';
 // Content-Security-Policy emitted via <meta http-equiv> because GitHub
 // Pages does not let us set HTTP headers. Notes:
 //   - `'unsafe-inline'` for script/style is required by the site's inline
-//     blocks (JSON-LD, theme bootstrap, copy-code wiring, KaTeX inline
+//     blocks (JSON-LD, theme bootstrap, KaTeX inline
 //     styles, Astro scoped style sheets). Tightening this would require
 //     migrating to nonce-based CSP, which Astro 6 does not surface for
 //     hand-written `<script is:inline>` blocks.
@@ -305,18 +305,7 @@ const jsonLd = {
     {metaDescription && <meta name="twitter:description" content={metaDescription} />}
     <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:image:alt" content={ogImageAlt} />
-    {/* WebSub hub advertisement at the page level so subscribers that
-        crawl the HTML head (rather than the feed) still find the hub. */}
-    <link rel="hub" href="https://pubsubhubbub.appspot.com/" />
-    {(['en', 'ja'] as const).map((locale) => (
-      <>
-        <link rel="alternate" type="application/rss+xml" title={`${meta.siteHandle} posts (${locale})`} href={getLocaleFileUrl(locale, '/rss.xml')} />
-        <link rel="alternate" type="application/atom+xml" title={`${meta.siteHandle} posts (${locale}, Atom)`} href={getLocaleFileUrl(locale, '/atom.xml')} />
-        <link rel="alternate" type="application/feed+json" title={`${meta.siteHandle} posts (${locale}, JSON Feed)`} href={getLocaleFileUrl(locale, '/feed.json')} />
-      </>
-    ))}
     <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
-    <link rel="alternate" type="text/x-opml" title={`${meta.siteHandle} feeds (OPML)`} href="/feeds.opml" />
 
     <!-- Hreflang alternates so search engines understand the bilingual pair. -->
     {locales.map((locale) => (
@@ -441,7 +430,7 @@ const jsonLd = {
   <body>
     <a class="skip-link" href="#main-content">{tUi('a11y.skipToMain')}</a>
     <Header lang={lang} availableLocales={locales} />
-    <main id="main-content" tabindex="-1">
+    <main id="main-content" tabindex="-1" data-pagefind-body data-copy-label={tUi('code.copy')} data-copied-label={tUi('code.copied')}>
       <slot />
     </main>
     <Footer lang={lang} />
@@ -451,51 +440,14 @@ const jsonLd = {
     <script>
       import { onReady } from '@/lib/dom-ready';
       import { setupLinkCardImages } from '@/lib/link-card-images';
-      onReady(setupLinkCardImages);
-    </script>
-
-    <script is:inline data-astro-rerun define:vars={{ lCopy: tUi('code.copy'), lCopied: tUi('code.copied') }}>
-      // Inject a copy-to-clipboard button into every fenced code block.
-      // Skip `pre.mermaid` blocks — those get replaced by SVG by the
-      // Mermaid renderer and would have nothing meaningful to copy.
-      // Feather-style inline SVGs: a "copy" sheet pair, swapped for a check
-      // on success. Inline so the button needs no icon font or asset request.
-      const copyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-      const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
-      const pres = document.querySelectorAll('main pre:not(.mermaid)');
-      pres.forEach((pre) => {
-        const code = pre.querySelector('code');
-        if (!code || pre.querySelector('.copy-code')) return;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'copy-code';
-        btn.innerHTML = copyIcon;
-        btn.setAttribute('aria-label', lCopy);
-        btn.addEventListener('click', async () => {
-          const text = code.innerText;
-          try {
-            await navigator.clipboard.writeText(text);
-          } catch {
-            return;
-          }
-          btn.innerHTML = checkIcon;
-          btn.setAttribute('aria-label', lCopied);
-          btn.classList.add('is-copied');
-          window.setTimeout(() => {
-            btn.innerHTML = copyIcon;
-            btn.setAttribute('aria-label', lCopy);
-            btn.classList.remove('is-copied');
-          }, 1600);
-        });
-        pre.appendChild(btn);
+      import { setupCodeCopy } from '@/lib/code-copy';
+      onReady(() => {
+        setupLinkCardImages();
+        setupCodeCopy();
       });
     </script>
-
     <style is:global>
-      /* Copy button stays in the top-right of every `<pre>`. The parent
-         must be `position: relative`, which we set inline in the script
-         path? No — set it here so SSR-rendered `<pre>` is already
-         positioned before JS attaches. */
+      /* Position code blocks before their client-side copy buttons attach. */
       main pre:not(.mermaid) { position: relative; }
       .copy-code {
         position: absolute;

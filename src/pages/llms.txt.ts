@@ -35,11 +35,6 @@ export const GET: APIRoute = async (context) => {
     `- [Gallery (ja)](${site}/ja/gallery)`,
     `- [Contact (en)](${site}/contact): contact form.`,
     `- [Contact (ja)](${site}/ja/contact)`,
-    '',
-    '## Feeds',
-    '',
-    `- [RSS (en posts)](${site}/rss.xml)`,
-    `- [RSS (ja posts)](${site}/ja/rss.xml)`,
     `- [Sitemap](${site}/sitemap-index.xml)`,
   ];
 

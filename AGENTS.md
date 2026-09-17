@@ -16,6 +16,7 @@ npm run check        # astro check (TypeScript on .astro/.ts/.mts)
 npm run check:css    # custom CSS sanity check (scripts/check-css.mjs)
 npm run check:security # reject unsafe link-card URL targets
 npm run check:mobile # Playwright layout checks against an existing dist/
+npm run check:interactions # Chromium/Firefox clipboard, search, keyboard, print, and theme checks
 npm run build-assets # rebuild public/icon.png + public/fonts/ + public/qr.png
 npm run sync-citations # refresh src/data/citations.json from CrossRef
 npm run sync-bibtex    # refresh src/data/bibtex.json from CrossRef
@@ -32,9 +33,9 @@ Docker: `docker compose up dev` (HMR on 4321) or `up prod` (nginx on 8080).
 `astro.config.mjs` sets `prefixDefaultLocale: false`, so:
 - English pages live at `/`, `/posts/`, etc., served from `src/pages/*.astro`.
 - Japanese pages live at `/ja/`, `/ja/posts/`, etc., served from `src/pages/ja/*.astro` — these are **manually mirrored thin wrappers** that import the same component and pass `lang="ja"`.
-- Home renders the profile followed by `CVSection.astro`; there is no standalone CV page or recent-posts section on Home. The old `/cv` and `/en/cv` pages redirect to the matching Home CV section. Legacy `/en/` pages redirect to English root routes; old feed and image endpoints remain as compatibility aliases.
+- Home renders the profile followed by `CVSection.astro`; there is no standalone CV page or recent-posts section on Home. The old `/cv` and `/en/cv` pages redirect to the matching Home CV section. Legacy `/en/` pages redirect to English root routes; old image endpoints remain as compatibility aliases. RSS, Atom, JSON Feed, OPML, and WebSub support have been removed.
 
-When adding a page, create both: `src/pages/foo.astro` and `src/pages/ja/foo.astro`. Shared rendering goes in `src/components/FooPage.astro`. Use `getRelativeLocaleUrl` for page links and `getLocaleFileUrl` for feed/OG file paths; the latter removes Astro's directory-style trailing slash.
+When adding a page, create both: `src/pages/foo.astro` and `src/pages/ja/foo.astro`. Shared rendering goes in `src/components/FooPage.astro`. Use `getRelativeLocaleUrl` for page links and `getLocaleFileUrl` for OG file paths; the latter removes Astro's directory-style trailing slash.
 
 UI strings are English-only and live in `src/i18n/ui.ts`; use `tUi(key)` for all visible and accessible interface labels in both routes. `lang` selects content, routes, document language, and locale metadata only. Keep localized prose in content collections or `profile.yaml`, not in the UI dictionary. Render grouped post-list dates as `MM-DD` beneath an ISO year heading, and standalone component dates as `YYYY-MM-DD`.
 
@@ -49,7 +50,9 @@ Defined in `src/content.config.ts`. Four collections:
 
 The gallery at `/gallery` is **not** a collection — loose images under `src/content/gallery/` are loaded via `import.meta.glob` from `PhotosListPage.astro`.
 
-`getByLang(collection, lang)` filters by `id.startsWith('<lang>/')`. `getPublishedByLang('posts', lang, { includeDevDrafts })` adds draft filtering — drafts visible only in `npm run dev`. **Feeds, sitemaps, and OG endpoints must omit `includeDevDrafts`** so drafts never leak into syndication.
+`getByLang(collection, lang)` filters by `id.startsWith('<lang>/')`. `getPublishedByLang('posts', lang, { includeDevDrafts })` adds draft filtering — drafts visible only in `npm run dev`. **Sitemaps and OG endpoints must omit `includeDevDrafts`** so drafts never leak into public metadata.
+
+Browser behavior lives in `src/lib/`: `cv/` separates section discovery, clipboard formatting, action controls, and initialization; `clipboard.ts` shares rich/text/legacy writes with code and share buttons; `search.ts` handles the dialog and loading while `search-fallback.ts` renders fallback results. `Base.astro` marks the main content with `data-pagefind-body` to keep page chrome out of search excerpts.
 
 ### Static paths pattern
 
