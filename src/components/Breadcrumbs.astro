@@ -15,7 +15,7 @@ interface Props {
 }
 const { items } = Astro.props;
 ---
-<nav class="breadcrumbs" aria-label={tUi('breadcrumb.label')}>
+<nav class="breadcrumb-nav" aria-label={tUi('breadcrumb.label')}>
   <ol itemscope itemtype="https://schema.org/BreadcrumbList">
     {items.map((it, i) => (
       <li
@@ -24,6 +24,7 @@ const { items } = Astro.props;
         itemtype="https://schema.org/ListItem"
         class:list={[{ 'is-current': !it.href || i === items.length - 1 }]}
       >
+        {i > 0 && <span class="breadcrumb-separator" aria-hidden="true">/</span>}
         {it.href && i < items.length - 1 ? (
           <a href={it.href} itemprop="item">
             <span itemprop="name">{it.label}</span>
@@ -38,29 +39,33 @@ const { items } = Astro.props;
 </nav>
 
 <style>
-  .breadcrumbs {
+  .breadcrumb-nav {
     margin: 0 0 1rem;
     font-size: 0.85rem;
     color: var(--color-muted);
-    font-family: var(--font-mono);
   }
-  .breadcrumbs ol {
+  .breadcrumb-nav ol {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: 0.5rem;
   }
-  .breadcrumbs li + li::before {
-    content: '›';
-    margin-right: 0.35rem;
-    color: var(--color-accent);
+  .breadcrumb-nav li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
-  .breadcrumbs a {
+  .breadcrumb-separator {
     color: var(--color-muted);
+  }
+  .breadcrumb-nav a {
+    color: var(--color-accent);
     text-decoration: none;
   }
-  .breadcrumbs a:hover { color: var(--color-accent); }
-  .breadcrumbs .is-current span { color: var(--color-fg); font-weight: 500; }
+  .breadcrumb-nav a:hover { text-decoration: underline; }
+  .breadcrumb-nav [aria-current="page"] { color: var(--color-fg); font-weight: 500; }
 </style>

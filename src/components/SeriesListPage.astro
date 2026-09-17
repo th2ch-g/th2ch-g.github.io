@@ -27,7 +27,7 @@ const displayPosts = sortByDateDesc(posts, 'pubDate');
   />
   <h1 class="count-heading">
     <span class="muted">{tUi('series.heading')}:</span> {name}
-    {posts.length > 0 && <span class="count-badge badge badge-primary badge-outline">{posts.length}</span>}
+    {posts.length > 0 && <span class="count-badge">{posts.length}</span>}
   </h1>
   {posts.length === 0 ? (
     <p class="muted">{tUi('list.empty')}</p>

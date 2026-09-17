@@ -42,7 +42,7 @@ if (photos.length > 1) {
 const slideshowImages = photos.map((p) => p.src);
 ---
 <Base lang={lang} title={tUi('nav.photos')} image={lang === 'en' ? '/en/og/gallery.png' : '/og/gallery.png'}>
-  <h1>{tUi('nav.photos')}</h1>
+  <h1 class="sr-only">{tUi('nav.photos')}</h1>
   {photos.length === 0 && <p class="muted">{tUi('list.empty')}</p>}
   {photos.length > 0 && <PhotoSlideshow images={slideshowImages} />}
   {photos.length > 0 && (

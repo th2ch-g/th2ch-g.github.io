@@ -36,7 +36,7 @@ const cvLinks = [
     <Toc headings={headings} lang={lang} />
     <div class="cv-content">
       <div class="cv-header">
-        <h1>{tUi('nav.cv')}</h1>
+        <h1 class="sr-only">{tUi('nav.cv')}</h1>
         {/* Page-level toolbar. Copy-all and .bib actions are collapsed into
             one disclosure menu built client-side by the script below — the
             same affordance as the per-section copy menus. */}
@@ -653,12 +653,12 @@ const cvLinks = [
     min-width: 0;
   }
   .cv-layout {
-    margin-top: clamp(3rem, 7.5vw, 3.975rem);
+    margin-top: 0;
   }
   .cv-header {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
+    justify-content: flex-end;
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
   }
@@ -708,7 +708,7 @@ const cvLinks = [
     font-size: 0.85rem;
     padding: 0.3rem 0.6rem;
     border: 1px solid var(--color-border);
-    border-radius: 999px;
+    border-radius: var(--radius-field);
     color: var(--color-fg);
     background: var(--color-bg);
     cursor: pointer;
@@ -743,8 +743,8 @@ const cvLinks = [
     border-color: var(--color-accent);
   }
   .cv-header-actions :global(.cv-menu.is-failed .cv-menu-trigger) {
-    color: #c0392b;
-    border-color: #c0392b;
+    color: var(--color-error);
+    border-color: var(--color-error);
   }
   .cv-header-actions :global(.cv-menu[open] .cv-menu-trigger::after) {
     transform: rotate(180deg);
@@ -766,7 +766,7 @@ const cvLinks = [
     background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+    box-shadow: var(--shadow-float);
   }
   .cv-header-actions :global(.cv-menu-item) {
     font-size: 0.8rem;
@@ -826,7 +826,7 @@ const cvLinks = [
     line-height: 1.2;
     padding: 0.25rem;
     border: 1px solid var(--color-border);
-    border-radius: 999px;
+    border-radius: var(--radius-field);
     color: var(--color-fg);
     background: var(--color-bg);
     font-family: inherit;
@@ -852,8 +852,8 @@ const cvLinks = [
     border-color: var(--color-accent);
   }
   .cv-prose :global(.cv-copy-btn.is-failed) {
-    color: #c0392b;
-    border-color: #c0392b;
+    color: var(--color-error);
+    border-color: var(--color-error);
   }
   /* Touch devices have no hover — keep the buttons faintly visible. */
   @media (hover: none) {
@@ -909,7 +909,7 @@ const cvLinks = [
     line-height: 1.3;
     padding: 0.2rem 0.6rem;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--radius-field);
     color: var(--color-fg);
     background: transparent;
     box-shadow: none;
@@ -936,8 +936,8 @@ const cvLinks = [
     text-decoration: none;
   }
   .cv-prose :global(.cv-section-btn.is-failed) {
-    color: #c0392b;
-    border-color: #c0392b;
+    color: var(--color-error);
+    border-color: var(--color-error);
   }
 
   /* Copy menu: one trigger (<summary>) that drops a small popover of copy
@@ -1023,7 +1023,7 @@ const cvLinks = [
     color: var(--color-accent);
   }
   .cv-prose :global(.cv-menu.is-failed .cv-menu-trigger) {
-    color: #c0392b;
+    color: var(--color-error);
   }
   .cv-prose :global(.cv-menu-list) {
     position: absolute;
@@ -1037,7 +1037,7 @@ const cvLinks = [
     background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+    box-shadow: var(--shadow-float);
   }
   .cv-prose :global(.cv-menu-item) {
     font-size: 0.8rem;

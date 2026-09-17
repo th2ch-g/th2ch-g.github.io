@@ -9,7 +9,7 @@
 .prose {
   overflow-wrap: break-word;
   font-size: 1rem;
-  line-height: 1.85;
+  line-height: 1.75;
 }
 
 .prose > p {
@@ -83,18 +83,13 @@
   line-height: 1.6;
 }
 
-/* Blockquote — left rule plus a soft card surface so the band reads as a
-   distinct quotation block, matching GitHub-flavored rendering. The
-   `:first-child` / `:last-child` resets keep the inner paragraphs from
-   stacking double-margins against the band's own padding. */
+/* GitHub-style quotations use a muted left rule and the page surface. */
 .prose blockquote {
-  border-left: 3px solid var(--color-accent);
-  padding: 0.55rem 1rem;
+  border-left: 4px solid var(--color-border);
+  padding: 0 1rem;
   margin: 1rem 0;
   color: var(--color-muted);
-  background: color-mix(in oklab, var(--color-card) 76%, transparent);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  box-shadow: var(--shadow-soft);
+  background: transparent;
 }
 .prose blockquote > :first-child { margin-top: 0; }
 .prose blockquote > :last-child { margin-bottom: 0; }
@@ -130,18 +125,17 @@
   margin: 1.25rem auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  background: color-mix(in oklab, var(--color-card) 82%, transparent);
+  background: var(--color-bg);
   color: var(--color-fg);
   text-decoration: none;
   overflow: hidden;
   box-shadow: var(--shadow-soft);
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
 .link-card:hover {
   border-color: var(--color-accent);
   text-decoration: none;
-  box-shadow: var(--shadow-float);
-  transform: translateY(-2px);
+  background: var(--color-card);
 }
 .link-card-thumb {
   display: block;
@@ -384,7 +378,7 @@
    inside the Search dialog) is unaffected. */
 .prose pre {
   position: relative;
-  border: 1px solid color-mix(in oklab, white 16%, transparent);
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-soft);
 }
 /* Labelled blocks: lift the label OUT of the code box and present it as a tab
@@ -449,23 +443,6 @@
   content: none;
 }
 
-/* Count badge — used by Archive / Series / Tag pages to display the number
-   of items inline with the heading. Sized down so it reads as metadata
-   alongside the title rather than competing with it. */
-.count-badge {
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 0.4rem;
-  padding: 0.05rem 0.55rem;
-  font-size: 0.65em;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  border: 1px solid color-mix(in oklab, var(--color-accent) 45%, transparent);
-  border-radius: 999px;
-  color: var(--color-accent);
-  background: color-mix(in oklab, var(--color-accent) 10%, transparent);
-}
-
 /* GitHub-style callouts produced by `src/plugins/remark-callouts.mjs`.
    The plugin promotes `> [!NOTE]` blockquotes to `<aside class="callout
    callout-note">` etc. Color tokens use the muted scale rather than
@@ -474,7 +451,7 @@
   border: 1px solid var(--color-border);
   border-left-width: 4px;
   border-radius: var(--radius);
-  background: color-mix(in oklab, var(--color-card) 78%, transparent);
+  background: var(--color-bg);
   padding: 0.75rem 1rem;
   margin: 1rem 0;
   box-shadow: var(--shadow-soft);

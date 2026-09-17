@@ -33,7 +33,7 @@ function firstPostWithTocPath() {
     return null;
   }
   for (const entry of entries) {
-    if (!entry.isDirectory() || entry.name === 'archive') continue;
+    if (!entry.isDirectory()) continue;
     try {
       const html = readFileSync(resolve(dir, entry.name, 'index.html'), 'utf8');
       if (html.includes('data-toc-panel')) return `/posts/${entry.name}`;

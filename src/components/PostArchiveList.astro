@@ -74,26 +74,38 @@ posts.forEach((post) => {
 <style>
   .year { margin-top: 1.5rem; }
   .year:first-child { margin-top: 1rem; }
-  .year h3 {
-    font-size: 1.2rem;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 0.25rem;
+  .year > h2,
+  .year > h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: var(--color-card);
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
+  .count-inline { font-weight: 400; font-size: 0.85rem; }
   .year > ul {
-    overflow: visible;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    border: 1px solid var(--color-border);
+    border-top: 0;
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: var(--color-bg);
   }
   .row {
     display: grid;
     grid-template-columns: 4rem minmax(0, 1fr);
     gap: 0.5rem 1rem;
-    padding: 0.35rem 0;
+    padding: 0.7rem 1rem;
     align-items: baseline;
-    border-bottom: 0;
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 160ms ease;
   }
+  .row:last-child { border-bottom: 0; }
+  .row:hover { background: var(--color-card); }
+  .row > a { overflow-wrap: anywhere; }
   .row[hidden] { display: none; }
   .date {
     font-variant-numeric: tabular-nums;
@@ -111,9 +123,9 @@ posts.forEach((post) => {
     line-height: 1.4;
     vertical-align: middle;
   }
-  .post-archive-list.large .year h3 { font-size: 1.35rem; }
+  .post-archive-list.large .year h3 { font-size: 1rem; }
   .post-archive-list.large .count-inline { font-size: 0.8em; }
-  .post-archive-list.large .row { padding-block: 0.45rem; }
+  .post-archive-list.large .row { padding-block: 0.8rem; }
   .post-archive-list.large-titles .row > a {
     font-size: 1.05rem;
     line-height: 1.65;

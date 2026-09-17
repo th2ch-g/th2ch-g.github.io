@@ -76,10 +76,13 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+    height: 2rem;
+    min-height: 2rem;
+    flex-shrink: 0;
     padding: 0.3rem 0.6rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: color-mix(in oklab, var(--color-card) 76%, transparent);
+    background: var(--color-bg);
     color: var(--color-muted);
     cursor: pointer;
     transition: color 160ms ease, border-color 160ms ease;
@@ -114,9 +117,9 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
     backdrop-filter: blur(2px);
   }
   .search-shell {
-    background: var(--color-card);
+    background: var(--color-bg);
     border: 1px solid var(--color-border);
-    border-radius: calc(var(--radius) + 0.2rem);
+    border-radius: var(--radius);
     padding: 1.1rem;
     box-shadow: var(--shadow-float);
   }

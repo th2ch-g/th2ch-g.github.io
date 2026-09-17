@@ -7,9 +7,14 @@ interface Props {
 
 const label = tUi('theme.toggle');
 ---
-<button type="button" class="theme-toggle btn btn-ghost btn-circle btn-sm" data-theme-toggle aria-label={label} title={label}>
-  <span class="icon sun" aria-hidden="true">☀</span>
-  <span class="icon moon" aria-hidden="true">☾</span>
+<button type="button" class="theme-toggle btn btn-ghost btn-sm" data-theme-toggle aria-label={label} title={label}>
+  <svg class="icon sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+  </svg>
+  <svg class="icon moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" />
+  </svg>
 </button>
 
 <script>
@@ -50,19 +55,20 @@ const label = tUi('theme.toggle');
     justify-content: center;
     width: 2rem;
     height: 2rem;
+    min-height: 2rem;
+    flex-shrink: 0;
     padding: 0;
-    background: color-mix(in oklab, var(--color-card) 76%, transparent);
+    background: transparent;
     border: 1px solid var(--color-border);
-    border-radius: 999px;
+    border-radius: var(--radius-field);
     color: var(--color-fg);
     cursor: pointer;
     font-size: 0.95rem;
     line-height: 1;
   }
   .theme-toggle:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-    background: color-mix(in oklab, var(--color-accent) 10%, transparent);
+    border-color: var(--color-muted);
+    background: var(--color-hover);
   }
   .icon {
     display: none;

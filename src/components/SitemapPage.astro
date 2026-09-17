@@ -29,7 +29,6 @@ const pages = [
   { href: getRelativeLocaleUrl(lang, '/cv'), label: tUi('nav.cv') },
   { href: getRelativeLocaleUrl(lang, '/gallery'), label: tUi('nav.photos') },
   { href: getRelativeLocaleUrl(lang, '/posts'), label: tUi('nav.posts') },
-  { href: getRelativeLocaleUrl(lang, '/posts/archive'), label: tUi('nav.archive') },
   { href: getRelativeLocaleUrl(lang, '/tags'), label: tUi('tags.index.title') },
   { href: getRelativeLocaleUrl(lang, '/contact'), label: tUi('nav.contact') },
   ...legalDocs.map((d) => ({
@@ -48,7 +47,7 @@ const xmlNote = tUi('sitemap.xmlNote');
 const site = (await readProfileShallow()).site?.trim() ?? '';
 ---
 <Base lang={lang} title={title} description={description}>
-  <h1>{title}</h1>
+  <h1 class="sr-only">{title}</h1>
   <p class="muted lead">{description}</p>
 
   <section>
@@ -152,7 +151,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
     overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: color-mix(in oklab, var(--color-card) 72%, transparent);
+    background: var(--color-card);
     box-shadow: var(--shadow-soft);
   }
   ul.list li {
@@ -178,7 +177,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
     padding: 0.25rem 0.7rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: color-mix(in oklab, var(--color-card) 78%, transparent);
+    background: var(--color-card);
   }
   ul.tag-list a {
     color: var(--color-fg);

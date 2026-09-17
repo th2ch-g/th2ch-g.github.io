@@ -232,25 +232,7 @@ try {
     'Language switcher labels are not JA/EN',
   );
 
-  await mobilePage.locator('.avatar-wrap').first().hover();
-  await mobilePage.waitForTimeout(200);
-  const tipRect = await mobilePage.locator('.avatar-tip').evaluate((tip) => {
-    const rect = tip.getBoundingClientRect();
-    return {
-      left: rect.left,
-      right: rect.right,
-      viewportWidth: window.innerWidth,
-      opacity: getComputedStyle(tip).opacity,
-    };
-  });
-  assert.ok(tipRect.left >= 0, 'Avatar tooltip overflows the left viewport edge');
-  assert.ok(
-    tipRect.right <= tipRect.viewportWidth,
-    'Avatar tooltip overflows the right viewport edge',
-  );
-  assert.equal(tipRect.opacity, '1', 'Avatar tooltip is not visible on hover');
-
-  await mobilePage.mouse.move(0, 0);
+  assert.equal(await mobilePage.locator('.hero img').count(), 0, 'Home still renders a profile image');
   const heroTopBefore = await mobilePage.locator('.hero').evaluate(
     (element) => element.getBoundingClientRect().top,
   );
@@ -297,23 +279,13 @@ try {
     'Posts',
     'Japanese content route does not use the English Posts heading',
   );
-  assert.equal(
-    await listPage.locator('[data-sort-toggle] .sort-label').textContent(),
-    'Newest first',
-    'Post sort control is not English',
-  );
-  assert.equal(
-    await listPage.locator('[data-facet="tag"][data-value=""]').textContent(),
-    'All',
-    'Post tag filter is not English',
-  );
   assert.match(
     (await listPage.locator('[data-post-row] time').first().textContent())?.trim() ?? '',
     /^\d{2}-\d{2}$/,
     'Grouped post date is not MM-DD',
   );
   assert.equal(await listPage.locator('.post-card').count(), 0, 'Post cards still render');
-  assert.equal(await listPage.locator('[data-posts-filter]').count(), 1, 'Post filters are missing');
+  assert.equal(await listPage.locator('[data-posts-filter]').count(), 0, 'Post filter bar still renders');
   assert.match(
     await listPage.locator('.tags-index-link').getAttribute('href') ?? '',
     /^\/tags\/?$/,
@@ -350,27 +322,50 @@ try {
     'Posts page titles are not larger than the base text',
   );
 
-  const firstTagChip = listPage.locator('[data-facet="tag"][data-value]:not([data-value=""])').first();
-  const selectedTag = await firstTagChip.getAttribute('data-value');
-  assert.ok(selectedTag, 'No post tag is available for filter verification');
-  await firstTagChip.click();
-  const filteredRows = listPage.locator('[data-post-row]:visible');
-  assert.ok(await filteredRows.count(), `Tag filter hides every post for ${selectedTag}`);
-  const filteredTags = await filteredRows.evaluateAll((rows) =>
-    rows.map((row) => JSON.parse(row.getAttribute('data-tags') ?? '[]')),
+  const dates = await listPage.locator('[data-post-row] time').evaluateAll((times) =>
+    times.map((time) => time.getAttribute('datetime')),
+  );
+  assert.deepEqual(dates, [...dates].sort().reverse(), 'Posts are not newest first');
+  await listPage.locator('.tags-index-link').click();
+  const firstTag = listPage.locator('.tag-cloud a').first();
+  const selectedTag = (await firstTag.locator('.tag-name').textContent())?.replace(/^#/, '');
+  assert.ok(selectedTag, 'Tags index has no tag links');
+  await firstTag.click();
+  const countAlignment = await listPage.locator('.count-heading').evaluate((heading) => {
+    const badge = heading.querySelector('.count-badge');
+    if (!badge) return null;
+    const titleRange = document.createRange();
+    titleRange.selectNodeContents(heading.firstChild);
+    const title = titleRange.getBoundingClientRect();
+    const numberRange = document.createRange();
+    numberRange.selectNodeContents(badge);
+    const number = numberRange.getBoundingClientRect();
+    const rect = badge.getBoundingClientRect();
+    return {
+      horizontalOffset: Math.abs(number.x + number.width / 2 - rect.x - rect.width / 2),
+      verticalOffset: Math.abs(number.y + number.height / 2 - rect.y - rect.height / 2),
+      titleOffset: Math.abs(title.y + title.height / 2 - rect.y - rect.height / 2),
+    };
+  });
+  assert.ok(countAlignment, 'Tag count badge is missing');
+  assert.ok(countAlignment.horizontalOffset < 1, 'Tag count is not horizontally centered');
+  assert.ok(countAlignment.verticalOffset < 2, 'Tag count is not vertically centered');
+  assert.ok(countAlignment.titleOffset < 3, 'Tag count badge is not aligned with the title');
+  const taggedRows = listPage.locator('[data-post-row]');
+  assert.ok(await taggedRows.count(), 'Tag page has no posts');
+  assert.ok(
+    (await taggedRows.evaluateAll((rows) => rows.map((row) => JSON.parse(row.dataset.tags ?? '[]'))))
+      .every((tags) => tags.includes(selectedTag)),
+    'Tag page includes a post outside the selected tag',
+  );
+  const separators = await listPage.locator('.breadcrumb-nav li').evaluateAll((items) =>
+    items.map((item) => getComputedStyle(item, '::before').content),
   );
   assert.ok(
-    filteredTags.every((tags) => tags.includes(selectedTag)),
-    `Tag filter shows a post outside ${selectedTag}`,
+    separators.every((content) => content === 'none' || content === 'normal'),
+    'Breadcrumb separators have an extra generated glyph',
   );
-  await listPage.locator('[data-facet="tag"][data-value=""]').click();
-
-  const newestDate = await listPage.locator('[data-post-row]:visible time').first().getAttribute('datetime');
-  await listPage.locator('[data-sort-toggle]').click();
-  const oldestDate = await listPage.locator('[data-post-row]:visible time').first().getAttribute('datetime');
-  assert.ok(newestDate && oldestDate && oldestDate < newestDate, 'Post sort does not switch to oldest first');
-  await listPage.locator('[data-sort-toggle]').click();
-  await listPage.screenshot({ path: '/tmp/th2ch-mobile-posts.png', fullPage: true });
+  assert.equal(await listPage.locator('.breadcrumb-separator').count(), 2);
   await listPage.close();
 
   const desktopPage = await newLocalPage({ width: 1280, height: 900 });
@@ -399,18 +394,6 @@ try {
     'Desktop post date and title do not form separate columns',
   );
   assert.equal(desktopLayout.alignItems, 'baseline', 'Desktop post row is not baseline-aligned');
-
-  const sortPositionBeforeExpand = await desktopPage.locator('[data-sort-toggle]').boundingBox();
-  const chipToggle = desktopPage.locator('.chip-toggle');
-  assert.equal(await chipToggle.count(), 1, 'Post tag expansion control is missing');
-  await chipToggle.click();
-  const sortPositionAfterExpand = await desktopPage.locator('[data-sort-toggle]').boundingBox();
-  assert.ok(sortPositionBeforeExpand && sortPositionAfterExpand, 'Post sort control has no layout box');
-  assert.ok(
-    Math.abs(sortPositionAfterExpand.x - sortPositionBeforeExpand.x) < 1
-      && Math.abs(sortPositionAfterExpand.y - sortPositionBeforeExpand.y) < 1,
-    'Post sort control moves when all tags are shown',
-  );
 
   const jaFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
     .map((label) => label.trim())

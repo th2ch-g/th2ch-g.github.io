@@ -1,29 +1,35 @@
-/* Zen Maru Gothic is generated as unicode-range subsets by build-fonts.mjs
-   and linked from Base.astro. Keep the type stack centralized here so both
-   Tailwind utilities and specialized component styles inherit it. */
+/* Shared GitHub-inspired surfaces and system typography for both themes. */
 :root {
   --color-bg: var(--color-base-100);
   --color-fg: var(--color-base-content);
-  --color-muted: color-mix(in oklab, var(--color-base-content) 62%, transparent);
-  --color-border: color-mix(in oklab, var(--color-base-content) 17%, transparent);
+  --color-muted: #59636e;
+  --color-border: var(--color-base-300);
   --color-card: var(--color-base-200);
-  --color-card-translucent: color-mix(in oklab, var(--color-base-100) 82%, transparent);
-  --color-accent-hover: color-mix(in oklab, var(--color-accent) 78%, var(--color-base-content));
+  --color-button: #f6f8fa;
+  --color-hover: #eff2f5;
+  --color-counter: rgb(129 139 152 / 0.12);
+  --color-accent-subtle: #ddf4ff;
+  --color-accent-hover: #0550ae;
+  --color-nav-marker: #fd8c73;
   --color-warn: var(--color-warning);
   --font-sans:
-    "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans",
-    "Yu Gothic UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
+    Arial, "Hiragino Sans", "Yu Gothic UI", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
   --max-width: 50rem;
   --radius: var(--radius-box);
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.05), 0 8px 24px rgb(0 0 0 / 0.06);
-  --shadow-float: 0 16px 44px rgb(0 0 0 / 0.16);
+  --shadow-soft: 0 1px 0 rgb(31 35 40 / 0.04);
+  --shadow-float: 0 8px 24px rgb(140 149 159 / 0.2);
 }
 
 :root[data-theme="dark"] {
-  --color-muted: color-mix(in oklab, var(--color-base-content) 68%, transparent);
-  --color-border: color-mix(in oklab, var(--color-base-content) 22%, transparent);
-  --color-card-translucent: color-mix(in oklab, var(--color-base-100) 78%, transparent);
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 10px 30px rgb(0 0 0 / 0.2);
-  --shadow-float: 0 18px 50px rgb(0 0 0 / 0.42);
+  --color-muted: #9198a1;
+  --color-button: #212830;
+  --color-hover: #262c36;
+  --color-counter: rgb(101 108 118 / 0.2);
+  --color-accent-subtle: #152a43;
+  --color-accent-hover: #79c0ff;
+  --shadow-soft: 0 1px 0 rgb(0 0 0 / 0.1);
+  --shadow-float: 0 8px 24px rgb(1 4 9 / 0.4);
 }

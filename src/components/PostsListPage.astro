@@ -2,8 +2,7 @@
 import Base from '@/layouts/Base.astro';
 import PostArchiveList from './PostArchiveList.astro';
 import { tUi, type Lang } from '@/i18n/ui';
-import { collectTags, getPublishedByLang, sortByDateDesc } from '@/lib/content';
-import { DEFAULT_CHIP_COLLAPSE_THRESHOLD } from '@/lib/chip-collapse';
+import { getPublishedByLang, sortByDateDesc } from '@/lib/content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 
 interface Props { lang: Lang }
@@ -13,165 +12,37 @@ const posts = sortByDateDesc(
   await getPublishedByLang('posts', lang, { includeDevDrafts: true }),
   'pubDate',
 );
-const allTags = collectTags(posts);
-const visibleTagCount = DEFAULT_CHIP_COLLAPSE_THRESHOLD - 1;
-const shouldCollapseTags = allTags.length > DEFAULT_CHIP_COLLAPSE_THRESHOLD;
-const collapsedTagCount = shouldCollapseTags ? allTags.length - visibleTagCount : 0;
 ---
 <Base lang={lang} title={tUi('nav.posts')} image={lang === 'en' ? '/en/og/posts.png' : '/og/posts.png'}>
-  <h1 class="count-heading">
-    {tUi('nav.posts')}
-    {posts.length > 0 && <span class="count-badge">{posts.length}</span>}
-  </h1>
+  <div class="posts-head">
+    <h1 class="sr-only">{tUi('nav.posts')}</h1>
+    <a class="tags-index-link" href={getRelativeLocaleUrl(lang, '/tags')}>
+      {tUi('tags.index.title')} <span aria-hidden="true">→</span>
+    </a>
+  </div>
   {posts.length === 0 ? (
     <p class="muted">{tUi('list.empty')}</p>
   ) : (
-    <>
-      <div class="filter-bar" data-posts-filter>
-        {allTags.length > 0 && (
-          <div
-            class="tag-chips"
-            role="group"
-            aria-label={tUi('filter.label')}
-            data-collapsible
-            data-more-label={tUi('filter.more')}
-            data-less-label={tUi('filter.less')}
-          >
-            <a class="tags-index-link" href={getRelativeLocaleUrl(lang, '/tags')}>
-              {tUi('tags.index.title')} →
-            </a>
-            <button type="button" class="chip btn btn-xs is-active" data-facet="tag" data-value="">
-              {tUi('filter.all')}
-            </button>
-            {allTags.map((tag, index) => (
-              <button
-                type="button"
-                class:list={['chip', 'btn', 'btn-xs', { 'chip-hidden': shouldCollapseTags && index >= visibleTagCount }]}
-                data-facet="tag"
-                data-value={tag}
-              >
-                #{tag}
-              </button>
-            ))}
-            {shouldCollapseTags && (
-              <button type="button" class="chip chip-toggle btn btn-xs btn-ghost" aria-expanded="false">
-                {tUi('filter.more').replace('{n}', String(collapsedTagCount))}
-              </button>
-            )}
-          </div>
-        )}
-        <button
-          type="button"
-          class="sort-toggle btn btn-ghost btn-sm"
-          data-sort-toggle
-          data-label-newest={tUi('sort.newest')}
-          data-label-oldest={tUi('sort.oldest')}
-          aria-label={tUi('sort.newest')}
-        >
-          <span class="sort-label">{tUi('sort.newest')}</span>
-          <span class="sort-arrow" aria-hidden="true">↓</span>
-        </button>
-      </div>
-      <PostArchiveList posts={posts} lang={lang} largeTitles />
-      <p class="muted empty-msg" hidden data-empty-msg>{tUi('list.empty.filter')}</p>
-    </>
+    <PostArchiveList posts={posts} lang={lang} largeTitles />
   )}
 </Base>
 
-<script>
-  import { setupPostListFilter } from '@/lib/post-list-filter';
-  import { onReady } from '@/lib/dom-ready';
-
-  onReady(setupPostListFilter);
-</script>
-
 <style>
-  .filter-bar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.75rem 1rem;
-    align-items: flex-start;
-    margin: 0.75rem 0 1.5rem;
-    padding: 0.8rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    background: color-mix(in oklab, var(--color-card) 74%, transparent);
-    box-shadow: var(--shadow-soft);
-  }
-  .tag-chips {
+  .posts-head {
     display: flex;
+    align-items: center;
+    justify-content: flex-end;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    min-width: 0;
+    gap: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
   }
+  .posts-head h1 { margin: 0; }
   .tags-index-link {
     display: inline-flex;
     align-items: center;
-    min-height: 1.7rem;
-    padding-inline: 0.2rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .tag-chips :global(.chip) {
-    padding: 0.2rem 0.7rem;
-    border: 1px solid var(--color-border);
-    border-radius: 999px;
-    min-height: 1.8rem;
-    background: var(--color-base-100);
-    color: var(--color-muted);
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
-  }
-  .tag-chips :global(.chip:hover),
-  .tag-chips :global(.chip:focus-visible) {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
-  }
-  .tag-chips :global(.chip.is-active) {
-    color: var(--color-primary-content);
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-  }
-  .tag-chips :global(.chip-toggle) {
-    border-style: dashed;
-    background: transparent;
-  }
-  .tag-chips :global(.chip-hidden) { display: none; }
-  .tag-chips[data-collapse-wired="1"] :global(.chip[style*="--reveal-i"]:not(.chip-hidden)) {
-    animation: chip-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1)
-      calc(var(--reveal-i, 0) * 35ms) both;
-  }
-  @keyframes chip-reveal {
-    from { opacity: 0; transform: scale(0.92) translateY(-2px); }
-    to { opacity: 1; transform: none; }
-  }
-  .sort-toggle {
-    display: inline-flex;
-    align-items: center;
     gap: 0.4rem;
-    padding: 0.25rem 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    background: var(--color-base-100);
-    color: var(--color-fg);
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: border-color 160ms ease, color 160ms ease;
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .sort-toggle:hover,
-  .sort-toggle:focus-visible {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-  .sort-arrow { font-weight: 700; line-height: 1; }
-  .empty-msg { margin-top: 1rem; }
-  @media (prefers-reduced-motion: reduce) {
-    .tag-chips[data-collapse-wired="1"] :global(.chip[style*="--reveal-i"]:not(.chip-hidden)) {
-      animation: none;
-    }
+    min-height: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 </style>

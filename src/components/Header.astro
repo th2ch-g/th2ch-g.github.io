@@ -30,10 +30,10 @@ type NavItem =
   | { href: string; label: string; external: true };
 
 const items: NavItem[] = [
-  { href: getRelativeLocaleUrl(lang, '/posts'), label: 'Posts', match: 'prefix' },
-  { href: getRelativeLocaleUrl(lang, '/cv'), label: 'CV', match: 'prefix' },
-  { href: getRelativeLocaleUrl(lang, '/gallery'), label: 'Gallery', match: 'prefix' },
-  { href: getRelativeLocaleUrl(lang, '/contact'), label: 'Contact', match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/posts'), label: tUi('nav.posts'), match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/cv'), label: tUi('nav.cv'), match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/gallery'), label: tUi('nav.photos'), match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/contact'), label: tUi('nav.contact'), match: 'prefix' },
 ];
 
 const withSlash = (p: string) => (p.endsWith('/') ? p : p + '/');
@@ -51,7 +51,7 @@ const homeHref = getRelativeLocaleUrl(lang, '/');
 const atHome = current === withSlash(homeHref);
 ---
 <header class="site-header">
-  <div class="inner navbar">
+  <div class="inner">
     {/* Icon-only brand. The image is decorative (`alt=""` + `aria-hidden`), so
         the link would have no accessible name on its own — `aria-label` supplies
         it and keeps axe's `link-name` (wcag2a) satisfied. */}
@@ -70,7 +70,7 @@ const atHome = current === withSlash(homeHref);
       )}
     </a>
     <nav id="primary-nav" data-nav data-open="false" aria-label="Primary">
-      <ul class="bare nav-list menu menu-horizontal">
+      <ul class="bare nav-list">
         {items.map((item) => {
           const external = item.external === true;
           const active = !external && isActive(item.href, item.match);
@@ -94,7 +94,7 @@ const atHome = current === withSlash(homeHref);
     <LanguageSwitcher lang={lang} availableLocales={availableLocales} />
     <button
       type="button"
-      class="nav-toggle btn btn-ghost btn-circle btn-sm"
+      class="nav-toggle btn btn-ghost btn-sm"
       aria-controls="primary-nav"
       aria-expanded="false"
       aria-label={tUi('nav.menu')}
@@ -114,76 +114,53 @@ const atHome = current === withSlash(homeHref);
 
 <style>
   .site-header {
-    /* Stay anchored to the viewport top while the page scrolls. The
-       z-index sits below the lightbox (1000) and search dialog so
-       modal overlays still cover the navbar. */
     position: sticky;
     top: 0;
     z-index: 50;
     border-bottom: 1px solid var(--color-border);
-    background: var(--color-card-translucent);
-    box-shadow: 0 1px 0 color-mix(in oklab, var(--color-accent) 7%, transparent);
-    /* `backdrop-filter` blurs whatever scrolls under the header so text
-       behind the bar stays subtly visible. WebKit still requires the
-       prefixed form on older Safari. */
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
-    backdrop-filter: blur(10px) saturate(160%);
-  }
-  /* Older browsers without `backdrop-filter` support fall back to a
-     solid (slightly less transparent) surface so text underneath isn't
-     unreadable. */
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .site-header { background: var(--color-card); }
+    background: var(--color-card);
   }
   .inner {
     max-width: var(--max-width);
     margin: 0 auto;
     min-height: 4rem;
-    padding: 0.6rem 1.25rem;
+    padding: 0.75rem 1.25rem;
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.75rem;
     align-items: center;
   }
   .brand {
     display: inline-flex;
     align-items: center;
     color: var(--color-fg);
+    flex-shrink: 0;
   }
   .brand-icon {
-    width: 1.85rem;
-    height: 1.85rem;
+    width: 2rem;
+    height: 2rem;
     border-radius: 50%;
     object-fit: cover;
-    border: 0;
-    background: var(--color-card);
-    /* Prevent flex squashing if the brand row is tight on mobile. */
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
     flex: 0 0 auto;
   }
-  nav {
-    flex: 1;
-  }
+  nav { flex: 1; }
   .nav-list {
     display: flex;
-    gap: 0.2rem;
-    flex-wrap: wrap;
+    gap: 0.25rem;
     padding: 0;
   }
   .nav-list a {
-    /* `inline-block` is required so the `::after` width-reservation
-       pseudo can lay out as a block child of the link. */
+    position: relative;
     display: inline-block;
     color: var(--color-fg);
-    font-size: 0.95rem;
-    padding: 0.38rem 0.72rem;
-    border: 1px solid transparent;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    padding: 0.4rem 0.6rem;
     border-radius: var(--radius-field);
-    transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+    transition: background-color 160ms ease;
   }
-  /* Reserve the bold-state width up front so toggling `.active` (which
-     bumps font-weight to 600) never reflows neighbouring links. The
-     pseudo carries the same label string at weight 600 with zero height
-     so it claims max(normal, bold) width without affecting line height. */
+  /* Reserve bold text width so the active item never shifts its neighbors. */
   .nav-list a::after {
     content: attr(data-label);
     display: block;
@@ -194,32 +171,35 @@ const atHome = current === withSlash(homeHref);
     pointer-events: none;
   }
   .nav-list a:hover {
-    color: var(--color-accent);
+    background: var(--color-hover);
     text-decoration: none;
   }
-  .nav-list a.active {
-    color: var(--color-accent);
-    border-color: color-mix(in oklab, var(--color-accent) 34%, transparent);
-    background: color-mix(in oklab, var(--color-accent) 11%, transparent);
-    font-weight: 600;
+  .nav-list a.active { font-weight: 600; }
+  .nav-list a.active::before {
+    content: '';
+    position: absolute;
+    bottom: -0.8rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--color-nav-marker);
   }
-
-  /* Hamburger button — hidden on desktop, shown below the breakpoint. */
   .nav-toggle {
     display: none;
     position: relative;
+    flex: 0 0 2rem;
     width: 2rem;
     height: 2rem;
+    min-height: 2rem;
     padding: 0;
     background: transparent;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-field);
     color: var(--color-fg);
     cursor: pointer;
   }
-  .nav-toggle:hover {
-    border-color: var(--color-accent);
-  }
+  .nav-toggle:hover { background: var(--color-hover); }
   .nav-toggle .bar {
     position: absolute;
     left: 0.45rem;
@@ -227,87 +207,53 @@ const atHome = current === withSlash(homeHref);
     height: 2px;
     background: currentColor;
     border-radius: 2px;
-    transition: transform 200ms ease, opacity 200ms ease;
+    transition: transform 160ms ease, opacity 160ms ease;
   }
   .nav-toggle .bar:nth-child(1) { top: 0.55rem; }
-  .nav-toggle .bar:nth-child(2) { top: 0.95rem; }
-  .nav-toggle .bar:nth-child(3) { top: 1.35rem; }
+  .nav-toggle .bar:nth-child(2) { top: 0.9rem; }
+  .nav-toggle .bar:nth-child(3) { top: 1.25rem; }
   .nav-toggle[aria-expanded="true"] .bar:nth-child(1) {
-    transform: translateY(0.4rem) rotate(45deg);
+    transform: translateY(0.35rem) rotate(45deg);
   }
-  .nav-toggle[aria-expanded="true"] .bar:nth-child(2) {
-    opacity: 0;
-  }
+  .nav-toggle[aria-expanded="true"] .bar:nth-child(2) { opacity: 0; }
   .nav-toggle[aria-expanded="true"] .bar:nth-child(3) {
-    transform: translateY(-0.4rem) rotate(-45deg);
+    transform: translateY(-0.35rem) rotate(-45deg);
   }
-  @media (prefers-reduced-motion: reduce) {
-    .nav-toggle .bar { transition: none; }
-  }
-
-  /* Mobile layout: collapse the nav into a hamburger drop-down.
-     The breakpoint roughly matches when the desktop row would otherwise
-     wrap onto two lines anyway.
-
-     The dropdown is rendered as an absolute-positioned overlay anchored
-     to the bottom of the header — opening it MUST NOT push the page
-     content downward, only float on top of it. `position: absolute`
-     against `.inner` (made `position: relative` for the mobile branch)
-     drops the nav out of the flex flow. The translucent background +
-     backdrop-filter mirrors `.site-header` so the overlay reads as a
-     continuation of the navbar. */
   @media (max-width: 720px) {
     .inner {
       position: relative;
-      flex-wrap: nowrap;
       gap: 0.5rem;
       min-height: 3.6rem;
-      padding-inline: 0.75rem;
+      padding: 0.65rem 0.75rem;
     }
-    /* With `nav` pulled out of the flex flow (absolute, below), the brand is
-       the only flexible child left — `flex: 1` makes it absorb the free space
-       so the search / theme / language / hamburger controls stay pinned to the
-       right edge. */
-    .brand {
-      flex: 1;
-      min-width: 0;
-    }
-    .nav-toggle {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
+    .brand { flex: 1; min-width: 0; }
+    .nav-toggle { display: inline-flex; }
     nav {
       position: absolute;
       top: 100%;
       left: 0;
       right: 0;
-      padding: 0.75rem 1.25rem;
+      padding: 0.5rem 0.75rem;
       border-top: 1px solid var(--color-border);
       border-bottom: 1px solid var(--color-border);
-      background: var(--color-card-translucent);
-      -webkit-backdrop-filter: blur(10px) saturate(160%);
-      backdrop-filter: blur(10px) saturate(160%);
+      background: var(--color-card);
+      box-shadow: var(--shadow-float);
     }
-    /* Solid fallback for browsers without backdrop-filter so the overlay
-       text doesn't read against unblurred content. */
-    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-      nav { background: var(--color-card); }
+    nav[data-open="false"] { display: none; }
+    .nav-list { flex-direction: column; gap: 0.25rem; }
+    .nav-list a { width: 100%; padding: 0.65rem 0.85rem; }
+    .nav-list a.active { background: var(--color-hover); }
+    .nav-list a.active::before {
+      top: 0.5rem;
+      bottom: 0.5rem;
+      left: -0.25rem;
+      right: auto;
+      width: 3px;
+      height: auto;
     }
-    nav[data-open="false"] {
-      display: none;
-    }
-    .nav-list {
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 0.35rem;
-    }
-    .nav-list a {
-      /* inline-block so the active border-bottom hugs the text width,
-         not the full row width, while keeping vertical padding for taps. */
-      display: inline-block;
-      width: 100%;
-      padding: 0.55rem 0.75rem;
-    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-list a,
+    .nav-toggle .bar { transition: none; }
   }
 </style>

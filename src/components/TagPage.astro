@@ -12,7 +12,7 @@ interface Props {
 }
 const { lang, tag } = Astro.props;
 
-// Match PostsListPage / ArchivePage / posts [...slug]: drafts are visible
+// Match PostsListPage and posts [...slug]: drafts are visible
 // in dev (`npm run dev`) but excluded from production. Without the DEV
 // guard a draft visible elsewhere would 404 from its own tag page.
 const posts = sortByDateDesc(
@@ -60,7 +60,7 @@ const availableLocales: Lang[] = otherHasTag ? ['ja', 'en'] : [lang];
     <h1 class="count-heading">
       #{tag}
       {posts.length > 0 && (
-        <span class="count-badge badge badge-primary badge-outline">{posts.length}</span>
+        <span class="count-badge">{posts.length}</span>
       )}
     </h1>
     {tagFeedExists && (

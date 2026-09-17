@@ -163,12 +163,12 @@ const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
     justify-content: center;
     width: 2.25rem;
     height: 2.25rem;
-    border-radius: 999px;
+    border-radius: var(--radius-field);
     border: 1px solid var(--color-border);
     background: var(--color-card);
     color: var(--color-muted);
     cursor: pointer;
-    transition: border-color 160ms ease, transform 160ms ease, filter 160ms ease;
+    transition: border-color 160ms ease, background-color 160ms ease;
   }
   /* Brand colors per icon. simple-icons hex values:
      X #000, Bluesky #0285FF, Hatena #00A4DE, Facebook #0866FF.
@@ -184,8 +184,7 @@ const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
   .share-btn:focus-visible {
     border-color: currentColor;
     text-decoration: none;
-    transform: translateY(-1px);
-    filter: brightness(1.1);
+    background: var(--color-hover);
   }
   .share-copy:hover,
   .share-copy:focus-visible {
