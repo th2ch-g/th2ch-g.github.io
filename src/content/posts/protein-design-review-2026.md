@@ -2,10 +2,6 @@
 title: タンパク質設計まとめ2026春
 description: 主要なタンパク質デザインツールを比較
 pubDate: 2026-05-13
-tags:
-  - protein
-  - protein-design
-  - review
 draft: false
 ---
 

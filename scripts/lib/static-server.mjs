@@ -26,7 +26,7 @@ function makeResolver(distDir) {
   return async function resolvePath(urlPath) {
     // Strip query/hash, decode percent-encoding, and resolve directory
     // routes to index.html. Decoding matters because Astro writes pages to
-    // disk under their decoded UTF-8 names (e.g. dist/tags/<日本語>/), while a
+    // disk under their decoded UTF-8 names (e.g. dist/posts/<日本語>/), while a
     // browser/Playwright requests them percent-encoded — without decode,
     // join() would look for a literally `%E3%82%BF...`-named dir and 404
     // every non-ASCII route. Fall back to the raw path on a malformed escape.

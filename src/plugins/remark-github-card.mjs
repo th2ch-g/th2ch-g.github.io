@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { escapeHtml as esc } from './lib/escape.mjs';
 import { extractStandaloneUrl } from './lib/extract-url.mjs';
 import { replaceWithHtml } from './lib/replace.mjs';
-import { REPO_URL, ogFilename } from './lib/github-og.mjs';
+import { REPO_URL, ogFilename, ogRemoteUrl } from './lib/github-og.mjs';
 import { siteHost } from '../lib/profile-yaml.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -102,7 +102,7 @@ async function fetchRepo(owner, repo) {
     // segment is a cache key; `1` works as a generic value because the
     // service redirects to the current hash internally. This is the same
     // image surfaced via the og:image meta tag on the repo page.
-    image: `https://opengraph.githubassets.com/1/${ownerLogin}/${name}`,
+    image: ogRemoteUrl(ownerLogin, name),
     siteName: 'GitHub',
   };
 }
@@ -123,9 +123,12 @@ async function getRepoData(owner, repo) {
 }
 
 function renderCard(d) {
+  const image = d.image
+    ? `<div class="link-card-thumb"><img src="${esc(d.image)}" alt="" width="1200" height="630" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>`
+    : '';
   return (
-    `<a class="link-card" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">` +
-    `<div class="link-card-thumb"><img src="${esc(d.image)}" alt="" width="1200" height="630" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>` +
+    `<a class="link-card${d.image ? '' : ' link-card--no-image'}" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">` +
+    image +
     `<div class="link-card-body">` +
     `<p class="link-card-title">${esc(d.title)}</p>` +
     `<p class="link-card-site">${ICON_MARK}<span>${esc(d.siteName)}</span></p>` +
@@ -157,10 +160,10 @@ export function remarkGithubCard() {
       // Prefer the self-hosted copy (scripts/build-github-og.mjs) so the
       // card serves from our own origin instead of hotlinking GitHub's
       // on-demand image service at runtime — which intermittently
-      // throttles / times out and blanks the card. Fall back to the
-      // upstream URL when the prebuild download was unavailable.
+      // throttles / times out and blanks the card. Keep the title and link
+      // without a thumbnail when the prebuild download was unavailable.
       const file = ogFilename(t.owner, t.repo);
-      const image = existsSync(join(PUBLIC_OG_DIR, file)) ? `/github-og/${file}` : data.image;
+      const image = existsSync(join(PUBLIC_OG_DIR, file)) ? `/github-og/${file}` : '';
       replaceWithHtml(t.parent, t.index, renderCard({ ...data, image }));
     }
   };

@@ -3,9 +3,7 @@ import { getProfileMeta } from '@/lib/content';
 import { requireSite } from '@/lib/site';
 
 // OPML feed export — a portable subscription bundle that RSS clients can
-// import to add every feed at once. We list site-wide feeds only; per-tag
-// feeds would balloon the file and are still individually discoverable
-// from each tag page's `<link rel="alternate">`.
+// import to add the site-wide feeds at once.
 export async function GET(context: APIContext) {
   const site = requireSite(context).toString().replace(/\/$/, '');
   // OPML title and feed labels read in any locale, so source the site

@@ -1,6 +1,6 @@
 // Build-time font fetcher for OG card generation. Mirrors the build-icon
-// script: pinned local copies of Noto Sans JP (Regular + Bold) + Noto
-// Color Emoji under public/fonts/ so `astro-og-canvas` reads them straight
+// script: local copies of Mona Sans, Noto Sans JP, and Noto Color Emoji
+// under public/fonts/ so `astro-og-canvas` reads them straight
 // off disk instead of re-fetching every build.
 //
 // Why this exists: the previous setup pointed `OG_FONTS` at a v52
@@ -27,14 +27,11 @@ const GENERIC_UA = 'Mozilla/5.0 (compatible; astro-build/1.0)';
 // One row per (family, weight, output filename). The CSS API can serve
 // every weight of a family in one request, so we group them at fetch time.
 const TARGETS = [
-  // Primary display face: Zen Maru Gothic — a free, redistributable
-  // alternative to commercial 丸ゴ faces (Hiragino Maru Gothic ProN
-  // can't be shipped via CI). Friendly rounded gothic, both Latin and
-  // CJK covered.
-  { family: 'Zen Maru Gothic', weight: 400, file: 'ZenMaruGothic-Regular.ttf' },
-  { family: 'Zen Maru Gothic', weight: 700, file: 'ZenMaruGothic-Bold.ttf' },
-  // Noto Sans JP stays as glyph fallback (Zen Maru is a more curated
-  // subset and may miss the long tail of CJK glyphs).
+  // Match the site's Mona Sans face, with static cuts for CanvasKit.
+  // Latin fonts are smaller than the full Japanese and emoji fonts.
+  { family: 'Mona Sans', weight: 400, file: 'MonaSans-Regular.ttf', minBytes: 50_000 },
+  { family: 'Mona Sans', weight: 700, file: 'MonaSans-Bold.ttf', minBytes: 50_000 },
+  // Portable Japanese fallback for environments without system CJK fonts.
   { family: 'Noto Sans JP', weight: 400, file: 'NotoSansJP-Regular.ttf' },
   { family: 'Noto Sans JP', weight: 700, file: 'NotoSansJP-Bold.ttf' },
   // Noto Color Emoji ships only weight 400 and uses COLRv1 vector glyphs,
@@ -43,8 +40,8 @@ const TARGETS = [
   { family: 'Noto Color Emoji', weight: 400, file: 'NotoColorEmoji.ttf' },
 ];
 
-// A previously-downloaded file is treated as valid only if it is at least
-// 500 KB. The full Noto Sans JP TTF is ~5 MB and Noto Color Emoji is
+// Japanese and emoji fonts must be at least 500 KB. The full Noto Sans JP
+// TTF is ~5 MB and Noto Color Emoji is
 // ~10 MB; anything smaller is almost certainly a Latin-only subset that
 // slipped through (which is what was causing CJK tofu in the first place).
 const MIN_VALID_BYTES = 500_000;
@@ -77,13 +74,13 @@ function parseFaces(css) {
   return faces;
 }
 
-async function downloadTo(url, outPath) {
+async function downloadTo(url, outPath, minBytes) {
   // 30s for the TTF binary — Noto Sans JP is ~5MB and CJK glyphs run
   // larger; a sluggish CDN should still finish well within this window.
   const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`font fetch ${res.status} for ${url}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length < MIN_VALID_BYTES) {
+  if (buf.length < minBytes) {
     throw new Error(`font too small (${buf.length} bytes), likely a subset rather than a full file`);
   }
   mkdirSync(dirname(outPath), { recursive: true });
@@ -93,10 +90,10 @@ async function downloadTo(url, outPath) {
 
 // --- 1) OG-card TTFs (full files; canvaskit-wasm reads them off disk) ---
 async function buildOgTtfs() {
-  const needed = TARGETS.filter(({ file }) => {
+  const needed = TARGETS.filter(({ file, minBytes = MIN_VALID_BYTES }) => {
     const p = resolve(OUT_DIR, file);
     if (!existsSync(p)) return true;
-    return statSync(p).size < MIN_VALID_BYTES;
+    return statSync(p).size < minBytes;
   });
   if (needed.length === 0) {
     console.log('[build-fonts] all OG TTFs already cached, skipping');
@@ -125,7 +122,7 @@ async function buildOgTtfs() {
           continue;
         }
         const out = resolve(OUT_DIR, target.file);
-        const bytes = await downloadTo(face.url, out);
+        const bytes = await downloadTo(face.url, out, target.minBytes ?? MIN_VALID_BYTES);
         console.log(`[build-fonts] wrote ${out} (${(bytes / 1024 / 1024).toFixed(2)} MB)`);
       }
     }

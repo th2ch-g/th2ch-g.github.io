@@ -200,33 +200,6 @@ function buildIntegrations(data: ProfileData) {
   return { giscus: giscusReady, webmention, analytics, indexnow, adsense, searchConsole };
 }
 
-// Collect a sorted, de-duplicated tag list from a set of collection entries.
-// Used by every list/tag page to render the chip filter bar in stable order.
-export function collectTags<T extends { data: { tags?: string[] } }>(
-  items: T[],
-): string[] {
-  return [...new Set(items.flatMap((i) => i.data.tags ?? []))].sort((a, b) =>
-    a.localeCompare(b),
-  );
-}
-
-// Tags with post counts for the tags-index page. Routes through
-// `getPublishedByLang(..., { includeDevDrafts: true })` — the same call
-// TagPage uses, and logically identical to buildTagPaths's `!draft || DEV`
-// filter — so the index lists exactly the tags that have a `/tags/<tag>`
-// page and the per-tag counts match the click-through, with no parallel
-// filter expression to drift. Tags arrive alphabetised + de-duped from
-// `collectTags`, so the rendered order is stable across builds.
-export async function getAllTags(
-  lang: Lang,
-): Promise<{ tag: string; count: number }[]> {
-  const posts = await getPublishedByLang('posts', lang, { includeDevDrafts: true });
-  return collectTags(posts).map((tag) => ({
-    tag,
-    count: posts.filter((p) => (p.data.tags ?? []).includes(tag)).length,
-  }));
-}
-
 export function sortByDateDesc<T extends { id: string; data: Record<string, unknown> }>(
   items: T[],
   key: string,
@@ -266,33 +239,6 @@ export async function getSeriesPosts(
   return all
     .filter((p) => p.data.series === series)
     .sort((a, b) => a.data.pubDate.getTime() - b.data.pubDate.getTime());
-}
-
-// Get up to `limit` posts from the same locale, ranked by tag overlap with
-// the given post (most-shared-tag first; ties broken by most-recent
-// `pubDate`). The current post itself and any draft posts (in production
-// builds) are excluded. Used to surface related reading at the bottom of
-// each post detail page.
-export async function getRelatedPosts(
-  current: CollectionEntry<'posts'>,
-  lang: Lang,
-  limit = 3,
-): Promise<CollectionEntry<'posts'>[]> {
-  const tags = new Set(current.data.tags ?? []);
-  if (tags.size === 0) return [];
-  const all = await getPublishedByLang('posts', lang, { includeDevDrafts: true });
-  const scored = all
-    .filter((p) => p.id !== current.id)
-    .map((p) => {
-      const overlap = (p.data.tags ?? []).filter((t) => tags.has(t)).length;
-      return { post: p, overlap };
-    })
-    .filter((x) => x.overlap > 0);
-  scored.sort((a, b) => {
-    if (b.overlap !== a.overlap) return b.overlap - a.overlap;
-    return b.post.data.pubDate.getTime() - a.post.data.pubDate.getTime();
-  });
-  return scored.slice(0, limit).map((x) => x.post);
 }
 
 // Chronologically adjacent posts. `prev` is older, `next` is newer — this

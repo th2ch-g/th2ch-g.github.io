@@ -2,18 +2,15 @@ import type { APIContext, APIRoute } from 'astro';
 import { addOgChrome, renderFallbackOgCard, type OgChromeOptions } from '@/lib/og-image';
 
 // astro-og-canvas's default `pathToSlug` strips everything after the last
-// dot as a file extension, collapsing a slug/tag like `v2.0` or `node.js`
+// dot as a file extension, collapsing a slug like `v2.0` or `node.js`
 // down to `v2` / `node` — which diverges from the `/og/<slug>.png` URL the
 // page references and 404s the card. Append `.png` to the verbatim key so
-// the emitted path and the referenced URL always agree. Shared by the post
-// and tag OG builders, which previously duplicated this verbatim.
+// the emitted path and the referenced URL always agree.
 export const ogPngSlug = (key: string): string => `${key}.png`;
 
 // Wrap an OGImageRoute's GET with chrome decoration + two-tier fail-soft, so
 // a font / canvaskit / jimp failure degrades the card instead of aborting
-// `astro build`. The post and tag builders previously shared an identical
-// inline GET wrapper; centralising it here also gives the try/catch a single
-// home.
+// `astro build`.
 //
 //   Tier 1 — base render ok, chrome (addOgChrome) throws: ship the
 //     undecorated-but-valid base card (only the gradient border + credit

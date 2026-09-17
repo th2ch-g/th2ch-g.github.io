@@ -16,14 +16,6 @@ import { z } from 'astro/zod';
 const blankToUndefined = (v: unknown) =>
   v === null || v === '' ? undefined : v;
 
-// Sanitise tag arrays at the schema boundary: drop null entries and empty
-// strings so consumers always see a clean `string[]` and don't need to
-// re-filter at every render site.
-const sanitiseTags = (v: unknown) =>
-  Array.isArray(v)
-    ? v.filter((x): x is string => typeof x === 'string' && x.length > 0)
-    : blankToUndefined(v);
-
 // Wrap a schema with `blankToUndefined` preprocess + `.optional()` so that
 // null / '' both collapse to undefined and the output type stays
 // `T | undefined` (no leaking `| null`).
@@ -210,7 +202,6 @@ const posts = defineCollection({
     // adjacent-post navigator all depend on it.
     pubDate: z.coerce.date(),
     updatedDate: nullable(z.coerce.date()),
-    tags: z.preprocess(sanitiseTags, z.array(z.string()).optional()),
     // null-tolerant boolean: YAML `draft:` (no value) deserialises to
     // null, which `z.boolean()` would reject; coerce it to undefined
     // so the `.default(false)` engages.

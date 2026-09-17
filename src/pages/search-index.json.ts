@@ -11,7 +11,6 @@ export const GET: APIRoute = async () => {
     slug: localeSlug(post.id),
     title: post.data.title,
     description: post.data.description ?? '',
-    tags: post.data.tags ?? [],
     date: post.data.pubDate.toISOString().slice(0, 10),
     body: post.body ?? '',
   }));

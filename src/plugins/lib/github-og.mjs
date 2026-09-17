@@ -22,8 +22,7 @@ export function ogFilename(owner, repo) {
 // GitHub's auto-generated social-preview image (the same one Twitter /
 // Slack render). The leading `/1/` path segment is a generic cache key;
 // the service redirects to the current hash internally. Used as the
-// download source and as the runtime fallback when the self-hosted copy
-// is absent (offline build etc.).
+// download source; cards only display successfully self-hosted images.
 export function ogRemoteUrl(owner, repo) {
   return `https://opengraph.githubassets.com/1/${owner}/${repo}`;
 }

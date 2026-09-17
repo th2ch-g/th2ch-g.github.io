@@ -149,6 +149,7 @@
    URL. When the target page has no og:image the card collapses to a
    text-only variant via `.link-card--no-image`. */
 .link-card {
+  font-family: var(--font-sans);
   line-height: 1.75;
   display: block;
   max-width: 36rem;

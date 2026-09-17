@@ -8,8 +8,8 @@
 //
 // Mirrors scripts/build-icon.mjs + src/lib/og-image.ts: fetch with a
 // timeout + a few retries, skip files refreshed within the TTL, and stay
-// fully fail-soft — a missing file just makes the card fall back to the
-// upstream hotlink (today's behavior), never blocking the build.
+// fully fail-soft — a missing file leaves a text-only card, never
+// blocking the build or depending on a flaky upstream image at runtime.
 //
 // Wired into npm `build-assets` (predev / prebuild / prestart) alongside
 // build-icon / build-fonts. The output dir is gitignored.
@@ -18,6 +18,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  rmSync,
   statSync,
   utimesSync,
   writeFileSync,
@@ -61,8 +62,8 @@ function walkMd(dir) {
 // full-line match is a faithful, dependency-free approximation: inline
 // `[text](url)` links and `/issues` paths don't match the anchored regex,
 // so they're correctly ignored. Over-matching (e.g. a URL alone inside a
-// code fence) only costs an unused download; under-matching falls back to
-// the hotlink — both harmless.
+// code fence) only costs an unused download; under-matching leaves a
+// text-only card.
 function collectRepos() {
   const repos = new Map(); // ogFilename -> { owner, repo }
   for (const file of walkMd(CONTENT_DIR)) {
@@ -139,8 +140,7 @@ await mapLimit([...repos], FETCH_CONCURRENCY, async ([file, { owner, repo }]) =>
     fetched++;
     console.log(`[build-github-og] wrote ${file} (${(buf.length / 1024).toFixed(0)} KB)`);
   } catch (err) {
-    // Fail-soft: leave the file absent so the card falls back to the
-    // upstream opengraph.githubassets.com URL (current behavior).
+    // Keep a text-only card when no local image could be downloaded.
     if (existsSync(out)) {
       // Keep a stale-but-valid local image and avoid retrying a failing
       // endpoint on every local dev/build command. Its synthetic mtime makes
@@ -151,4 +151,8 @@ await mapLimit([...repos], FETCH_CONCURRENCY, async ([file, { owner, repo }]) =>
     console.warn(`[build-github-og] skipped ${owner}/${repo}: ${err.message}`);
   }
 });
+// `astro check` can render and cache Markdown before prebuild downloads
+// these images. Re-render it after asset preparation so image paths reflect
+// the files that will actually be deployed, including warm local builds.
+rmSync(resolve(ROOT, 'node_modules/.astro/data-store.json'), { force: true });
 console.log(`[build-github-og] done: ${fetched} fetched, ${skipped} fresh-cached, ${repos.size} total`);

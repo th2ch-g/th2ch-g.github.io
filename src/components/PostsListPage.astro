@@ -3,7 +3,6 @@ import Base from '@/layouts/Base.astro';
 import PostArchiveList from './PostArchiveList.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import { getPublishedByLang, sortByDateDesc } from '@/lib/content';
-import { getRelativeLocaleUrl } from 'astro:i18n';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -14,35 +13,10 @@ const posts = sortByDateDesc(
 );
 ---
 <Base lang={lang} title={tUi('nav.posts')} image={lang === 'en' ? '/en/og/posts.png' : '/og/posts.png'}>
-  <div class="posts-head">
-    <h1 class="sr-only">{tUi('nav.posts')}</h1>
-    <a class="tags-index-link" href={getRelativeLocaleUrl(lang, '/tags')}>
-      {tUi('tags.index.title')} <span aria-hidden="true">→</span>
-    </a>
-  </div>
+  <h1 class="sr-only">{tUi('nav.posts')}</h1>
   {posts.length === 0 ? (
     <p class="muted">{tUi('list.empty')}</p>
   ) : (
     <PostArchiveList posts={posts} lang={lang} largeTitles />
   )}
 </Base>
-
-<style>
-  .posts-head {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 0.75rem 1rem;
-    margin-bottom: 0.5rem;
-  }
-  .posts-head h1 { margin: 0; }
-  .tags-index-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    min-height: 2rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-</style>

@@ -1,8 +1,8 @@
 import MarkdownIt from 'markdown-it';
 import sanitizeHtml from 'sanitize-html';
 
-// Singleton MarkdownIt instance shared by every posts feed (site-wide,
-// per-tag, ja/en). MarkdownIt is stateless across `.render()` calls, so a
+// Singleton MarkdownIt instance shared by the JA and EN posts feeds.
+// MarkdownIt is stateless across `.render()` calls, so a
 // single parser is safe and avoids re-creating the same option object
 // dozens of times per build. Pre-2024 Node would benefit even more from
 // the cache; modern V8 inlines this regardless, but the shared instance

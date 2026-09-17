@@ -28,7 +28,6 @@
   #giscus,
   .webmentions,
   .post-nav,
-  .related-posts,
   .series-nav {
     display: none !important;
   }

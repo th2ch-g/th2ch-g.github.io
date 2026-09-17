@@ -2,7 +2,6 @@
 import Base from '@/layouts/Base.astro';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import {
-  collectTags,
   formatDate,
   getLegalByLang,
   getPublishedByLang,
@@ -18,7 +17,6 @@ interface Props {
 const { lang } = Astro.props;
 
 const posts = sortByDateDesc(await getPublishedByLang('posts', lang), 'pubDate');
-const tags = collectTags(posts);
 // Legal docs are appended to the static-page list dynamically so a new
 // src/content/legal/<lang>/<slug>.md file shows up here without any
 // code edit. Order: fixed nav pages first, then alphabetised legal docs.
@@ -29,7 +27,6 @@ const pages = [
   { href: getRelativeLocaleUrl(lang, '/cv'), label: tUi('nav.cv') },
   { href: getRelativeLocaleUrl(lang, '/gallery'), label: tUi('nav.photos') },
   { href: getRelativeLocaleUrl(lang, '/posts'), label: tUi('nav.posts') },
-  { href: getRelativeLocaleUrl(lang, '/tags'), label: tUi('tags.index.title') },
   { href: getRelativeLocaleUrl(lang, '/contact'), label: tUi('nav.contact') },
   ...legalDocs.map((d) => ({
     href: getRelativeLocaleUrl(lang, `/${d.slug}`),
@@ -77,21 +74,6 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
             </li>
           );
         })}
-      </ul>
-    </section>
-  )}
-
-  {tags.length > 0 && (
-    <section>
-      <h2>
-        {tUi('sitemap.tags')} <span class="count">({tags.length})</span>
-      </h2>
-      <ul class="tag-list">
-        {tags.map((tag) => (
-          <li class="badge badge-outline">
-            <a href={getRelativeLocaleUrl(lang, `/tags/${tag}/`)}>{tag}</a>
-          </li>
-        ))}
       </ul>
     </section>
   )}
@@ -164,26 +146,6 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
   }
   ul.list li:last-child {
     border-bottom: none;
-  }
-  ul.tag-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  ul.tag-list li {
-    padding: 0.25rem 0.7rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    background: var(--color-card);
-  }
-  ul.tag-list a {
-    color: var(--color-fg);
-  }
-  ul.tag-list a:hover {
-    color: var(--color-accent);
   }
   .date {
     font-family: var(--font-mono);

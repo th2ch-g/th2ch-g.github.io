@@ -3,8 +3,8 @@ import { getProfileMeta } from '@/lib/content';
 import { addOgChrome, renderFallbackOgCard } from './og-image';
 import type { Lang } from '@/i18n/ui';
 
-// Shared visual config for OG card generation. Extracted so that the four
-// route files (post / tag x ja / en) stay in sync — color shifts, padding
+// Shared visual config for OG card generation. Section and post cards in
+// both locales stay in sync — color shifts, padding
 // tweaks, and font additions ripple from here. The explicit `[r, g, b][]`
 // type keeps the constants mutable-compatible so `astro-og-canvas`'s
 // `RGBColor[]` parameter type accepts them as-is.
@@ -41,8 +41,8 @@ export const OG_BORDER_WIDTH = 40;
 // Paths are relative to the repo root because that's the cwd Astro uses
 // when invoking image-route handlers.
 export const OG_FONTS = [
-  './public/fonts/ZenMaruGothic-Regular.ttf',
-  './public/fonts/ZenMaruGothic-Bold.ttf',
+  './public/fonts/MonaSans-Regular.ttf',
+  './public/fonts/MonaSans-Bold.ttf',
   './public/fonts/NotoSansJP-Regular.ttf',
   './public/fonts/NotoSansJP-Bold.ttf',
   './public/fonts/NotoColorEmoji.ttf',
@@ -54,10 +54,9 @@ export const OG_FONTS = [
 // the next. Without this, astro-og-canvas defaults to `['Noto Sans']`,
 // which silently won't pick up Noto Color Emoji even after we load it
 // via `OG_FONTS` — the families array is what gates which loaded font
-// is consulted, not the raw fonts list. Zen Maru Gothic is the friendly
-// rounded display face (free Hiragino-Maru-style stand-in); Noto Sans
-// JP catches glyphs Zen Maru doesn't ship.
-export const OG_FONT_FAMILIES = ['Zen Maru Gothic', 'Noto Sans JP', 'Noto Color Emoji'];
+// is consulted, not the raw fonts list. Mona Sans matches the site's
+// primary face; Noto Sans JP supplies the Japanese glyphs.
+export const OG_FONT_FAMILIES = ['Mona Sans', 'Noto Sans JP', 'Noto Color Emoji'];
 
 // Vertical padding inside the card body. Larger value pushes the title
 // further from the top edge — astro-og-canvas pins the paragraph at
@@ -147,10 +146,4 @@ export async function renderSectionOg(input: SectionOgInput): Promise<Response> 
     // BlobPart on Node 22+ (see og-route.ts / addOgChrome for the same dance).
     return new Response(new Blob([new Uint8Array(png)], { type: 'image/png' }));
   }
-}
-
-// Description suffix for tag OG cards. Keeps the locale-specific phrasing
-// out of the route file so the route bodies are pure logic.
-export function describeTagCounts(lang: Lang, postCount: number): string {
-  return lang === 'ja' ? `${postCount} 記事` : `${postCount} posts`;
 }

@@ -46,9 +46,6 @@ export function buildJsonFeedHandler(lang: Lang) {
           ...(post.data.updatedDate
             ? { date_modified: post.data.updatedDate.toISOString() }
             : {}),
-          ...(post.data.tags && post.data.tags.length > 0
-            ? { tags: post.data.tags }
-            : {}),
         };
       }),
     };

@@ -18,9 +18,9 @@ interface Props {
   description?: string;
   lang: Lang;
   // Locales in which this page exists. Most pages are fully mirrored (ja + en),
-  // which is the default. Content pages lacking a translation (a ja-only post,
-  // a tag with no en posts) pass a subset so the language switcher and the
-  // hreflang alternates below never point at a non-existent URL (which 404s,
+  // which is the default. Content pages lacking a translation pass a subset
+  // so the language switcher and hreflang alternates never point at a
+  // non-existent URL (which 404s,
   // and for hreflang is silently dropped by search engines anyway).
   availableLocales?: Lang[];
   // Per-page social-card image. Pass an Astro `image()` asset (preferred — its
@@ -38,7 +38,6 @@ interface Props {
     description?: string;
     pubDate: Date;
     updatedDate?: Date;
-    tags?: string[];
     wordCount?: number;
     contentLang?: Lang;
   };
@@ -105,7 +104,7 @@ const twitterCard = 'summary_large_image';
 const ogImageAlt = metaDescription ?? title;
 // `og:type` switches to `article` only when caller passes article metadata
 // (i.e. post detail). Everything else stays `website`. The article
-// branch then unlocks article:published_time / modified_time / tag.
+// branch then unlocks article:published_time / modified_time.
 const ogType = article ? 'article' : 'website';
 const ogLocale = lang === 'ja' ? 'ja_JP' : 'en_US';
 const ogLocaleAlternate = lang === 'ja' ? 'en_US' : 'ja_JP';
@@ -196,7 +195,6 @@ const articleLd = article
       // Google's guidance for personal blogs — Organization is overkill).
       publisher: { '@type': 'Person', name: meta.name, url: Astro.site?.toString() },
       ...(article.wordCount ? { wordCount: article.wordCount } : {}),
-      ...(article.tags && article.tags.length > 0 ? { keywords: article.tags.join(', ') } : {}),
       mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
     }
   : null;
@@ -291,7 +289,6 @@ const jsonLd = {
         {article.updatedDate && (
           <meta property="article:modified_time" content={article.updatedDate.toISOString()} />
         )}
-        {article.tags?.map((tag) => <meta property="article:tag" content={tag} />)}
       </>
     )}
     <meta name="twitter:card" content={twitterCard} />
@@ -440,6 +437,12 @@ const jsonLd = {
     <Footer lang={lang} />
     <Lightbox />
     <Shortcuts lang={lang} />
+
+    <script>
+      import { onReady } from '@/lib/dom-ready';
+      import { setupLinkCardImages } from '@/lib/link-card-images';
+      onReady(setupLinkCardImages);
+    </script>
 
     <script is:inline data-astro-rerun define:vars={{ lCopy: tUi('code.copy'), lCopied: tUi('code.copied') }}>
       // Inject a copy-to-clipboard button into every fenced code block.

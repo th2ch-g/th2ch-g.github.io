@@ -4,7 +4,6 @@ export interface SearchIndexItem {
   slug: string;
   title: string;
   description: string;
-  tags: string[];
   date: string;
   body: string;
 }
@@ -31,9 +30,8 @@ const normalize = (value: string) => value.normalize('NFKC').toLocaleLowerCase()
 function itemScore(item: SearchIndexItem, terms: string[]): number {
   const title = normalize(item.title);
   const description = normalize(item.description);
-  const tags = normalize(item.tags.join(' '));
   const body = normalize(item.body);
-  const searchable = `${title} ${description} ${tags} ${body}`;
+  const searchable = `${title} ${description} ${body}`;
 
   if (!terms.every((term) => searchable.includes(term))) return -1;
 
@@ -41,7 +39,6 @@ function itemScore(item: SearchIndexItem, terms: string[]): number {
     if (title === term) return score + 12;
     if (title.startsWith(term)) return score + 8;
     if (title.includes(term)) return score + 6;
-    if (tags.includes(term)) return score + 4;
     if (description.includes(term)) return score + 2;
     return score + 1;
   }, 0);
@@ -120,11 +117,10 @@ function createFallback(
         listItem.appendChild(description);
       }
 
-      const metaParts = [item.date, ...item.tags.map((tag) => `#${tag}`)];
-      if (metaParts.length > 0) {
+      if (item.date) {
         const meta = document.createElement('p');
         meta.className = 'search-fallback__meta';
-        meta.textContent = metaParts.join(' · ');
+        meta.textContent = item.date;
         listItem.appendChild(meta);
       }
 

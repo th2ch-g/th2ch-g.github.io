@@ -223,30 +223,3 @@ ul.bare {
   color: var(--color-muted);
   font-size: 0.9rem;
 }
-
-.tags {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-.tag {
-  font-size: 0.75rem;
-  padding: 0.1rem 0.6rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  color: var(--color-accent);
-  background: var(--color-accent-subtle);
-}
-/* Clickable variant — used on detail pages where the tag links to
-   `/tags/<tag>/`. Override the global `a:hover` underline to keep the
-   pill look. */
-a.tag-link {
-  color: var(--color-accent);
-  transition: color 120ms ease, background-color 120ms ease;
-}
-a.tag-link:hover,
-a.tag-link:focus-visible {
-  color: var(--color-accent-content);
-  background: var(--color-accent);
-  text-decoration: none;
-}

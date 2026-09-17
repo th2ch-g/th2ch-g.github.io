@@ -64,9 +64,6 @@ export function buildAtomFeedHandler(lang: Lang) {
           lines.push(`    <summary>${xmlEscape(post.data.description)}</summary>`);
         }
         lines.push(`    <content type="html">${xmlEscape(content)}</content>`);
-        for (const tag of post.data.tags ?? []) {
-          lines.push(`    <category term="${xmlEscape(tag)}"/>`);
-        }
         lines.push(
           `    <author><name>${xmlEscape(profile.name)}</name></author>`,
         );

@@ -9,21 +9,6 @@ import { startStaticServer } from './lib/static-server.mjs';
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const distDir = resolve(ROOT, 'dist');
 
-// Pick an existing tag page from the build output so the sample URL is
-// guaranteed to exist (URLs are case-sensitive on GitHub Pages, and the
-// tag set drifts with content edits — hard-coding a literal would rot).
-function firstTagPath(localePrefix) {
-  const dir = resolve(distDir, localePrefix.replace(/^\/|\/$/g, ''), 'tags');
-  let entries;
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return null;
-  }
-  const tag = entries.find((e) => e.isDirectory())?.name;
-  return tag ? `${localePrefix}tags/${tag}` : null;
-}
-
 function postPaths() {
   return ['', '/en'].flatMap((prefix) => {
     try {
@@ -50,20 +35,19 @@ try {
 const { url: base, close } = await startStaticServer(distDir);
 
 // Cover shared page types and every post: tables and highlighted embeds vary
-// by content. Pick tags dynamically so the sample follows content changes.
+// by content.
 const pages = [
   '/',
   '/en/',
   '/cv',
   '/en/cv',
   '/posts',
+  '/en/posts',
   ...postPaths(),
   '/gallery',
   '/contact',
   '/404.html',
-  firstTagPath('/'),
-  firstTagPath('/en/'),
-].filter(Boolean);
+];
 
 let browser;
 let totalViolations = 0;

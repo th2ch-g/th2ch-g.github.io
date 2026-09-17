@@ -74,7 +74,7 @@ export async function addOgChrome(
   // All elements left-anchored to `OG_PADDING`, vertically centered
   // against the icon's 80px height (or text height when iconPath is
   // omitted — profile.yaml may leave `icon.url` empty). Text rendered via
-  // canvaskit-wasm so credit and label share the title's Zen Maru Bold
+  // canvaskit-wasm so credit and label share the title's Mona Sans Bold
   // face. Pipe separator only drawn when a pageLabel is present.
   const PIPE_GAP = 16;
   const icon = opts.iconPath ? await Jimp.read(opts.iconPath) : undefined;
@@ -209,7 +209,7 @@ export async function addOgChrome(
 // CanvasKit + FontMgr singletons. We use canvaskit-wasm directly (rather
 // than jimp's BMFont print) for the bottom-row credit and section label
 // because jimp ships only Open Sans Regular bitmap fonts; rendering via
-// canvaskit lets us reuse the same Zen Kaku Gothic Bold face that
+// canvaskit lets us reuse the same Mona Sans Bold face that
 // astro-og-canvas uses for the title, so all card text shares one
 // consistent typography.
 let _canvasKit: Awaited<ReturnType<typeof CanvasKitInit>> | undefined;
@@ -235,7 +235,7 @@ async function getOgFontMgr() {
 
 // Render a single line of text via canvaskit-wasm and return PNG bytes
 // of a transparent canvas sized to fit. Used for credit + label so they
-// pick up the proper Zen Kaku Gothic Bold weight (jimp's BMFont can't).
+// pick up the proper Mona Sans Bold weight (jimp's BMFont can't).
 async function renderText(
   text: string,
   fontSize: number,
@@ -251,9 +251,8 @@ async function renderText(
     fontSize,
     fontStyle: {
       weight: CK.FontWeight[weight],
-      // Zen Maru Gothic doesn't ship an italic cut, so canvaskit
-      // synthesizes oblique by skewing — fine for Latin labels (Home /
-      // Posts / Tags) which are the only callers that pass italic=true.
+      // Only upright cuts are loaded; CanvasKit synthesizes oblique
+      // when a caller requests italic text.
       slant: italic ? CK.FontSlant.Italic : CK.FontSlant.Upright,
     },
   };

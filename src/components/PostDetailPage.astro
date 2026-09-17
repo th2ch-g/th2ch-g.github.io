@@ -7,12 +7,11 @@ import { render } from 'astro:content';
 import ShareButtons from '@/components/ShareButtons.astro';
 import Giscus from '@/components/Giscus.astro';
 import Webmentions from '@/components/Webmentions.astro';
-import RelatedPosts from '@/components/RelatedPosts.astro';
 import PostNav from '@/components/PostNav.astro';
 import SeriesNav from '@/components/SeriesNav.astro';
 import Backlinks from '@/components/Backlinks.astro';
 import Breadcrumbs from '@/components/Breadcrumbs.astro';
-import { getRelatedPosts, getAdjacentPosts, getSeriesPosts } from '@/lib/content';
+import { getAdjacentPosts, getSeriesPosts } from '@/lib/content';
 import { getBacklinks } from '@/lib/backlinks';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { localeSlug, getPublishedByLang } from '@/lib/content';
@@ -28,7 +27,6 @@ const { Content } = await render(post);
 const contentLang: Lang = 'ja';
 const readingMinutes = getReadingMinutes(post.body ?? '', contentLang);
 const wordCount = getWordCount(post.body ?? '', contentLang);
-const related = await getRelatedPosts(post, lang, 3);
 const { prev, next } = await getAdjacentPosts(post, lang);
 const seriesPosts = post.data.series ? await getSeriesPosts(post.data.series, lang) : [];
 const backlinks = await getBacklinks(post, lang);
@@ -64,7 +62,6 @@ const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
     description: post.data.description,
     pubDate: post.data.pubDate,
     updatedDate: post.data.updatedDate,
-    tags: post.data.tags,
     wordCount,
     contentLang,
   }}
@@ -84,17 +81,8 @@ const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
   />
   <div class="post-layout">
     <article lang={contentLang}>
-      {/* Pagefind index hints. `data-pagefind-filter="tag:foo"` adds the post
-          to the "tag" filter group with value "foo"; multiple tags need
-          separate elements. The `style="display:none"` keeps them out of the
-          rendered article without removing them from the indexed HTML — Pagefind
-          scrapes the static markup, not the live DOM.
-          `year` lets readers narrow by publication year; Pagefind already
-          splits the index per `<html lang>` so an explicit `lang` filter
-          would just duplicate that boundary. */}
-      {post.data.tags?.map((tag) => (
-        <span data-pagefind-filter={`tag:${tag}`} style="display:none"></span>
-      ))}
+      {/* Pagefind reads the hidden year hint from static HTML so readers can
+          narrow results by publication year. Locale indexes are automatic. */}
       <span data-pagefind-filter={`year:${post.data.pubDate.getUTCFullYear()}`} style="display:none"></span>
       <header class="post-header">
         {post.data.draft && <p class="draft">[{tUi('posts.draft')}]</p>}
@@ -109,13 +97,6 @@ const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
           )}
           <> · {readingMinutes} {tUi('posts.readingTime')}</>
         </p>
-        {post.data.tags && (
-          <div class="tags">
-            {post.data.tags.map((tag) => (
-              <a class="tag tag-link badge badge-outline badge-sm" href={getRelativeLocaleUrl(lang, `/tags/${tag}`)}>#{tag}</a>
-            ))}
-          </div>
-        )}
       </header>
       {post.data.series && seriesPosts.length > 1 && (
         <SeriesNav
@@ -127,7 +108,6 @@ const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
       )}
       <div class="prose"><Content /></div>
       <Backlinks lang={lang} citers={backlinks} />
-      <RelatedPosts posts={related} lang={lang} />
       <Webmentions lang={lang} />
       <Giscus lang={lang} />
       <ShareButtons lang={lang} title={post.data.title} />

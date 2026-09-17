@@ -336,11 +336,6 @@ try {
   );
   assert.equal(await listPage.locator('.post-card').count(), 0, 'Post cards still render');
   assert.equal(await listPage.locator('[data-posts-filter]').count(), 0, 'Post filter bar still renders');
-  assert.match(
-    await listPage.locator('.tags-index-link').getAttribute('href') ?? '',
-    /^\/tags\/?$/,
-    'JA Posts page does not link to the tags index',
-  );
   const mobileRow = await listPage.locator('[data-post-row]').first().evaluate((row) => {
     const date = row.querySelector('time')?.getBoundingClientRect();
     const title = row.querySelector('a')?.getBoundingClientRect();
@@ -376,38 +371,7 @@ try {
     times.map((time) => time.getAttribute('datetime')),
   );
   assert.deepEqual(dates, [...dates].sort().reverse(), 'Posts are not newest first');
-  await listPage.locator('.tags-index-link').click();
-  const firstTag = listPage.locator('.tag-cloud a').first();
-  const selectedTag = (await firstTag.locator('.tag-name').textContent())?.replace(/^#/, '');
-  assert.ok(selectedTag, 'Tags index has no tag links');
-  await firstTag.click();
-  const countAlignment = await listPage.locator('.count-heading').evaluate((heading) => {
-    const badge = heading.querySelector('.count-badge');
-    if (!badge) return null;
-    const titleRange = document.createRange();
-    titleRange.selectNodeContents(heading.firstChild);
-    const title = titleRange.getBoundingClientRect();
-    const numberRange = document.createRange();
-    numberRange.selectNodeContents(badge);
-    const number = numberRange.getBoundingClientRect();
-    const rect = badge.getBoundingClientRect();
-    return {
-      horizontalOffset: Math.abs(number.x + number.width / 2 - rect.x - rect.width / 2),
-      verticalOffset: Math.abs(number.y + number.height / 2 - rect.y - rect.height / 2),
-      titleOffset: Math.abs(title.y + title.height / 2 - rect.y - rect.height / 2),
-    };
-  });
-  assert.ok(countAlignment, 'Tag count badge is missing');
-  assert.ok(countAlignment.horizontalOffset < 1, 'Tag count is not horizontally centered');
-  assert.ok(countAlignment.verticalOffset < 2, 'Tag count is not vertically centered');
-  assert.ok(countAlignment.titleOffset < 3, 'Tag count badge is not aligned with the title');
-  const taggedRows = listPage.locator('[data-post-row]');
-  assert.ok(await taggedRows.count(), 'Tag page has no posts');
-  assert.ok(
-    (await taggedRows.evaluateAll((rows) => rows.map((row) => JSON.parse(row.dataset.tags ?? '[]'))))
-      .every((tags) => tags.includes(selectedTag)),
-    'Tag page includes a post outside the selected tag',
-  );
+  await listPage.locator('[data-post-row] a').first().click();
   const separators = await listPage.locator('.breadcrumb-nav li').evaluateAll((items) =>
     items.map((item) => getComputedStyle(item, '::before').content),
   );
@@ -449,11 +413,6 @@ try {
     .map((label) => label.trim())
     .filter((label) => label.endsWith('Policy'));
   await desktopPage.goto(`${url}/en/posts/`, { waitUntil: 'networkidle' });
-  assert.match(
-    await desktopPage.locator('.tags-index-link').getAttribute('href') ?? '',
-    /^\/en\/tags\/?$/,
-    'EN Posts page does not link to the tags index',
-  );
   const enPostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
     .map((title) => title.trim());
   assert.deepEqual(enPostTitles, jaPostTitles, 'JA and EN routes do not show the same posts');
@@ -474,9 +433,40 @@ try {
     /^Published: \d{4}-\d{2}-\d{2}/,
     'Standalone post date is not English YYYY-MM-DD',
   );
+  const githubCards = detailPage.locator('.link-card[href^="https://github.com/"]');
+  const previews = githubCards.locator('.link-card-thumb img');
+  assert.ok(await previews.count(), 'Post has no self-hosted GitHub card previews');
+  for (const preview of await previews.all()) {
+    assert.match(await preview.getAttribute('src') ?? '', /^\/github-og\//,
+      'GitHub card still depends on an upstream preview image');
+    await preview.scrollIntoViewIfNeeded();
+    await preview.evaluate((image) => image.decode());
+    assert.ok(await preview.evaluate((image) => image.naturalWidth > 0),
+      'Self-hosted GitHub card image failed to decode');
+  }
+
+  const card = githubCards.filter({ has: detailPage.locator('.link-card-thumb img') }).first();
+  const cardHref = await card.getAttribute('href');
+  const cardTitle = await card.locator('.link-card-title').textContent();
+  const previewUrl = new URL(await card.locator('img').getAttribute('src'), url).href;
+  await detailPage.route(previewUrl, (route) => route.abort());
+  await detailPage.reload({ waitUntil: 'networkidle' });
+  const fallbackCard = detailPage.locator('.link-card').filter({ hasText: cardTitle });
+  await fallbackCard.scrollIntoViewIfNeeded();
+  await detailPage.waitForFunction((href) => {
+    const link = [...document.querySelectorAll('.link-card')]
+      .find((element) => element.getAttribute('href') === href);
+    return link?.classList.contains('link-card--no-image');
+  }, cardHref);
+  assert.equal(await fallbackCard.locator('.link-card-thumb').count(), 0,
+    'Failed card image leaves a blank thumbnail');
+  assert.equal(await fallbackCard.getAttribute('href'), cardHref,
+    'Image failure changes the card destination');
+  assert.equal(await fallbackCard.locator('.link-card-title').isVisible(), true,
+    'Image failure hides the card title');
   await detailPage.close();
 
-  console.log('✓ Chromium/Firefox English UI, date, gallery, heading, navigation, and post-list checks passed');
+  console.log('✓ Chromium/Firefox English UI, date, gallery, heading, navigation, post-list, and link-card checks passed');
 } finally {
   await browser.close();
   await close();
