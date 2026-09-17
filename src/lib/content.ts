@@ -88,6 +88,20 @@ export async function getLegalByLang(lang: Lang) {
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
+// Navigation uses English titles while destinations follow the content locale.
+export async function getLegalLinksByLang(lang: Lang) {
+  const legalDocs = await getLegalByLang(lang);
+  const englishLegalTitles = new Map(
+    (await getLegalByLang('en')).map((doc) => [doc.slug, doc.title]),
+  );
+  return legalDocs.map((doc) => ({
+    slug: doc.slug,
+    // Humanize the slug when a document has no English mirror yet.
+    label: englishLegalTitles.get(doc.slug)
+      ?? doc.slug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' '),
+  })).sort((a, b) => a.label.localeCompare(b.label, 'en'));
+}
+
 // Resolves the single-entry `profileMeta` YAML and flattens per-locale
 // `{ ja, en }` sub-objects to plain strings for the requested locale.
 // Throws (rather than returning null) when the entry is missing — this

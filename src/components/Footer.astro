@@ -1,7 +1,7 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { tUi, type Lang } from '@/i18n/ui';
-import { getLegalByLang, getProfileMeta } from '@/lib/content';
+import { getLegalLinksByLang, getProfileMeta } from '@/lib/content';
 
 interface Props {
   lang: Lang;
@@ -13,22 +13,7 @@ const year = new Date().getFullYear();
 // Without it the GH source / license link block is hidden entirely
 // rather than rendering broken `https://github.com/` links.
 const repoUrl = meta.repo ? `https://github.com/${meta.repo}` : undefined;
-// Legal docs auto-discovered from src/content/legal/<lang>/. Drop a new
-// markdown file there and it appears in the footer + sitemap with no further
-// code change. Footer labels prefer the English mirror's frontmatter title;
-// the destination still follows the current content locale.
-const legalDocs = await getLegalByLang(lang);
-const englishLegalTitles = new Map(
-  (await getLegalByLang('en')).map((doc) => [doc.slug, doc.title]),
-);
-const legalLinks = legalDocs.map((doc) => ({
-  slug: doc.slug,
-  // Legal pages are content and keep their localized headings, but footer
-  // navigation is English-only. A humanized slug preserves that contract if
-  // a locale-specific page temporarily has no English mirror.
-  label: englishLegalTitles.get(doc.slug)
-    ?? doc.slug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' '),
-})).sort((a, b) => a.label.localeCompare(b.label, 'en'));
+const legalLinks = await getLegalLinksByLang(lang);
 const sitemapUrl = getRelativeLocaleUrl(lang, '/sitemap');
 const sitemapLabel = tUi('sitemap.title');
 ---

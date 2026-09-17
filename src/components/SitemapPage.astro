@@ -3,7 +3,7 @@ import Base from '@/layouts/Base.astro';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import {
   formatDate,
-  getLegalByLang,
+  getLegalLinksByLang,
   getPublishedByLang,
   localeSlug,
   sortByDateDesc,
@@ -20,7 +20,7 @@ const posts = sortByDateDesc(await getPublishedByLang('posts', lang), 'pubDate')
 // Legal docs are appended to the static-page list dynamically so a new
 // src/content/legal/<lang>/<slug>.md file shows up here without any
 // code edit. Order: fixed nav pages first, then alphabetised legal docs.
-const legalDocs = await getLegalByLang(lang);
+const legalDocs = await getLegalLinksByLang(lang);
 
 const pages = [
   { href: getRelativeLocaleUrl(lang, '/'), label: tUi('nav.home') },
@@ -29,7 +29,7 @@ const pages = [
   { href: getRelativeLocaleUrl(lang, '/contact'), label: tUi('nav.contact') },
   ...legalDocs.map((d) => ({
     href: getRelativeLocaleUrl(lang, `/${d.slug}`),
-    label: d.title,
+    label: d.label,
   })),
 ];
 
