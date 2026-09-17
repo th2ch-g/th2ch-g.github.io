@@ -1,5 +1,5 @@
 
-/* Print stylesheet for posts. Strip away header/footer/share/toc/
+/* Print stylesheet for posts. Strip away header/footer/share/
    comments/webmention/progress chrome so paper output is just the body
    content with readable typography. Forces light-theme colors so the
    user doesn't accidentally print a dark page (= ink-heavy). */
@@ -24,9 +24,6 @@
   .site-header,
   footer,
   .share,
-  .toc,
-  .toc-toggle,
-  .toc-backdrop,
   .skip-link,
   #giscus,
   .webmentions,

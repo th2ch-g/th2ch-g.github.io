@@ -5,12 +5,12 @@ export function hasOpenModal(): boolean {
 }
 
 /** Isolate a custom modal until its returned cleanup function is called. */
-export function containModalFocus(panel: HTMLElement, backdrop?: HTMLElement): () => void {
+export function containModalFocus(panel: HTMLElement): () => void {
   const outside = new Map<HTMLElement, boolean>();
   let branch = panel;
   while (branch.parentElement) {
     for (const sibling of branch.parentElement.children) {
-      if (!(sibling instanceof HTMLElement) || sibling === branch || sibling === backdrop) continue;
+      if (!(sibling instanceof HTMLElement) || sibling === branch) continue;
       outside.set(sibling, sibling.inert);
       sibling.inert = true;
     }

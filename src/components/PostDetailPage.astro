@@ -5,7 +5,6 @@ import { formatDate, getReadingMinutes, getWordCount } from '@/lib/content';
 import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content';
 import ShareButtons from '@/components/ShareButtons.astro';
-import Toc from '@/components/Toc.astro';
 import Giscus from '@/components/Giscus.astro';
 import Webmentions from '@/components/Webmentions.astro';
 import RelatedPosts from '@/components/RelatedPosts.astro';
@@ -23,7 +22,7 @@ interface Props {
   lang: Lang;
 }
 const { post, lang } = Astro.props;
-const { Content, headings } = await render(post);
+const { Content } = await render(post);
 // Post bodies are authored once in Japanese and shared by both route locales.
 // Interface chrome follows `lang`; prose metrics and language metadata do not.
 const contentLang: Lang = 'ja';
@@ -53,11 +52,6 @@ const ogImageUrl = lang === 'en' ? `/en/og/${slug}.png` : `/og/${slug}.png`;
 // the set of URLs that need the embed library.
 const TWEET_URL_PATTERN = /^https?:\/\/(?:twitter\.com|x\.com|mobile\.twitter\.com)\/[A-Za-z0-9_]{1,15}\/status\/\d+(?:\?[^\s]*)?\/?$/m;
 const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
-const tocMinDepth = headings.length > 0 ? Math.min(...headings.map((heading) => heading.depth)) : 2;
-const tocHeadingCount = headings.filter(
-  (heading) => heading.depth >= tocMinDepth && heading.depth <= tocMinDepth + 2,
-).length;
-const hasToc = tocHeadingCount >= 2;
 ---
 <Base
   lang={lang}
@@ -88,8 +82,7 @@ const hasToc = tocHeadingCount >= 2;
       { label: post.data.title },
     ]}
   />
-  <div class:list={['post-layout', { 'has-toc': hasToc }]}>
-    <Toc headings={headings} lang={lang} />
+  <div class="post-layout">
     <article lang={contentLang}>
       {/* Pagefind index hints. `data-pagefind-filter="tag:foo"` adds the post
           to the "tag" filter group with value "foo"; multiple tags need
@@ -250,27 +243,5 @@ const hasToc = tocHeadingCount >= 2;
     font-size: 1.05rem;
     color: var(--color-fg);
     margin: 0.5rem 0 1rem;
-  }
-  /* Keep the article centered at the same width as posts without a TOC.
-     Only the right-side gutter is extended; the TOC narrows with the
-     available space instead of pulling the article to the left. */
-  @media (min-width: 90rem) {
-    .post-layout.has-toc {
-      --toc-space: min(19rem, calc((100vw - var(--max-width)) / 2));
-      display: grid;
-      grid-template-columns:
-        calc(100% - var(--toc-space))
-        calc(var(--toc-space) - 1rem);
-      grid-template-areas: 'article toc';
-      gap: 1rem;
-      align-items: start;
-      width: calc(100% + var(--toc-space));
-    }
-    .post-layout.has-toc article {
-      grid-area: article;
-    }
-    .post-layout.has-toc > :global(.toc) {
-      grid-area: toc;
-    }
   }
 </style>

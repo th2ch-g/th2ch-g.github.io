@@ -5,7 +5,6 @@ import { getCv } from '@/lib/content';
 import { allCitations } from '@/lib/citations';
 import { allBibtex } from '@/lib/bibtex';
 import { render } from 'astro:content';
-import Toc from '@/components/Toc.astro';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -14,12 +13,7 @@ const cv = await getCv(lang);
 if (!cv) {
   throw new Error(`CV (${lang}) is missing. Add src/content/cv/${lang}.md`);
 }
-const { Content, headings } = await render(cv);
-const tocMinDepth = headings.length > 0 ? Math.min(...headings.map((heading) => heading.depth)) : 2;
-const tocHeadingCount = headings.filter(
-  (heading) => heading.depth >= tocMinDepth && heading.depth <= tocMinDepth + 2,
-).length;
-const hasToc = tocHeadingCount >= 2;
+const { Content } = await render(cv);
 const cvLinks = [
   cv.data.orcid
     ? { label: 'ORCID', url: `https://orcid.org/${cv.data.orcid}` }
@@ -32,8 +26,7 @@ const cvLinks = [
 ].filter((link): link is { label: string; url: string } => Boolean(link));
 ---
 <Base lang={lang} title={tUi('nav.cv')} image={lang === 'en' ? '/en/og/cv.png' : '/og/cv.png'}>
-  <div class:list={['cv-layout', { 'has-toc': hasToc }]}>
-    <Toc headings={headings} lang={lang} />
+  <div class="cv-layout">
     <div class="cv-content">
       <div class="cv-header">
         <h1 class="sr-only">{tUi('nav.cv')}</h1>
@@ -950,8 +943,7 @@ const cvLinks = [
 
   /* Copy menu: one trigger (<summary>) that drops a small popover of copy
      actions. Shared by section headings and individual list entries. The
-     list is absolutely positioned so opening it never reflows the row.
-     Mirrors the native <details> disclosure used by Toc.astro. */
+     list is absolutely positioned so opening it never reflows the row. */
   .cv-prose :global(.cv-menu) {
     position: relative;
     display: inline-block;
@@ -1102,25 +1094,4 @@ const cvLinks = [
     .cv-prose :global(.citation-badge) { display: none; }
   }
 
-  /* Keep the CV column at its existing width on wide screens and place the
-     desktop TOC in the otherwise unused right viewport gutter. */
-  @media (min-width: 90rem) {
-    .cv-layout.has-toc {
-      --toc-space: min(19rem, calc((100vw - var(--max-width)) / 2));
-      display: grid;
-      grid-template-columns:
-        calc(100% - var(--toc-space))
-        calc(var(--toc-space) - 1rem);
-      grid-template-areas: 'content toc';
-      gap: 1rem;
-      align-items: start;
-      width: calc(100% + var(--toc-space));
-    }
-    .cv-layout.has-toc .cv-content {
-      grid-area: content;
-    }
-    .cv-layout.has-toc > :global(.toc) {
-      grid-area: toc;
-    }
-  }
 </style>

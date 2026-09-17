@@ -17,19 +17,15 @@ async function newLocalPage(viewport) {
   return page;
 }
 
-async function assertTocAnchorClearsHeader(path) {
+async function assertHeadingAnchorClearsHeader(path) {
   const page = await newLocalPage({ width: 393, height: 852 });
-  await page.goto(`${url}${path}`, { waitUntil: 'networkidle' });
-
-  const toggle = page.locator('[data-toc-toggle]');
-  assert.equal(await toggle.isVisible(), true, `TOC toggle is missing on ${path}`);
-  await toggle.click();
-  await assertModalKeyboard(page, '[data-toc-panel]');
-
-  const firstLink = page.locator('[data-toc-link]').first();
-  const targetId = await firstLink.getAttribute('data-toc-link');
-  assert.ok(targetId, `TOC has no target on ${path}`);
-  await firstLink.click();
+  await page.goto(`${url}${path}`, { waitUntil: 'domcontentloaded' });
+  assert.equal(await page.locator('[data-toc-panel], [data-toc-toggle]').count(), 0,
+    `A removed table of contents is still rendered on ${path}`);
+  const heading = page.locator('.prose :is(h1, h2, h3, h4, h5, h6)[id]').first();
+  const targetId = await heading.getAttribute('id');
+  assert.ok(targetId, `Page has no heading anchor on ${path}`);
+  await page.goto(`${url}${path}#${encodeURIComponent(targetId)}`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(
     (id) => decodeURIComponent(location.hash.slice(1)) === id,
     targetId,
@@ -44,15 +40,10 @@ async function assertTocAnchorClearsHeader(path) {
       headerBottom: header.getBoundingClientRect().bottom,
     };
   }, targetId);
-  assert.ok(anchorLayout, `TOC target or navbar is missing on ${path}`);
-  assert.equal(
-    await page.evaluate((id) => document.activeElement?.id === id, targetId),
-    true,
-    `TOC link leaves keyboard focus in the hidden drawer on ${path}`,
-  );
+  assert.ok(anchorLayout, `Heading target or navbar is missing on ${path}`);
   assert.ok(
     anchorLayout.headingTop > anchorLayout.headerBottom,
-    `TOC target is hidden by the navbar on ${path} (${anchorLayout.headingTop}px / ${anchorLayout.headerBottom}px)`,
+    `Heading target is hidden by the navbar on ${path} (${anchorLayout.headingTop}px / ${anchorLayout.headerBottom}px)`,
   );
   await page.close();
 }
@@ -178,8 +169,8 @@ async function assertFirefoxTouchAutoplay() {
 
 try {
   await assertStableFirstPaint();
-  await assertTocAnchorClearsHeader('/posts/dotfiles-2026-summer/');
-  await assertTocAnchorClearsHeader('/cv/');
+  await assertHeadingAnchorClearsHeader('/posts/dotfiles-2026-summer/');
+  await assertHeadingAnchorClearsHeader('/cv/');
   await assertCvBibtexCopy();
   await assertFirefoxTouchAutoplay();
 
@@ -485,7 +476,7 @@ try {
   );
   await detailPage.close();
 
-  console.log('✓ Chromium/Firefox English UI, date, gallery, TOC, navigation, and post-list checks passed');
+  console.log('✓ Chromium/Firefox English UI, date, gallery, heading, navigation, and post-list checks passed');
 } finally {
   await browser.close();
   await close();

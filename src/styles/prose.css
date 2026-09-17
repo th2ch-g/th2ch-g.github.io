@@ -360,7 +360,7 @@
    doesn't visually compete with the prose layout. Clicking copies the
    heading URL (with hash) to the clipboard — wired up in PostDetailPage. */
 .prose :is(h1, h2, h3, h4, h5, h6)[id] {
-  /* Clear the sticky navbar after TOC/hash navigation and retain one rem of
+  /* Clear the sticky navbar after anchor navigation and retain one rem of
      visual breathing room between the header and the target heading. */
   scroll-margin-top: 4.5rem;
 }

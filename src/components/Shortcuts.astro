@@ -61,7 +61,7 @@ const cvUrl = getRelativeLocaleUrl(lang, '/cv');
       // browser actions; only act on plain key presses.
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (isTyping(e.target)) return;
-      // Native dialogs, the image preview, and the TOC own their keyboard input.
+      // Native dialogs and the image preview own their keyboard input.
       const inDialog = document.querySelector('dialog[open], [aria-modal="true"]:not([hidden]):not([aria-hidden="true"])');
       if (inDialog) { clearG(); return; }
 
