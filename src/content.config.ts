@@ -121,6 +121,7 @@ const profileMeta = defineCollection({
     // of the schema.
     giscus: z
       .object({
+        enabled: z.boolean().default(true),
         // Override `repo` only if comments live on a different repo;
         // otherwise the top-level `repo` field is reused. Same character
         // class as the top-level `repo` field.

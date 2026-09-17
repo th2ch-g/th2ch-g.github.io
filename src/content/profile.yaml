@@ -17,6 +17,7 @@ giscus:
   category: Announcements
   categoryId: DIC_kwDOSWDKhM4C8k4s
   mapping: pathname
+  enabled: false
 
 webmention:
   endpoint:

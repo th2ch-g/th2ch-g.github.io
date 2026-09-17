@@ -84,12 +84,8 @@ const slideshowImages = photos.map((p) => p.src);
      `lightbox:open` event that Lightbox.astro listens for.
      `break-inside: avoid` lives here so the button + its image stay in
      the same column.
-     Hover effect: wrapper lifts & casts a shadow (same as Posts `.card`),
-     but does NOT scale — `.photo-btn` is both the card and the image
-     frame, so wrapper-scale + inner-img-scale stacks visually and looks
-     like the whole tile is ballooning. Only the inner <img> zooms
-     inside the rounded clip mask, mirroring how Posts `.thumb` clips its
-     img zoom. */
+     Keep the frame stationary like a Primer card; only the image zooms
+     inside its rounded clip mask. */
   .photo-btn {
     width: 100%;
     padding: 0;
@@ -101,14 +97,11 @@ const slideshowImages = photos.map((p) => p.src);
     cursor: zoom-in;
     display: block;
     break-inside: avoid;
-    transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      border-color 200ms ease,
-      box-shadow 260ms ease;
+    transition: border-color 160ms ease;
   }
   .photo-btn:hover {
-    transform: translateY(-6px);
-    border-color: var(--color-accent);
-    box-shadow: var(--shadow-float);
+    border-color: var(--color-border-strong);
+    box-shadow: none;
   }
   .photo-btn:focus-visible {
     outline: 2px solid var(--color-accent);
@@ -124,10 +117,7 @@ const slideshowImages = photos.map((p) => p.src);
        neighbouring masonry items. */
     transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  /* Inner-img zoom on hover lives in src/styles/global.css per project
-     contract (see CLAUDE.md "CSS gotchas"). The card lift below and the
-     reduced-motion transition resets stay scoped because they target
-     element-local transforms / transitions only. */
+  /* Keep descendant hover transforms in the shared layout stylesheet. */
   @media (prefers-reduced-motion: reduce) {
     .photo-btn,
     .photo { transition: none; }

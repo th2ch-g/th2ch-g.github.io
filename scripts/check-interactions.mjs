@@ -184,6 +184,10 @@ async function checkCopyAndTheme(browser) {
 
   // Both legacy failure modes must remove temporary controls and preserve focus.
   for (const shouldThrow of [false, true]) {
+    // Start with successful feedback, then deny the next copy immediately.
+    await mockClipboard(page);
+    await code.locator('.copy-code').click();
+    await share.click();
     await page.evaluate((shouldThrow) => {
       navigator.clipboard.writeText = async () => { throw new Error('denied'); };
       Object.defineProperty(document, 'execCommand', {
@@ -195,6 +199,13 @@ async function checkCopyAndTheme(browser) {
       });
     }, shouldThrow);
     const before = await page.locator('textarea').count();
+    const codeButton = code.locator('.copy-code');
+    await codeButton.focus();
+    await codeButton.click();
+    assert.equal(await codeButton.getAttribute('aria-label'), 'Copy failed');
+    assert.equal(await codeButton.evaluate((element) => element.classList.contains('is-copied')), false,
+      'A failed code copy still shows successful feedback');
+    assert.equal(await codeButton.evaluate((element) => element === document.activeElement), true);
     await share.focus();
     await share.click();
     await page.waitForFunction(() => document.querySelector('.share-copy').classList.contains('is-failed'));
@@ -203,6 +214,11 @@ async function checkCopyAndTheme(browser) {
     assert.equal(await page.locator('textarea').count(), before, 'Failed copy leaked a temporary textarea');
     assert.equal(await share.evaluate((element) => element === document.activeElement), true);
   }
+
+  await mockClipboard(page);
+  await code.locator('.copy-code').click();
+  assert.equal(await code.locator('.copy-code').getAttribute('aria-label'), 'Copied');
+  assert.equal(await code.locator('.copy-code').evaluate((element) => element.classList.contains('is-failed')), false);
 
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
   await page.locator('[data-theme-toggle]').click();
@@ -214,6 +230,53 @@ async function checkCopyAndTheme(browser) {
   });
   await page.locator('[data-theme-toggle]').click();
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
+  assert.deepEqual(errors, []);
+  await page.close();
+}
+
+async function checkNavigationAndGallery(browser) {
+  const { page, errors } = await newPage(browser, '/ja/', { viewport: { width: 393, height: 852 } });
+  const toggle = page.locator('[data-nav-toggle]');
+  await toggle.click();
+  await page.locator('.cv-prose h2').first().click();
+  assert.equal(await toggle.getAttribute('aria-expanded'), 'false', 'Outside click leaves navigation open');
+  for (const [key, destination] of [['b', '/ja/posts'], ['p', '/ja/gallery'], ['c', '/ja/#cv'], ['h', '/ja/']]) {
+    const target = new URL(destination, server.url);
+    await page.keyboard.press('g');
+    await page.keyboard.press(key);
+    await page.waitForURL((location) => `${location.pathname.replace(/\/$/, '')}${location.hash}` === `${target.pathname.replace(/\/$/, '')}${target.hash}`);
+    await page.waitForLoadState('networkidle');
+  }
+  await page.goto(server.url + '/gallery/', { waitUntil: 'networkidle' });
+  const slideshow = page.locator('.photo-slideshow');
+  const current = () => page.locator('.slideshow-progress-current').textContent();
+  const total = await page.locator('.slideshow-progress-total').textContent();
+  await slideshow.locator('.prev').click();
+  assert.equal(await current(), total, 'Previous slide does not wrap to the last image');
+  await slideshow.locator('.prev').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await current(), '1', 'Arrow navigation does not wrap to the first image');
+  await slideshow.locator('[data-speed="8000"]').click();
+  assert.equal(await slideshow.locator('[aria-pressed="true"]').getAttribute('data-speed'), '8000');
+  await slideshow.locator('.fullscreen-btn').click();
+  await page.waitForFunction(() => document.fullscreenElement?.classList.contains('photo-slideshow'));
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await current(), '2', 'Fullscreen arrow navigation does not advance the image');
+  await slideshow.locator('.fullscreen-btn').click();
+  await page.waitForFunction(() => !document.fullscreenElement);
+
+  // A single image still exposes a fullscreen button and must wire it.
+  await page.route('**/gallery/', async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text()).replaceAll('class="slide"', 'class="fixture-inactive" hidden');
+    await route.fulfill({ response, body: html });
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await slideshow.locator('.slide').count(), 1);
+  await slideshow.locator('.fullscreen-btn').click();
+  await page.waitForFunction(() => document.fullscreenElement?.classList.contains('photo-slideshow'));
+  await slideshow.locator('.fullscreen-btn').click();
+  await page.waitForFunction(() => !document.fullscreenElement);
   assert.deepEqual(errors, []);
   await page.close();
 }
@@ -230,7 +293,8 @@ try {
       }
       await checkSearchRecovery(browser);
       await checkCopyAndTheme(browser);
-      console.log(`[interactions] ${engine.name()}: recovery, code/share copy and theme persistence passed`);
+      await checkNavigationAndGallery(browser);
+      console.log(`[interactions] ${engine.name()}: recovery, copy feedback, theme, navigation and fullscreen passed`);
     } finally {
       await browser.close();
     }

@@ -5,6 +5,7 @@ import { getProfileMeta } from '@/lib/content';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import Search from './Search.astro';
+import Octicon from './Octicon.astro';
 
 interface Props {
   lang: Lang;
@@ -15,6 +16,8 @@ interface Props {
 const { lang, availableLocales } = Astro.props;
 
 const meta = await getProfileMeta(lang);
+// build-icon generates this avatar from the configured profile image.
+const iconSrc = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/icon.png`;
 
 // Navigation and all other interface labels are intentionally English in
 // both content locales.
@@ -26,13 +29,13 @@ const meta = await getProfileMeta(lang);
 // tab and never receive an active state since their href is on a different
 // origin.
 type NavItem =
-  | { href: string; label: string; match: 'exact' | 'prefix'; external?: false }
-  | { href: string; label: string; external: true };
+  | { href: string; label: string; icon: 'book' | 'image' | 'mail'; match: 'exact' | 'prefix'; external?: false }
+  | { href: string; label: string; icon: 'book' | 'image' | 'mail'; external: true };
 
 const items: NavItem[] = [
-  { href: getRelativeLocaleUrl(lang, '/posts'), label: tUi('nav.posts'), match: 'prefix' },
-  { href: getRelativeLocaleUrl(lang, '/gallery'), label: tUi('nav.photos'), match: 'prefix' },
-  { href: getRelativeLocaleUrl(lang, '/contact'), label: tUi('nav.contact'), match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/posts'), label: tUi('nav.posts'), icon: 'book', match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/gallery'), label: tUi('nav.photos'), icon: 'image', match: 'prefix' },
+  { href: getRelativeLocaleUrl(lang, '/contact'), label: tUi('nav.contact'), icon: 'mail', match: 'prefix' },
 ];
 
 const withSlash = (p: string) => (p.endsWith('/') ? p : p + '/');
@@ -58,7 +61,7 @@ const atHome = current === withSlash(homeHref);
       {meta.icon && (
         <img
           class="brand-icon"
-          src={meta.icon}
+          src={iconSrc}
           alt=""
           width="28"
           height="28"
@@ -78,11 +81,13 @@ const atHome = current === withSlash(homeHref);
               <a
                 href={item.href}
                 class:list={{ active }}
-                data-label={item.label}
                 aria-current={active ? 'page' : undefined}
                 target={external ? '_blank' : undefined}
                 rel={external ? 'noopener noreferrer' : undefined}
-              >{item.label}</a>
+              >
+                <Octicon name={item.icon} />
+                <span class="nav-label" data-label={item.label}>{item.label}</span>
+              </a>
             </li>
           );
         })}
@@ -117,7 +122,7 @@ const atHome = current === withSlash(homeHref);
     top: 0;
     z-index: 50;
     border-bottom: 1px solid var(--color-border);
-    background: var(--color-card);
+    background: var(--color-inset);
   }
   .inner {
     max-width: var(--max-width);
@@ -151,16 +156,19 @@ const atHome = current === withSlash(homeHref);
   }
   .nav-list a {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     color: var(--color-fg);
     font-size: 0.875rem;
     line-height: 1.5;
-    padding: 0.4rem 0.6rem;
+    min-height: 2rem;
+    padding: 0.375rem 0.5rem;
     border-radius: var(--radius-field);
     transition: background-color 160ms ease;
   }
   /* Reserve bold text width so the active item never shifts its neighbors. */
-  .nav-list a::after {
+  .nav-label::after {
     content: attr(data-label);
     display: block;
     height: 0;
@@ -168,6 +176,17 @@ const atHome = current === withSlash(homeHref);
     visibility: hidden;
     font-weight: 600;
     pointer-events: none;
+  }
+  .nav-list :global(.octicon) { color: var(--color-muted); }
+  .nav-list a.active::before {
+    content: '';
+    position: absolute;
+    right: 0.5rem;
+    bottom: -1rem;
+    left: 0.5rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-nav-active);
   }
   .nav-list a:hover {
     background: var(--color-hover);
@@ -233,6 +252,13 @@ const atHome = current === withSlash(homeHref);
     .nav-list { flex-direction: column; gap: 0.25rem; }
     .nav-list a { width: 100%; padding: 0.65rem 0.85rem; }
     .nav-list a.active { background: var(--color-hover); }
+    .nav-list a.active::before {
+      top: 0.5rem;
+      bottom: 0.5rem;
+      left: 0;
+      width: 3px;
+      height: auto;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .nav-list a,

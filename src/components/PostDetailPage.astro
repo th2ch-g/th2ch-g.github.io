@@ -210,19 +210,20 @@ const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
     text-underline-offset: 0.14em;
   }
   .post-header {
-    margin-bottom: 2.5rem;
-    padding: 1.35rem 1.4rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    background: var(--color-card);
-    box-shadow: var(--shadow-soft);
+    margin-bottom: 1.5rem;
+    padding: 0 0 1.5rem;
+    border-bottom: 1px solid var(--color-border);
   }
-  .post-header h1 { margin-top: 0; }
+  .post-header h1 {
+    margin: 0 0 0.5rem;
+    font-weight: 400;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .post-header > .muted { margin: 0.75rem 0 0; }
   .lede {
-    border-left: 3px solid var(--color-accent);
-    padding: 0.25rem 0 0.25rem 0.85rem;
-    font-size: 1.05rem;
-    color: var(--color-fg);
+    font-size: 1rem;
+    color: var(--color-muted);
     margin: 0.5rem 0 1rem;
   }
 </style>

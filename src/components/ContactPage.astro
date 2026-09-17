@@ -41,7 +41,7 @@ if (meta.contactForm && meta.contactFormEmbed) {
       {/* Fallback for browsers/extensions that block the frame, and for
           visitors who prefer the full-page form. Uses the plain URL. */}
       <p class="fallback">
-        <a class="btn btn-outline btn-primary btn-sm" href={meta.contactForm} target="_blank" rel="noopener noreferrer">
+        <a class="contact-link btn btn-sm" href={meta.contactForm} target="_blank" rel="noopener noreferrer">
           {tUi('contact.cta')}
         </a>
       </p>
@@ -74,4 +74,20 @@ if (meta.contactForm && meta.contactFormEmbed) {
     margin-top: 0.75rem;
     font-size: 0.9rem;
   }
+  .contact-link {
+    min-height: 2rem;
+    height: auto;
+    padding: 0.3125rem 0.75rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-button);
+    color: var(--color-fg);
+    font-size: 0.875rem;
+    box-shadow: var(--shadow-soft);
+  }
+  .contact-link:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-hover);
+    text-decoration: none;
+  }
+  .contact-link:active { background: var(--color-button-active); }
 </style>

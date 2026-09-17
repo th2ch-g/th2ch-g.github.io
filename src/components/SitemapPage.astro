@@ -132,12 +132,12 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
     overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: var(--color-card);
-    box-shadow: var(--shadow-soft);
+    background: var(--color-bg);
+    font-size: 0.875rem;
   }
   ul.list li {
     padding: 0.65rem 0.8rem;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-muted);
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -146,6 +146,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
   ul.list li:last-child {
     border-bottom: none;
   }
+  ul.list li:hover { background: var(--color-card); }
   .date {
     font-family: var(--font-mono);
     font-size: 0.82rem;

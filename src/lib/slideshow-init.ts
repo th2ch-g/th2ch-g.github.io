@@ -16,7 +16,7 @@ function initSlideshow(root: SlideshowEl) {
   const progressFill = root.querySelector<HTMLElement>('.slideshow-progress-fill');
   const progressBar = root.querySelector<HTMLElement>('.slideshow-progress-bar');
   const progressCurrent = root.querySelector<HTMLElement>('.slideshow-progress-current');
-  if (slides.length < 2) return;
+  if (slides.length === 0) return;
 
   let interval = Number(root.dataset.interval ?? 5000);
   let current = 0;
@@ -62,7 +62,7 @@ function initSlideshow(root: SlideshowEl) {
     stop();
     const inFullscreen = document.fullscreenElement === root;
     const interactionPaused = !inFullscreen && (hoverPaused || focusPaused);
-    if (!autoplayEnabled || document.hidden || interactionPaused) return;
+    if (slides.length < 2 || !autoplayEnabled || document.hidden || interactionPaused) return;
     timer = window.setTimeout(() => {
       show(current + 1);
       start();
@@ -113,7 +113,10 @@ function initSlideshow(root: SlideshowEl) {
       // Choosing a speed is an explicit autoplay request, including when
       // the operating system initially reported reduced motion.
       autoplayEnabled = true;
-      speedBtns.forEach((b) => b.classList.toggle('active', b === btn));
+      speedBtns.forEach((b) => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
       start();
     });
   });

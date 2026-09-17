@@ -6,6 +6,7 @@ export function setupCodeCopy(): void {
   if (!main) return;
   const label = main.dataset.copyLabel ?? 'Copy';
   const copiedLabel = main.dataset.copiedLabel ?? 'Copied';
+  const failedLabel = main.dataset.copyFailedLabel ?? 'Copy failed';
   main.querySelectorAll('pre:not(.mermaid)').forEach((pre) => {
     const code = pre.querySelector('code');
     if (!code || pre.querySelector('.copy-code')) return;
@@ -16,15 +17,16 @@ export function setupCodeCopy(): void {
     button.setAttribute('aria-label', label);
     let feedbackTimer: number | undefined;
     button.addEventListener('click', async () => {
-      if (!await copyToClipboard(code.innerText)) return;
+      const ok = await copyToClipboard(code.innerText);
       window.clearTimeout(feedbackTimer);
-      button.innerHTML = CHECK_ICON;
-      button.setAttribute('aria-label', copiedLabel);
-      button.classList.add('is-copied');
+      button.innerHTML = ok ? CHECK_ICON : COPY_ICON;
+      button.setAttribute('aria-label', ok ? copiedLabel : failedLabel);
+      button.classList.toggle('is-copied', ok);
+      button.classList.toggle('is-failed', !ok);
       feedbackTimer = window.setTimeout(() => {
         button.innerHTML = COPY_ICON;
         button.setAttribute('aria-label', label);
-        button.classList.remove('is-copied');
+        button.classList.remove('is-copied', 'is-failed');
       }, 1600);
     });
     pre.appendChild(button);

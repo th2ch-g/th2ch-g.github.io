@@ -61,6 +61,7 @@ export const ui = {
     'citation.source': 'via CrossRef',
     'code.copy': 'Copy',
     'code.copied': 'Copied',
+    'code.copy.failed': 'Copy failed',
     'share.title': 'Share this post',
     'share.x': 'Share on X',
     'share.bluesky': 'Share on Bluesky',

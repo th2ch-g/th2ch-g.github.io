@@ -430,7 +430,7 @@ const jsonLd = {
   <body>
     <a class="skip-link" href="#main-content">{tUi('a11y.skipToMain')}</a>
     <Header lang={lang} availableLocales={locales} />
-    <main id="main-content" tabindex="-1" data-pagefind-body data-copy-label={tUi('code.copy')} data-copied-label={tUi('code.copied')}>
+    <main id="main-content" tabindex="-1" data-pagefind-body data-copy-label={tUi('code.copy')} data-copied-label={tUi('code.copied')} data-copy-failed-label={tUi('code.copy.failed')}>
       <slot />
     </main>
     <Footer lang={lang} />
@@ -482,6 +482,11 @@ const jsonLd = {
         opacity: 1;
         color: var(--color-accent-hover);
         border-color: var(--color-accent-hover);
+      }
+      .copy-code.is-failed {
+        opacity: 1;
+        color: var(--color-error);
+        border-color: var(--color-error);
       }
     </style>
   </body>

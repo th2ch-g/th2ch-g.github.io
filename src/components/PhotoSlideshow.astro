@@ -46,9 +46,9 @@ const { images, intervalMs = 5000 } = Astro.props;
     <div class="controls">
       {images.length > 1 && (
         <div class="speed" role="group" aria-label="Slideshow speed">
-          <button type="button" class="speed-btn" data-speed="3000" aria-label="Fast (3s)">3s</button>
-          <button type="button" class="speed-btn active" data-speed="5000" aria-label="Normal (5s)">5s</button>
-          <button type="button" class="speed-btn" data-speed="8000" aria-label="Slow (8s)">8s</button>
+          <button type="button" class:list={['speed-btn', { active: intervalMs === 3000 }]} data-speed="3000" aria-label="Fast (3s)" aria-pressed={intervalMs === 3000}>3s</button>
+          <button type="button" class:list={['speed-btn', { active: intervalMs === 5000 }]} data-speed="5000" aria-label="Normal (5s)" aria-pressed={intervalMs === 5000}>5s</button>
+          <button type="button" class:list={['speed-btn', { active: intervalMs === 8000 }]} data-speed="8000" aria-label="Slow (8s)" aria-pressed={intervalMs === 8000}>8s</button>
         </div>
       )}
       <button type="button" class="fullscreen-btn" aria-label="Toggle fullscreen">

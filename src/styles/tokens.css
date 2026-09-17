@@ -1,10 +1,12 @@
-/* Shared GitHub-inspired surfaces and typography for both themes. */
+/* Primer's default light and dark surfaces, shared by every page. */
 :root {
   --color-bg: var(--color-base-100);
   --color-fg: var(--color-base-content);
   --color-muted: #59636e;
   --color-border: var(--color-base-300);
+  --color-border-muted: #d1d9e0b3;
   --color-card: var(--color-base-200);
+  --color-inset: #f6f8fa;
   --color-button: #f6f8fa;
   --color-button-active: #e6eaef;
   --color-border-strong: #b7bfc8;
@@ -13,20 +15,25 @@
   --color-counter: rgb(129 139 152 / 0.12);
   --color-accent-subtle: #ddf4ff;
   --color-accent-hover: #0550ae;
+  --color-nav-active: #fd8c73;
+  --color-scrim: rgb(31 35 40 / 0.5);
   --color-warn: var(--color-warning);
   --font-sans:
     "Mona Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
     Arial, "Hiragino Sans", "Yu Gothic UI", sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji";
-  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --max-width: 50rem;
   --radius: var(--radius-box);
+  --radius-overlay: 0.75rem;
   --shadow-soft: 0 1px 0 rgb(31 35 40 / 0.04);
   --shadow-float: 0 8px 24px rgb(140 149 159 / 0.2);
 }
 
 :root[data-theme="dark"] {
   --color-muted: #9198a1;
+  --color-border-muted: #3d444db3;
+  --color-inset: #010409;
   --color-button: #212830;
   --color-button-active: #2a313c;
   --color-border-strong: #656c76;
@@ -35,6 +42,7 @@
   --color-counter: rgb(101 108 118 / 0.2);
   --color-accent-subtle: #152a43;
   --color-accent-hover: #79c0ff;
+  --color-scrim: rgb(1 4 9 / 0.7);
   --shadow-soft: 0 1px 0 rgb(0 0 0 / 0.1);
   --shadow-float: 0 8px 24px rgb(1 4 9 / 0.4);
 }

@@ -51,9 +51,9 @@ const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)
     padding: 0.75rem 1rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    background: var(--color-card);
+    background: var(--color-bg);
     color: var(--color-fg);
-    box-shadow: var(--shadow-soft);
+    box-shadow: none;
     transition: border-color 160ms ease, background-color 160ms ease;
   }
   .nav-next {
@@ -69,6 +69,8 @@ const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)
     font-size: 0.8rem;
   }
   .nav-title {
+    color: var(--color-accent);
+    font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.4;
   }

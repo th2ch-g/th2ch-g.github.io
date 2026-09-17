@@ -1,0 +1,27 @@
+---
+import Book from '@primer/octicons/build/svg/book-16.svg';
+import Image from '@primer/octicons/build/svg/image-16.svg';
+import Mail from '@primer/octicons/build/svg/mail-16.svg';
+import File from '@primer/octicons/build/svg/file-16.svg';
+import Search from '@primer/octicons/build/svg/search-16.svg';
+import Sun from '@primer/octicons/build/svg/sun-16.svg';
+import Moon from '@primer/octicons/build/svg/moon-16.svg';
+
+const icons = { book: Book, image: Image, mail: Mail, file: File, search: Search, sun: Sun, moon: Moon };
+interface Props {
+  name: keyof typeof icons;
+  class?: string;
+}
+const { name, class: className } = Astro.props;
+const Icon = icons[name];
+---
+<Icon class:list={['octicon', className]} width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false" />
+
+<style>
+  .octicon {
+    display: inline-block;
+    flex-shrink: 0;
+    overflow: visible;
+    vertical-align: text-bottom;
+  }
+</style>

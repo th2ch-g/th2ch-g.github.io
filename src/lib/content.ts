@@ -157,7 +157,7 @@ function buildIntegrations(data: ProfileData) {
   const fallbackRepo = blank(data.repo);
 
   const g = data.giscus;
-  const giscus = g?.repoId && g?.categoryId
+  const giscus = g?.enabled !== false && g?.repoId && g?.categoryId
     ? {
         repo: blank(g.repo) ?? fallbackRepo,
         repoId: g.repoId,
