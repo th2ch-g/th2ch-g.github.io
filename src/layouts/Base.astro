@@ -12,6 +12,9 @@ import Shortcuts from '@/components/Shortcuts.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import { getProfileMeta } from '@/lib/content';
 import type { ImageMetadata } from 'astro';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { versionOgImage } from '@/lib/og-version';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 
 interface Props {
   title: string;
@@ -47,7 +50,8 @@ interface Props {
   breadcrumbs?: Array<{ name: string; url?: string }>;
 }
 const { title, description, lang, image, article, breadcrumbs, availableLocales } = Astro.props;
-const locales = availableLocales ?? (['ja', 'en'] as Lang[]);
+const locales = availableLocales ?? (['en', 'ja'] as Lang[]);
+const localePath = Astro.url.pathname.replace(/^\/(?:en|ja)(?=\/|$)/, '') || '/';
 const meta = await getProfileMeta(lang);
 const adsenseClientId = meta.integrations.adsense?.clientId;
 const googleAnalyticsId = meta.integrations.analytics?.googleAnalyticsId;
@@ -70,8 +74,8 @@ const documentTitle = !siteName || title === siteName ? title : `${title} | ${si
 
 const canonical = new URL(Astro.url.pathname, Astro.site).toString();
 // Locale-aware default OG card. Generated at build time by
-// `src/pages/og/default.png.ts` (and the /en/ mirror), 1200x630.
-const defaultOgPath = lang === 'en' ? '/en/og/default.png' : '/og/default.png';
+// `src/pages/og/default.png.ts` (and the /ja/ mirror), 1200x630.
+const defaultOgPath = getLocaleFileUrl(lang, '/og/default.png');
 // Resolve against `Astro.url` (current request) rather than `Astro.site`
 // (production host). In dev this yields http://localhost:4321/... so local
 // OGP previewers can actually fetch the image; in prod builds the origin
@@ -81,12 +85,17 @@ const defaultOgPath = lang === 'en' ? '/en/og/default.png' : '/og/default.png';
 // PostDetailPage) are also wrapped — OGP requires absolute URLs and Slack
 // / Discord / Twitter Card validators reject relative paths. Already-
 // absolute URLs (http(s)://) pass through `new URL()` unchanged.
-const ogImage =
+const ogImageUrl = new URL(
   typeof image === 'string'
-    ? new URL(image, Astro.url).toString()
+    ? image
     : image
-      ? new URL(image.src, Astro.url).toString()
-      : new URL(defaultOgPath, Astro.url).toString();
+      ? image.src
+      : defaultOgPath,
+  Astro.url,
+);
+const ogImage = ogImageUrl.origin === Astro.url.origin
+  ? versionOgImage(ogImageUrl)
+  : ogImageUrl.toString();
 // Width/height hints help SNS previewers reserve the card area before
 // fetching bytes (faster perceived render, no layout shift). astro-og-canvas
 // hardcodes 1200x630 for every generated card, so when the source is one of
@@ -299,28 +308,29 @@ const jsonLd = {
     {/* WebSub hub advertisement at the page level so subscribers that
         crawl the HTML head (rather than the feed) still find the hub. */}
     <link rel="hub" href="https://pubsubhubbub.appspot.com/" />
-    <link rel="alternate" type="application/rss+xml" title={`${meta.siteHandle} posts (ja)`} href="/rss.xml" />
-    <link rel="alternate" type="application/rss+xml" title={`${meta.siteHandle} posts (en)`} href="/en/rss.xml" />
-    <link rel="alternate" type="application/atom+xml" title={`${meta.siteHandle} posts (ja, Atom)`} href="/atom.xml" />
-    <link rel="alternate" type="application/atom+xml" title={`${meta.siteHandle} posts (en, Atom)`} href="/en/atom.xml" />
-    <link rel="alternate" type="application/feed+json" title={`${meta.siteHandle} posts (ja, JSON Feed)`} href="/feed.json" />
-    <link rel="alternate" type="application/feed+json" title={`${meta.siteHandle} posts (en, JSON Feed)`} href="/en/feed.json" />
+    {(['en', 'ja'] as const).map((locale) => (
+      <>
+        <link rel="alternate" type="application/rss+xml" title={`${meta.siteHandle} posts (${locale})`} href={getLocaleFileUrl(locale, '/rss.xml')} />
+        <link rel="alternate" type="application/atom+xml" title={`${meta.siteHandle} posts (${locale}, Atom)`} href={getLocaleFileUrl(locale, '/atom.xml')} />
+        <link rel="alternate" type="application/feed+json" title={`${meta.siteHandle} posts (${locale}, JSON Feed)`} href={getLocaleFileUrl(locale, '/feed.json')} />
+      </>
+    ))}
     <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
     <link rel="alternate" type="text/x-opml" title={`${meta.siteHandle} feeds (OPML)`} href="/feeds.opml" />
 
     <!-- Hreflang alternates so search engines understand the bilingual pair. -->
-    {lang === 'ja' && locales.includes('en') && (
+    {locales.map((locale) => (
       <link
         rel="alternate"
-        hreflang="en"
-        href={new URL(`/en${Astro.url.pathname === '/' ? '/' : Astro.url.pathname}`, Astro.site).toString()}
+        hreflang={locale}
+        href={new URL(getRelativeLocaleUrl(locale, localePath), Astro.site).toString()}
       />
-    )}
-    {lang === 'en' && locales.includes('ja') && (
+    ))}
+    {locales.includes('en') && (
       <link
         rel="alternate"
-        hreflang="ja"
-        href={new URL(Astro.url.pathname.replace(/^\/en(?=\/|$)/, '') || '/', Astro.site).toString()}
+        hreflang="x-default"
+        href={new URL(getRelativeLocaleUrl('en', localePath), Astro.site).toString()}
       />
     )}
 

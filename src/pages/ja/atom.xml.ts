@@ -1,5 +1,6 @@
 import type { APIContext } from 'astro';
 import { buildAtomFeedHandler } from '@/lib/page-builders/feed-atom';
 
-const handler = buildAtomFeedHandler('en');
+// JA posts Atom feed. EN twin lives at `src/pages/atom.xml.ts`.
+const handler = buildAtomFeedHandler('ja');
 export const GET = (ctx: APIContext) => handler(ctx);

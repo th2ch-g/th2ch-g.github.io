@@ -5,6 +5,7 @@ import {
   OG_BG_GRADIENT,
   OG_FONTS,
   OG_FONT_FAMILIES,
+  OG_HEADING_WEIGHT,
   OG_TITLE_COLOR,
   OG_PADDING,
   OG_BORDER_COLOR_LEFT,
@@ -74,22 +75,21 @@ export async function addOgChrome(
   // All elements left-anchored to `OG_PADDING`, vertically centered
   // against the icon's 80px height (or text height when iconPath is
   // omitted — profile.yaml may leave `icon.url` empty). Text rendered via
-  // canvaskit-wasm so credit and label share the title's Mona Sans Bold
+  // canvaskit-wasm so credit and label share the title's Mona Sans SemiBold
   // face. Pipe separator only drawn when a pageLabel is present.
   const PIPE_GAP = 16;
   const icon = opts.iconPath ? await Jimp.read(opts.iconPath) : undefined;
   icon?.resize({ w: CREDIT_ICON_SIZE, h: CREDIT_ICON_SIZE });
 
-  // Chrome row uses Bold to match the title's weight — same family,
-  // same Bold cut, just a smaller size for hierarchy.
+  // Credit and section label match the site's heading family and weight.
   const nameImg = await Jimp.read(
-    await renderText(opts.name, CREDIT_FONT_HEIGHT, 'Bold', OG_TITLE_COLOR),
+    await renderText(opts.name, CREDIT_FONT_HEIGHT, OG_HEADING_WEIGHT, OG_TITLE_COLOR),
   );
   const labelImg = opts.pageLabel
-    ? await Jimp.read(await renderText(opts.pageLabel, CREDIT_FONT_HEIGHT, 'Bold', OG_TITLE_COLOR))
+    ? await Jimp.read(await renderText(opts.pageLabel, CREDIT_FONT_HEIGHT, OG_HEADING_WEIGHT, OG_TITLE_COLOR))
     : undefined;
   const pipeImg = opts.pageLabel
-    ? await Jimp.read(await renderText('|', CREDIT_FONT_HEIGHT, 'Bold', OG_TITLE_COLOR))
+    ? await Jimp.read(await renderText('|', CREDIT_FONT_HEIGHT, OG_HEADING_WEIGHT, OG_TITLE_COLOR))
     : undefined;
 
   const rowLeft = OG_PADDING;
@@ -209,7 +209,7 @@ export async function addOgChrome(
 // CanvasKit + FontMgr singletons. We use canvaskit-wasm directly (rather
 // than jimp's BMFont print) for the bottom-row credit and section label
 // because jimp ships only Open Sans Regular bitmap fonts; rendering via
-// canvaskit lets us reuse the same Mona Sans Bold face that
+// canvaskit lets us reuse the same Mona Sans SemiBold face that
 // astro-og-canvas uses for the title, so all card text shares one
 // consistent typography.
 let _canvasKit: Awaited<ReturnType<typeof CanvasKitInit>> | undefined;
@@ -235,11 +235,11 @@ async function getOgFontMgr() {
 
 // Render a single line of text via canvaskit-wasm and return PNG bytes
 // of a transparent canvas sized to fit. Used for credit + label so they
-// pick up the proper Mona Sans Bold weight (jimp's BMFont can't).
+// pick up the proper Mona Sans SemiBold weight (jimp's BMFont can't).
 async function renderText(
   text: string,
   fontSize: number,
-  weight: 'Bold' | 'Normal',
+  weight: 'SemiBold' | 'Normal',
   color: RGB,
   italic = false,
 ): Promise<Buffer> {

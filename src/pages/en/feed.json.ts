@@ -1,5 +1,2 @@
-import type { APIContext } from 'astro';
-import { buildJsonFeedHandler } from '@/lib/page-builders/feed-json';
-
-const handler = buildJsonFeedHandler('en');
-export const GET = (ctx: APIContext) => handler(ctx);
+// Preserve existing feed and image URLs after moving English to the root.
+export { GET } from '@/pages/feed.json';

@@ -32,9 +32,9 @@ export const OG_BORDER_COLOR_LEFT: RGB = [74, 222, 128];
 export const OG_BORDER_COLOR_RIGHT: RGB = [121, 184, 255];
 export const OG_BORDER_WIDTH = 40;
 
-// Local TTF copies maintained by `scripts/build-fonts.mjs`. Both Regular
-// and Bold are loaded so that `font: { title: { weight: 'Bold' } }` resolves
-// to a real bold glyph set rather than synthesized faux-bold over Regular.
+// Match the site's 600-weight headings and 400-weight body text with real
+// static cuts. CanvasKit cannot select the site's variable WOFF2 weights
+// through astro-og-canvas's font API.
 // Noto Color Emoji is appended last so that astro-og-canvas's font-stack
 // fallback only consults it for codepoints that the CJK + Latin fonts
 // can't handle (regional-indicator flag pairs, pictographs, etc.).
@@ -42,9 +42,9 @@ export const OG_BORDER_WIDTH = 40;
 // when invoking image-route handlers.
 export const OG_FONTS = [
   './public/fonts/MonaSans-Regular.ttf',
-  './public/fonts/MonaSans-Bold.ttf',
+  './public/fonts/MonaSans-SemiBold.ttf',
   './public/fonts/NotoSansJP-Regular.ttf',
-  './public/fonts/NotoSansJP-Bold.ttf',
+  './public/fonts/NotoSansJP-SemiBold.ttf',
   './public/fonts/NotoColorEmoji.ttf',
 ];
 
@@ -57,6 +57,8 @@ export const OG_FONTS = [
 // is consulted, not the raw fonts list. Mona Sans matches the site's
 // primary face; Noto Sans JP supplies the Japanese glyphs.
 export const OG_FONT_FAMILIES = ['Mona Sans', 'Noto Sans JP', 'Noto Color Emoji'];
+export const OG_HEADING_WEIGHT = 'SemiBold';
+export const OG_BODY_WEIGHT = 'Normal';
 
 // Vertical padding inside the card body. Larger value pushes the title
 // further from the top edge — astro-og-canvas pins the paragraph at
@@ -116,8 +118,8 @@ export async function renderSectionOg(input: SectionOgInput): Promise<Response> 
       bgGradient: OG_BG_GRADIENT,
       padding: OG_PADDING,
       font: {
-        title: { color: OG_TITLE_COLOR, size: 96, weight: 'Bold', families: OG_FONT_FAMILIES },
-        description: { color: OG_DESC_COLOR, size: 32, weight: 'Bold', lineHeight: 1.4, families: OG_FONT_FAMILIES },
+        title: { color: OG_TITLE_COLOR, size: 96, weight: OG_HEADING_WEIGHT, families: OG_FONT_FAMILIES },
+        description: { color: OG_DESC_COLOR, size: 32, weight: OG_BODY_WEIGHT, lineHeight: 1.4, families: OG_FONT_FAMILIES },
       },
       fonts: OG_FONTS,
     })) as Buffer;

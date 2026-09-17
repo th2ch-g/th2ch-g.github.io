@@ -1,0 +1,14 @@
+---
+import PostDetailPage from '@/components/PostDetailPage.astro';
+import { buildPostsDetailPaths } from '@/lib/static-paths';
+
+// Astro requires `getStaticPaths` to be a top-level function declaration —
+// arrow-fn assigned to `const` is not picked up by its static analyzer
+// and yields `Astro.props === undefined` at render time.
+export async function getStaticPaths() {
+  return buildPostsDetailPaths('ja');
+}
+
+const { post } = Astro.props;
+---
+<PostDetailPage post={post} lang="ja" />

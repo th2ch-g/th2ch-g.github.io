@@ -1,5 +1,2 @@
-import type { APIRoute } from 'astro';
-import { renderSectionOg } from '@/lib/og-config';
-
-export const GET: APIRoute = () =>
-  renderSectionOg({ lang: 'en', title: 'Gallery', pageLabel: 'Gallery' });
+// Preserve existing feed and image URLs after moving English to the root.
+export { GET } from '@/pages/og/gallery.png';

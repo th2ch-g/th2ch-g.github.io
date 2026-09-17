@@ -1,14 +1,2 @@
-import type { APIRoute } from 'astro';
-import { getProfileMeta } from '@/lib/content';
-import { renderSectionOg } from '@/lib/og-config';
-
-// English mirror of `src/pages/og/default.png.ts`.
-export const GET: APIRoute = async () => {
-  const meta = await getProfileMeta('en');
-  return renderSectionOg({
-    lang: 'en',
-    title: meta.name,
-    description: meta.bio ?? '',
-    pageLabel: 'Home',
-  });
-};
+// Preserve existing feed and image URLs after moving English to the root.
+export { GET } from '@/pages/og/default.png';

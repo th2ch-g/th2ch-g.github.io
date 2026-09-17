@@ -19,8 +19,7 @@ let cache: Map<string, Citer[]> | undefined;
 
 function extractPostsSlugs(body: string): string[] {
   const out: string[] = [];
-  // Match `[label](/posts/foo)`, `[label](/posts/foo/)`, or the EN-prefixed
-  // form `(/en/posts/foo)`. We accept either `/...` (root-relative) so
+  // Match root, Japanese, and legacy English post URLs so
   // authors don't have to think about which locale they're linking to.
   // Strip fenced code blocks, inline code, and HTML comments before
   // matching so a `](/posts/...)` shown as a code *example* (or commented
@@ -30,7 +29,7 @@ function extractPostsSlugs(body: string): string[] {
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`]*`/g, '')
     .replace(/<!--[\s\S]*?-->/g, '');
-  const regex = /\]\((?:\/en)?\/posts\/([^)\s#?]+)/g;
+  const regex = /\]\((?:\/(?:en|ja))?\/posts\/([^)\s#?]+)/g;
   for (const m of prose.matchAll(regex)) {
     out.push(m[1].replace(/\/$/, ''));
   }

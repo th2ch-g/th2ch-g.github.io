@@ -1,6 +1,8 @@
 import type { APIContext, ImageMetadata } from 'astro';
 import { getPublishedByLang, localeSlug, sortByDateDesc } from '@/lib/content';
 import { requireSite } from '@/lib/site';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 
 // Image sitemap (https://developers.google.com/search/docs/crawling-indexing/sitemaps/image-sitemaps).
 // Lists every page URL alongside the images on that page so Google Image
@@ -20,8 +22,7 @@ export async function GET(context: APIContext) {
   const site = requireSite(context);
   const entries: Array<{ url: string; images: Array<{ url: string; title?: string; caption?: string }> }> = [];
 
-  for (const lang of ['ja', 'en'] as const) {
-    const langPrefix = lang === 'en' ? '/en' : '';
+  for (const lang of ['en', 'ja'] as const) {
 
     // Posts: the generated per-post OG card is the first-class image.
     // Sort by pubDate so same-day entries stay in a stable order across
@@ -29,9 +30,9 @@ export async function GET(context: APIContext) {
     const posts = sortByDateDesc(await getPublishedByLang('posts', lang), 'pubDate');
     for (const post of posts) {
       const slug = localeSlug(post.id);
-      const url = new URL(`${langPrefix}/posts/${slug}/`, site).toString();
+      const url = new URL(getRelativeLocaleUrl(lang, `/posts/${slug}/`), site).toString();
       const images = [{
-        url: new URL(`${langPrefix}/og/${slug}.png`, site).toString(),
+        url: new URL(getLocaleFileUrl(lang, `/og/${slug}.png`), site).toString(),
         title: post.data.title,
       }];
       entries.push({ url, images });
@@ -49,7 +50,7 @@ export async function GET(context: APIContext) {
     }));
     if (photoEntries.length > 0) {
       entries.push({
-        url: new URL(`${langPrefix}/gallery/`, site).toString(),
+        url: new URL(getRelativeLocaleUrl(lang, '/gallery/'), site).toString(),
         images: photoEntries,
       });
     }

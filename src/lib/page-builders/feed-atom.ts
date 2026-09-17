@@ -4,6 +4,8 @@ import { renderFeedHtml } from '@/lib/rss';
 import { buildPageMeta } from '@/lib/page-builders';
 import { requireSite } from '@/lib/site';
 import type { Lang } from '@/i18n/ui';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 
 // Five-entity escape: safe for both element text content and attribute
 // values, matching the escaper sitemap-images.xml.ts already uses.
@@ -22,13 +24,12 @@ function xmlEscape(s: string): string {
 export function buildAtomFeedHandler(lang: Lang) {
   const isEn = lang === 'en';
   const titleSuffix = isEn ? ' (en)' : '';
-  const localePrefix = isEn ? '/en' : '';
-  const selfPath = `${localePrefix}/atom.xml`;
+  const selfPath = getLocaleFileUrl(lang, '/atom.xml');
 
   return async function GET(context: APIContext) {
     const { profile, posts } = await buildPageMeta(lang);
     const site = requireSite(context);
-    const homeUrl = new URL(`${localePrefix}/`, site).toString();
+    const homeUrl = new URL(getRelativeLocaleUrl(lang, '/'), site).toString();
     const selfUrl = new URL(selfPath, site).toString();
     // The feed's `<updated>` is the most recent update across ALL entries
     // (RFC 4287 §4.2.15), not just the newest-by-pubDate post — a recently
@@ -45,7 +46,7 @@ export function buildAtomFeedHandler(lang: Lang) {
     const entryXml = posts
       .map((post) => {
         const url = new URL(
-          `${localePrefix}/posts/${localeSlug(post.id)}/`,
+          getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}/`),
           site,
         ).toString();
         const updated = (

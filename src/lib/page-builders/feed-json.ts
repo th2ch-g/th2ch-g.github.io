@@ -4,6 +4,8 @@ import { renderFeedHtml } from '@/lib/rss';
 import { buildPageMeta } from '@/lib/page-builders';
 import { requireSite } from '@/lib/site';
 import type { Lang } from '@/i18n/ui';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 
 // JSON Feed 1.1 (https://jsonfeed.org/version/1.1) sibling of the RSS
 // handler. Same items, JSON serialisation. Authored separately rather
@@ -13,8 +15,7 @@ export function buildJsonFeedHandler(lang: Lang) {
   const isEn = lang === 'en';
   const titleSuffix = isEn ? ' (en)' : '';
   const descSuffix = isEn ? ' (English)' : '';
-  const localePrefix = isEn ? '/en' : '';
-  const selfPath = `${localePrefix}/feed.json`;
+  const selfPath = getLocaleFileUrl(lang, '/feed.json');
 
   return async function GET(context: APIContext) {
     const { profile, posts } = await buildPageMeta(lang);
@@ -23,7 +24,7 @@ export function buildJsonFeedHandler(lang: Lang) {
       version: 'https://jsonfeed.org/version/1.1',
       title: `${profile.siteHandle} posts${titleSuffix}`,
       description: `Posts by ${profile.siteHandle}${descSuffix}`,
-      home_page_url: new URL(`${localePrefix}/`, site).toString(),
+      home_page_url: new URL(getRelativeLocaleUrl(lang, '/'), site).toString(),
       feed_url: new URL(selfPath, site).toString(),
       language: lang,
       ...(profile.icon ? { icon: new URL(profile.icon, site).toString() } : {}),
@@ -33,7 +34,7 @@ export function buildJsonFeedHandler(lang: Lang) {
       hubs: [{ type: 'WebSub', url: 'https://pubsubhubbub.appspot.com/' }],
       items: posts.map((post) => {
         const url = new URL(
-          `${localePrefix}/posts/${localeSlug(post.id)}/`,
+          getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}/`),
           site,
         ).toString();
         return {

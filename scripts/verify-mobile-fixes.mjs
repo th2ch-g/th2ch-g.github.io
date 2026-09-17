@@ -17,6 +17,50 @@ async function newLocalPage(viewport) {
   return page;
 }
 
+async function assertHomeLocales() {
+  const page = await newLocalPage({ width: 1280, height: 900 });
+  for (const [lang, path, other] of [['en', '/', '/ja/'], ['ja', '/ja/', '/']]) {
+    await page.goto(`${url}${path}`, { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-cv-actions] summary').waitFor();
+    assert.equal(await page.locator('html').getAttribute('lang'), lang);
+    assert.equal(await page.locator('main h1').count(), 1, 'Home must have one page heading');
+    assert.equal(await page.locator('.hero + #cv').count(), 1, 'CV does not follow the profile');
+    assert.equal(await page.locator('.cv-prose').getAttribute('data-cv-lang'), lang);
+    assert.equal(await page.locator('[data-post-row], .posts-section').count(), 0,
+      'Home still contains the recent posts list');
+    assert.equal(await page.locator('.cv-prose [data-cv-section="peer-reviewed"]').count(), 1,
+      'Home is missing its publication section');
+    assert.equal(await page.locator('.nav-list a[href$="/cv"]').count(), 0,
+      'Navigation still links to the removed CV page');
+    assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute('href')).pathname, path);
+    assert.equal(new URL(await page.locator('link[hreflang="en"]').getAttribute('href')).pathname, '/');
+    assert.equal(new URL(await page.locator('link[hreflang="ja"]').getAttribute('href')).pathname, '/ja/');
+    assert.equal(new URL(await page.locator('link[hreflang="x-default"]').getAttribute('href')).pathname, '/');
+    const previewUrl = new URL(await page.locator('meta[property="og:image"]').getAttribute('content'));
+    assert.equal(previewUrl.pathname, `${path}og/default.png`);
+    assert.match(previewUrl.searchParams.get('v'), /^[a-f0-9]{12}$/,
+      'Social preview URL does not include a renderer revision');
+    assert.equal(await page.locator('.lang-switch a:not([aria-current])').getAttribute('href'), other);
+    await page.locator('.lang-switch a:not([aria-current])').click();
+    await page.waitForURL(`${url}${other}`);
+  }
+
+  for (const [from, to] of [
+    ['/en/', '/'], ['/cv/', '/ja/#cv'], ['/en/cv/', '/#cv'],
+    ['/en/posts/', '/posts'], ['/en/contact/', '/contact'],
+    ['/en/posts/dotfiles-2026-summer/', '/posts/dotfiles-2026-summer'],
+  ]) {
+    const target = new URL(to, url);
+    await page.goto(`${url}${from}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForURL((location) =>
+      location.pathname.replace(/\/$/, '') + location.hash ===
+      target.pathname.replace(/\/$/, '') + target.hash,
+    );
+    await page.locator('main').waitFor();
+  }
+  await page.close();
+}
+
 async function assertHeadingAnchorClearsHeader(path) {
   const page = await newLocalPage({ width: 393, height: 852 });
   await page.goto(`${url}${path}`, { waitUntil: 'domcontentloaded' });
@@ -82,7 +126,7 @@ async function assertStableFirstPaint() {
       }
     }).observe({ type: 'layout-shift', buffered: true });
   });
-  for (const path of ['/', '/cv/']) {
+  for (const path of ['/', '/ja/']) {
     await page.goto(`${url}${path}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1000);
     const shift = await page.evaluate(() => globalThis.__layoutShiftTotal);
@@ -93,9 +137,10 @@ async function assertStableFirstPaint() {
 
 async function assertCvBibtexCopy() {
   const page = await newLocalPage({ width: 1280, height: 900 });
-  await page.goto(`${url}/cv/`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/`, { waitUntil: 'domcontentloaded' });
 
   const papers = page.locator('li.cv-has-bibtex');
+  await papers.first().waitFor();
   assert.ok(await papers.count(), 'CV has no per-paper BibTeX menus');
   const firstPaper = papers.first();
   const trigger = firstPaper.locator('summary.cv-copy-btn');
@@ -168,9 +213,11 @@ async function assertFirefoxTouchAutoplay() {
 }
 
 try {
+  await assertHomeLocales();
   await assertStableFirstPaint();
   await assertHeadingAnchorClearsHeader('/posts/dotfiles-2026-summer/');
-  await assertHeadingAnchorClearsHeader('/cv/');
+  await assertHeadingAnchorClearsHeader('/');
+  await assertHeadingAnchorClearsHeader('/ja/');
   await assertCvBibtexCopy();
   await assertFirefoxTouchAutoplay();
 
@@ -275,8 +322,8 @@ try {
   );
   assert.deepEqual(
     (await mobilePage.locator('.lang-switch a').allTextContents()).map((label) => label.trim()),
-    ['JA', 'EN'],
-    'Language switcher labels are not JA/EN',
+    ['EN', 'JA'],
+    'Language switcher labels are not EN/JA',
   );
 
   assert.equal(await mobilePage.locator('.hero img').count(), 0, 'Home still renders a profile image');
@@ -296,30 +343,13 @@ try {
   const mobileNavLabels = await mobilePage.locator('.nav-list a').allTextContents();
   assert.deepEqual(
     mobileNavLabels.map((label) => label.trim()),
-    ['Posts', 'CV', 'Gallery', 'Contact'],
+    ['Posts', 'Gallery', 'Contact'],
     'Mobile navigation order does not match the primary site sections',
   );
-  const homePostRows = mobilePage.locator('[data-post-row]');
-  const homePostCount = await homePostRows.count();
-  assert.ok(homePostCount > 0, 'Home does not show any posts');
-  assert.ok(homePostCount <= 7, `Home shows more than seven posts (${homePostCount})`);
-  const homePostTypography = await homePostRows.first().evaluate((row) => {
-    const title = row.querySelector('a');
-    const date = row.querySelector('time');
-    return {
-      root: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
-      title: title ? Number.parseFloat(getComputedStyle(title).fontSize) : 0,
-      date: date ? Number.parseFloat(getComputedStyle(date).fontSize) : 0,
-    };
-  });
-  assert.ok(
-    homePostTypography.title > homePostTypography.root,
-    'Home post titles are not larger than the base text',
-  );
-  assert.ok(
-    homePostTypography.date > homePostTypography.root * 0.9,
-    'Home post dates are not using the enlarged list treatment',
-  );
+  assert.equal(await mobilePage.locator('[data-post-row]').count(), 0,
+    'Mobile Home still contains posts');
+  assert.equal(await mobilePage.locator('.hero + #cv .cv-prose').count(), 1,
+    'Mobile Home does not contain the CV below the profile');
   await mobilePage.close();
 
   const listPage = await newLocalPage({ width: 393, height: 852 });
@@ -384,12 +414,12 @@ try {
 
   const desktopPage = await newLocalPage({ width: 1280, height: 900 });
   await desktopPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
-  const jaPostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
+  const rootPostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
     .map((title) => title.trim());
   const desktopNavLabels = await desktopPage.locator('.nav-list a').allTextContents();
   assert.deepEqual(
     desktopNavLabels.map((label) => label.trim()),
-    ['Posts', 'CV', 'Gallery', 'Contact'],
+    ['Posts', 'Gallery', 'Contact'],
     'Desktop navigation order does not match the primary site sections',
   );
   const desktopLayout = await desktopPage.locator('[data-post-row]').first().evaluate((row) => {
@@ -409,19 +439,19 @@ try {
   );
   assert.equal(desktopLayout.alignItems, 'baseline', 'Desktop post row is not baseline-aligned');
 
-  const jaFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
+  const rootFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
     .map((label) => label.trim())
     .filter((label) => label.endsWith('Policy'));
-  await desktopPage.goto(`${url}/en/posts/`, { waitUntil: 'networkidle' });
-  const enPostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
+  await desktopPage.goto(`${url}/ja/posts/`, { waitUntil: 'domcontentloaded' });
+  const japanesePostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
     .map((title) => title.trim());
-  assert.deepEqual(enPostTitles, jaPostTitles, 'JA and EN routes do not show the same posts');
-  const enFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
+  assert.deepEqual(japanesePostTitles, rootPostTitles, 'JA and EN routes do not show the same posts');
+  const japaneseFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
     .map((label) => label.trim())
     .filter((label) => label.endsWith('Policy'));
   assert.deepEqual(
-    enFooterPolicies,
-    jaFooterPolicies,
+    japaneseFooterPolicies,
+    rootFooterPolicies,
     'Footer policy links change order between JA and EN routes',
   );
   await desktopPage.close();

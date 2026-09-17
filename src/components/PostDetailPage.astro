@@ -14,6 +14,7 @@ import Breadcrumbs from '@/components/Breadcrumbs.astro';
 import { getAdjacentPosts, getSeriesPosts } from '@/lib/content';
 import { getBacklinks } from '@/lib/backlinks';
 import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 import { localeSlug, getPublishedByLang } from '@/lib/content';
 
 interface Props {
@@ -42,7 +43,7 @@ const otherHasPost = (
   await getPublishedByLang('posts', otherLang, { includeDevDrafts: true })
 ).some((p) => localeSlug(p.id) === slug);
 const availableLocales: Lang[] = otherHasPost ? ['ja', 'en'] : [lang];
-const ogImageUrl = lang === 'en' ? `/en/og/${slug}.png` : `/og/${slug}.png`;
+const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
 // Twitter widgets.js is ~50KB and ships a privacy-relevant cookie. Inject it
 // only when the post body actually contains an X / Twitter status URL that
 // `remark-twitter-embed` would promote into a `<blockquote class="twitter-tweet">`.

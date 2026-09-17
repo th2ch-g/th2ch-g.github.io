@@ -45,8 +45,8 @@ export default defineConfig({
   site,
   trailingSlash: 'ignore',
   i18n: {
-    defaultLocale: 'ja',
-    locales: ['ja', 'en'],
+    defaultLocale: 'en',
+    locales: ['en', 'ja'],
     routing: {
       prefixDefaultLocale: false,
       redirectToDefaultLocale: false,
@@ -55,14 +55,27 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
+  redirects: {
+    '/cv': '/ja/#cv',
+    '/en/cv': '/#cv',
+    '/en': '/',
+    '/en/posts': '/posts',
+    '/en/posts/[...slug]': '/posts/[...slug]',
+    '/en/posts/series/[name]': '/posts/series/[name]',
+    '/en/gallery': '/gallery',
+    '/en/contact': '/contact',
+    '/en/sitemap': '/sitemap',
+    '/en/[legal]': '/[legal]',
+  },
   integrations: [
     // Generates `/sitemap-index.xml` + per-locale shards. The i18n option
     // marks each URL with its `hreflang` and emits xhtml:link alternates
     // so search engines understand the ja/en bilingual structure.
     sitemap({
+      filter: (page) => !/^\/(?:en(?:\/|$)|cv\/?$)/.test(new URL(page).pathname),
       i18n: {
-        defaultLocale: 'ja',
-        locales: { ja: 'ja-JP', en: 'en-US' },
+        defaultLocale: 'en',
+        locales: { en: 'en-US', ja: 'ja-JP' },
       },
     }),
   ],

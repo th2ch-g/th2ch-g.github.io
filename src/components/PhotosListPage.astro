@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import Base from '@/layouts/Base.astro';
 import PhotoSlideshow from './PhotoSlideshow.astro';
 import { tUi, type Lang } from '@/i18n/ui';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -41,7 +42,7 @@ if (photos.length > 1) {
 }
 const slideshowImages = photos.map((p) => p.src);
 ---
-<Base lang={lang} title={tUi('nav.photos')} image={lang === 'en' ? '/en/og/gallery.png' : '/og/gallery.png'}>
+<Base lang={lang} title={tUi('nav.photos')} image={getLocaleFileUrl(lang, '/og/gallery.png')}>
   <h1 class="sr-only">{tUi('nav.photos')}</h1>
   {photos.length === 0 && <p class="muted">{tUi('list.empty')}</p>}
   {photos.length > 0 && <PhotoSlideshow images={slideshowImages} />}

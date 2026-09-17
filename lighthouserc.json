@@ -6,7 +6,7 @@
         "http://localhost/index.html",
         "http://localhost/posts/index.html",
         "http://localhost/gallery/index.html",
-        "http://localhost/cv/index.html"
+        "http://localhost/ja/index.html"
       ],
       "numberOfRuns": 1,
       "settings": {

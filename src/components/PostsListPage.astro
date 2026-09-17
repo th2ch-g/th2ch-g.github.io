@@ -3,6 +3,7 @@ import Base from '@/layouts/Base.astro';
 import PostArchiveList from './PostArchiveList.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import { getPublishedByLang, sortByDateDesc } from '@/lib/content';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -12,7 +13,7 @@ const posts = sortByDateDesc(
   'pubDate',
 );
 ---
-<Base lang={lang} title={tUi('nav.posts')} image={lang === 'en' ? '/en/og/posts.png' : '/og/posts.png'}>
+<Base lang={lang} title={tUi('nav.posts')} image={getLocaleFileUrl(lang, '/og/posts.png')}>
   <h1 class="sr-only">{tUi('nav.posts')}</h1>
   {posts.length === 0 ? (
     <p class="muted">{tUi('list.empty')}</p>

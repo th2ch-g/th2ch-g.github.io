@@ -10,7 +10,7 @@ const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const distDir = resolve(ROOT, 'dist');
 
 function postPaths() {
-  return ['', '/en'].flatMap((prefix) => {
+  return ['', '/ja'].flatMap((prefix) => {
     try {
       return readdirSync(resolve(distDir, prefix.slice(1), 'posts'), { withFileTypes: true })
         .filter((entry) => entry.isDirectory())
@@ -38,11 +38,9 @@ const { url: base, close } = await startStaticServer(distDir);
 // by content.
 const pages = [
   '/',
-  '/en/',
-  '/cv',
-  '/en/cv',
+  '/ja/',
   '/posts',
-  '/en/posts',
+  '/ja/posts',
   ...postPaths(),
   '/gallery',
   '/contact',

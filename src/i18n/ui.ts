@@ -2,8 +2,8 @@
 // Keep locale-specific prose in content collections or profile metadata.
 
 export const languages = {
-  ja: 'JA',
   en: 'EN',
+  ja: 'JA',
 } as const;
 
 export type Lang = keyof typeof languages;
@@ -37,7 +37,6 @@ export const ui = {
     'webmention.title': 'Mentions',
     'webmention.empty': 'No mentions yet.',
     'webmention.send': 'Send a webmention to this post',
-    'home.see.all': 'See all',
     'list.empty': 'Nothing here yet.',
     'posts.published': 'Published',
     'posts.updated': 'Updated',

@@ -1,22 +1,13 @@
 ---
 import Base from '@/layouts/Base.astro';
-import PostArchiveList from './PostArchiveList.astro';
-import { tUi, type Lang } from '@/i18n/ui';
-import {
-  getProfileMeta,
-  getPublishedByLang,
-  sortByDateDesc,
-} from '@/lib/content';
-import { getRelativeLocaleUrl } from 'astro:i18n';
+import CVSection from './CVSection.astro';
+import type { Lang } from '@/i18n/ui';
+import { getProfileMeta } from '@/lib/content';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 
 const meta = await getProfileMeta(lang);
-const recentPosts = sortByDateDesc(
-  await getPublishedByLang('posts', lang),
-  'pubDate',
-).slice(0, 7);
 ---
 {/* Home page is titled with the site brand (meta.name), not "Home": this
     collapses `documentTitle` to just the brand and makes og:title /
@@ -30,18 +21,7 @@ const recentPosts = sortByDateDesc(
     </div>
   </section>
 
-  {recentPosts.length > 0 && (
-    <section class="posts-section">
-      <h2>{tUi('nav.posts')}</h2>
-      <PostArchiveList posts={recentPosts} lang={lang} yearHeadingLevel="h3" size="large" />
-      <p class="see-all">
-        <a class="btn btn-sm" href={getRelativeLocaleUrl(lang, '/posts')}>
-          {tUi('home.see.all')}
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-      </p>
-    </section>
-  )}
+  <CVSection lang={lang} />
 </Base>
 
 <style>
@@ -50,7 +30,7 @@ const recentPosts = sortByDateDesc(
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     padding: 1.5rem 0 2rem;
     border-bottom: 1px solid var(--color-border);
   }
@@ -66,36 +46,5 @@ const recentPosts = sortByDateDesc(
     font-size: 1.05rem;
     color: var(--color-muted);
     margin: 0;
-  }
-  .posts-section > h2 {
-    font-size: 1.25rem;
-    margin-top: 0;
-    border: 0;
-    padding-bottom: 0;
-  }
-  .see-all { margin-top: 1rem; text-align: right; }
-  .see-all a {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 2rem;
-    padding: 0.35rem 0.8rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-field);
-    background: var(--color-button);
-    color: var(--color-fg);
-    font-size: 0.875rem;
-    font-weight: 500;
-    line-height: 1.25;
-    box-shadow: var(--shadow-soft);
-    transition: background-color 160ms ease, border-color 160ms ease;
-  }
-  .see-all a:hover {
-    background: var(--color-hover);
-    border-color: var(--color-muted);
-    text-decoration: none;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .see-all a { transition: none; }
   }
 </style>

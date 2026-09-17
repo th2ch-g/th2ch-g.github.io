@@ -10,7 +10,7 @@ const { lang } = Astro.props;
 const homeUrl = getRelativeLocaleUrl(lang, '/');
 const postsUrl = getRelativeLocaleUrl(lang, '/posts');
 const galleryUrl = getRelativeLocaleUrl(lang, '/gallery');
-const cvUrl = getRelativeLocaleUrl(lang, '/cv');
+const cvUrl = `${homeUrl}#cv`;
 ---
 <dialog class="shortcuts-dialog" data-shortcuts-dialog aria-label={tUi('shortcuts.title')}>
   <div class="shortcuts-shell modal-box">

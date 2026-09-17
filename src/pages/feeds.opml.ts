@@ -1,24 +1,22 @@
 import type { APIContext } from 'astro';
 import { getProfileMeta } from '@/lib/content';
 import { requireSite } from '@/lib/site';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 
 // OPML feed export — a portable subscription bundle that RSS clients can
 // import to add the site-wide feeds at once.
 export async function GET(context: APIContext) {
   const site = requireSite(context).toString().replace(/\/$/, '');
-  // OPML title and feed labels read in any locale, so source the site
-  // brand from JA profile (siteHandle is locale-independent).
-  const { siteHandle } = await getProfileMeta('ja');
+  const { siteHandle } = await getProfileMeta('en');
   // OPML's `type="rss"` is the conventional value for both RSS and Atom
   // feeds; readers sniff the actual content type from the response. JSON
   // Feed has no widely-deployed OPML type, so it's omitted here and
   // remains discoverable from the page-level <link rel="alternate">.
-  const feeds = [
-    { type: 'rss', title: `${siteHandle} posts (ja)`, url: `${site}/rss.xml`, html: `${site}/posts` },
-    { type: 'rss', title: `${siteHandle} posts (en)`, url: `${site}/en/rss.xml`, html: `${site}/en/posts` },
-    { type: 'rss', title: `${siteHandle} posts (ja, Atom)`, url: `${site}/atom.xml`, html: `${site}/posts` },
-    { type: 'rss', title: `${siteHandle} posts (en, Atom)`, url: `${site}/en/atom.xml`, html: `${site}/en/posts` },
-  ];
+  const feeds = (['en', 'ja'] as const).flatMap((lang) => [
+    { type: 'rss', title: `${siteHandle} posts (${lang})`, url: `${site}${getLocaleFileUrl(lang, '/rss.xml')}`, html: `${site}${getRelativeLocaleUrl(lang, '/posts')}` },
+    { type: 'rss', title: `${siteHandle} posts (${lang}, Atom)`, url: `${site}${getLocaleFileUrl(lang, '/atom.xml')}`, html: `${site}${getRelativeLocaleUrl(lang, '/posts')}` },
+  ]);
 
   const escape = (s: string) =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');

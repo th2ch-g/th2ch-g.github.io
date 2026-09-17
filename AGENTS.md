@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack
 
-Astro 6 + TypeScript (strict), Markdown content collections, Pagefind for search, Playwright (headless Chromium) for CV PDF generation, jimp + canvaskit-wasm for OG cards, KaTeX + Mermaid + custom remark plugins. No test framework. Path alias: `@/*` → `src/*`. Node 22 in CI. Zod schemas import `z` from `astro/zod` (the `astro:content` re-export was deprecated in Astro 6).
+Astro + TypeScript (strict), Markdown content collections, Pagefind for search, Playwright for browser checks, jimp + canvaskit-wasm for OG cards, KaTeX + Mermaid + custom remark plugins. No test framework. Path alias: `@/*` → `src/*`. Node 22 in CI. Zod schemas import `z` from `astro/zod` (the `astro:content` re-export was deprecated in Astro 6).
 
 ## Common commands
 
 ```bash
 npm run dev          # astro dev (port 4321) — predev runs build-icon + build-fonts + build-qr
-npm run build        # astro build → inject-sitemap-xsl → pagefind --site dist → CV PDF
+npm run build        # astro build → inject-sitemap-xsl → pagefind --site dist
 npm run preview      # serve dist/
 npm run check        # astro check (TypeScript on .astro/.ts/.mts)
 npm run check:css    # custom CSS sanity check (scripts/check-css.mjs)
@@ -27,13 +27,14 @@ Docker: `docker compose up dev` (HMR on 4321) or `up prod` (nginx on 8080).
 
 ## Architecture
 
-### Bilingual routing (ja default, en under `/en/`)
+### Bilingual routing (en default, ja under `/ja/`)
 
 `astro.config.mjs` sets `prefixDefaultLocale: false`, so:
-- Japanese pages live at `/`, `/posts/`, `/cv`, etc., served from `src/pages/*.astro`.
-- English pages live at `/en/`, `/en/posts/`, `/en/cv`, served from `src/pages/en/*.astro` — these are **manually mirrored thin wrappers** that import the same component and pass `lang="en"`.
+- English pages live at `/`, `/posts/`, etc., served from `src/pages/*.astro`.
+- Japanese pages live at `/ja/`, `/ja/posts/`, etc., served from `src/pages/ja/*.astro` — these are **manually mirrored thin wrappers** that import the same component and pass `lang="ja"`.
+- Home renders the profile followed by `CVSection.astro`; there is no standalone CV page or recent-posts section on Home. The old `/cv` and `/en/cv` pages redirect to the matching Home CV section. Legacy `/en/` pages redirect to English root routes; old feed and image endpoints remain as compatibility aliases.
 
-When adding a page, create both: `src/pages/foo.astro` and `src/pages/en/foo.astro`. Shared rendering goes in `src/components/FooPage.astro`.
+When adding a page, create both: `src/pages/foo.astro` and `src/pages/ja/foo.astro`. Shared rendering goes in `src/components/FooPage.astro`. Use `getRelativeLocaleUrl` for page links and `getLocaleFileUrl` for feed/OG file paths; the latter removes Astro's directory-style trailing slash.
 
 UI strings are English-only and live in `src/i18n/ui.ts`; use `tUi(key)` for all visible and accessible interface labels in both routes. `lang` selects content, routes, document language, and locale metadata only. Keep localized prose in content collections or `profile.yaml`, not in the UI dictionary. Render grouped post-list dates as `MM-DD` beneath an ISO year heading, and standalone component dates as `YYYY-MM-DD`.
 
@@ -41,10 +42,10 @@ UI strings are English-only and live in `src/i18n/ui.ts`; use `tUi(key)` for all
 
 Defined in `src/content.config.ts`. Four collections:
 
-- `cv` — `src/content/cv/{ja,en}.md`. Frontmatter carries `orcid` (the iD the `orcid-cv-sync` skill pulls from; both locales must declare the same one) plus optional `github` / `kaggle` / `huggingface` URLs rendered in the CV header. Funding / publication / presentation lists are wrapped in `<!-- cv:section <kind> -->` … `<!-- /cv:section -->` markers, `kind` ∈ `funding` / `peer-reviewed` / `preprints` / `presentations`. Those markers are the **only** contract for "which list is what": `remark-cv-sections` turns them into `data-cv-section` attributes that `CVPage.astro` reads, and the sync script inserts new entries right after the matching start marker. Heading text is free-form — renaming or translating a heading changes nothing.
-- `legal` — `src/content/legal/{ja,en}/<slug>.md` with `title` / `description` / `updatedDate` frontmatter. The slug after the locale becomes the URL (`/<slug>` and `/en/<slug>`), so keep it short and stable.
+- `cv` — `src/content/cv/{ja,en}.md`. Frontmatter carries `orcid` (the iD the `orcid-cv-sync` skill pulls from; both locales must declare the same one) plus optional `github` / `kaggle` / `huggingface` URLs rendered in the CV header. Funding / publication / presentation lists are wrapped in `<!-- cv:section <kind> -->` … `<!-- /cv:section -->` markers, `kind` ∈ `funding` / `peer-reviewed` / `preprints` / `presentations`. Those markers are the **only** contract for "which list is what": `remark-cv-sections` turns them into `data-cv-section` attributes that `CVSection.astro` reads, and the sync script inserts new entries right after the matching start marker. Heading text is free-form — renaming or translating a heading changes nothing.
+- `legal` — `src/content/legal/{ja,en}/<slug>.md` with `title` / `description` / `updatedDate` frontmatter. The slug after the locale becomes the URL (`/<slug>` and `/ja/<slug>`), so keep it short and stable.
 - `profileMeta` — single file `src/content/profile.yaml`. Per-locale fields use `{ ja, en }` sub-objects; shared values stay flat. Read via `getProfileMeta(lang)` (in `src/lib/content.ts`), which flattens to a per-locale plain object. Throws if the file is missing — fail loudly at build time rather than degrade silently.
-- `posts` — shared Japanese content under `src/content/posts/<slug>.md`, with optional co-located images. The same entries render at `/posts/` and `/en/posts/`; route locale changes interface chrome and URL prefixes only. `entry.id` is the slug directly.
+- `posts` — shared Japanese content under `src/content/posts/<slug>.md`, with optional co-located images. The same entries render at `/posts/` and `/ja/posts/`; route locale changes interface chrome and URL prefixes only. `entry.id` is the slug directly.
 
 The gallery at `/gallery` is **not** a collection — loose images under `src/content/gallery/` are loaded via `import.meta.glob` from `PhotosListPage.astro`.
 
@@ -63,9 +64,9 @@ Each page's `getStaticPaths` is evaluated independently by Astro and **must be a
 
 `prebuild` additionally runs `sync-citation-counts.mjs` + `sync-bibtex.mjs`, which refresh `src/data/{citations,bibtex}.json` from CrossRef. **Commit these JSON files** — they are fail-soft snapshots (the scripts preserve existing per-DOI values on fetch errors), so a missing committed snapshot would leave CV cited-by badges and BibTeX buttons empty during a CrossRef outage or initial fork build.
 
-`npm run build` then runs `astro build`, `scripts/inject-sitemap-xsl.mjs` (post-processes the generated sitemap to reference `public/sitemap.xsl` for human-readable rendering), `pagefind --site dist` (search index), and `scripts/build-cv-pdf.mjs` (Playwright spins up a static server, prints `/cv` and `/en/cv` to `dist/cv.pdf` and `dist/en/cv.pdf`). The CV PDF step **fails soft** — if Playwright is missing or Chromium crashes, the build still succeeds.
+`npm run build` then runs `astro build`, `scripts/inject-sitemap-xsl.mjs` (post-processes the generated sitemap to reference `public/sitemap.xsl` for human-readable rendering), and `pagefind --site dist` (search index). Home's CV supports browser printing and copy/BibTeX actions; there is no separate PDF generation step.
 
-OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm.
+OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm. `og-config.ts` uses Mona Sans with 600-weight headings and 400-weight descriptions, matching site typography, with Noto Sans JP and emoji fallbacks. `og-version.ts` gives preview URLs a renderer/font-source hash so social crawlers can fetch updated images.
 
 ### Markdown plumbing
 
@@ -111,4 +112,4 @@ All three are auto-discoverable; prefer them over hand-rolled equivalents.
 
 ## Deployment
 
-GitHub Pages on push to `main` (`.github/workflows/deploy.yml`). The `site` field in `astro.config.mjs` is `https://th2ch-g.github.io` — this is a User/Org Page, so no base path. The deploy job caches Playwright browsers across runs; CV PDF generation is in the build step, not deploy.
+GitHub Pages on push to `main` (`.github/workflows/deploy.yml`). The deployment URL is derived from `profile.yaml`. The deploy job caches Playwright browsers across runs and validates the built pages before publishing.

@@ -30,10 +30,10 @@ const TARGETS = [
   // Match the site's Mona Sans face, with static cuts for CanvasKit.
   // Latin fonts are smaller than the full Japanese and emoji fonts.
   { family: 'Mona Sans', weight: 400, file: 'MonaSans-Regular.ttf', minBytes: 50_000 },
-  { family: 'Mona Sans', weight: 700, file: 'MonaSans-Bold.ttf', minBytes: 50_000 },
+  { family: 'Mona Sans', weight: 600, file: 'MonaSans-SemiBold.ttf', minBytes: 50_000 },
   // Portable Japanese fallback for environments without system CJK fonts.
   { family: 'Noto Sans JP', weight: 400, file: 'NotoSansJP-Regular.ttf' },
-  { family: 'Noto Sans JP', weight: 700, file: 'NotoSansJP-Bold.ttf' },
+  { family: 'Noto Sans JP', weight: 600, file: 'NotoSansJP-SemiBold.ttf' },
   // Noto Color Emoji ships only weight 400 and uses COLRv1 vector glyphs,
   // which canvaskit-wasm (Skia) supports. Last in the stack so it's
   // consulted only for codepoints the JP fonts can't handle.

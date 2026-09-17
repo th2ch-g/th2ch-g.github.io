@@ -5,18 +5,18 @@ import { tUi } from '@/i18n/ui';
 // GitHub Pages serves a single `/404.html` regardless of the requested
 // content locale. The interface stays English and offers both content homes.
 //
-// availableLocales={['ja']}: there is no /en/404 route (GitHub Pages only
+// availableLocales={['en']}: there is no /ja/404 route (GitHub Pages only
 // serves the root 404.html), so the language switcher and hreflang must NOT
-// advertise /en/404 — it would be a dead link. The explicit links below
+// advertise /ja/404 — it would be a dead link. The explicit links below
 // still expose both content locales.
 ---
-<Base lang="ja" title="404 — Not Found" availableLocales={['ja']}>
+<Base lang="en" title="404 — Not Found" availableLocales={['en']}>
   <h1 class="big-404">404</h1>
   <section>
     <h2>{tUi('404.title')}</h2>
     <p>{tUi('404.message')}</p>
-    <p><a href="/">{tUi('404.home.ja')} →</a></p>
-    <p><a href="/en/">{tUi('404.home.en')} →</a></p>
+    <p><a href="/">{tUi('404.home.en')} →</a></p>
+    <p><a href="/ja/">{tUi('404.home.ja')} →</a></p>
   </section>
 </Base>
 

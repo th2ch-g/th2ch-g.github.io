@@ -1,5 +1,4 @@
 ---
-import Base from '@/layouts/Base.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import { getCv } from '@/lib/content';
 import { allCitations } from '@/lib/citations';
@@ -25,12 +24,10 @@ const cvLinks = [
     : undefined,
 ].filter((link): link is { label: string; url: string } => Boolean(link));
 ---
-<Base lang={lang} title={tUi('nav.cv')} image={lang === 'en' ? '/en/og/cv.png' : '/og/cv.png'}>
-  <div class="cv-layout">
+  <section id="cv" class="cv-layout" aria-label={tUi('nav.cv')}>
     <div class="cv-content">
       <div class="cv-header">
-        <h1 class="sr-only">{tUi('nav.cv')}</h1>
-        {/* Page-level toolbar. Copy-all and .bib actions are collapsed into
+        {/* CV toolbar. Copy-all and .bib actions are collapsed into
             one disclosure menu built client-side by the script below — the
             same affordance as the per-section copy menus. */}
         <div
@@ -71,8 +68,7 @@ const cvLinks = [
         data-item-text-label={tUi('cv.copy.item.text')}
       ><Content /></div>
     </div>
-  </div>
-</Base>
+  </section>
 
 <script>
   import { onReady } from '@/lib/dom-ready';
@@ -647,6 +643,7 @@ const cvLinks = [
   }
   .cv-layout {
     margin-top: 0;
+    scroll-margin-top: 5rem;
   }
   .cv-header {
     display: flex;
@@ -657,7 +654,6 @@ const cvLinks = [
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
   }
-  .cv-header h1 { margin: 0; }
   .cv-header-actions {
     display: flex;
     align-items: center;

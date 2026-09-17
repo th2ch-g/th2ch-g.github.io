@@ -5,17 +5,15 @@ import { renderFeedHtml, feedWebSubLinks, FEED_XMLNS } from '@/lib/rss';
 import { buildPageMeta } from '@/lib/page-builders';
 import { requireSite } from '@/lib/site';
 import type { Lang } from '@/i18n/ui';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getLocaleFileUrl } from '@/lib/locale-url';
 
-// Build the per-locale posts RSS handler. Both `pages/rss.xml.ts` (ja)
-// and `pages/en/rss.xml.ts` (en) reduce to a single import + handler
-// re-export. Title/description suffix and the `/en/` URL prefix are the
-// only locale-derived bits; the rest of the feed payload is identical.
+// Build the posts RSS handler with URLs from the configured locale routing.
 export function buildPostsRssHandler(lang: Lang) {
   const isEn = lang === 'en';
   const titleSuffix = isEn ? ' (en)' : '';
   const descSuffix = isEn ? ' (English)' : '';
-  const localePrefix = isEn ? '/en' : '';
-  const selfPath = `${localePrefix}/rss.xml`;
+  const selfPath = getLocaleFileUrl(lang, '/rss.xml');
 
   return async function GET(context: APIContext) {
     const { profile, posts } = await buildPageMeta(lang);
@@ -24,7 +22,7 @@ export function buildPostsRssHandler(lang: Lang) {
     return rss({
       title: `${profile.siteHandle} posts${titleSuffix}`,
       description: `Posts by ${profile.siteHandle}${descSuffix}`,
-      site,
+      site: new URL(getRelativeLocaleUrl(lang, '/'), site),
       xmlns: FEED_XMLNS,
       customData: feedWebSubLinks(selfUrl),
       items: posts.map((post) => ({
@@ -34,7 +32,7 @@ export function buildPostsRssHandler(lang: Lang) {
         // Absolute URL so RSS readers that don't normalize against the
         // channel `<link>` still resolve correctly. See `pages/rss.xml.ts`
         // for the original rationale.
-        link: new URL(`${localePrefix}/posts/${localeSlug(post.id)}/`, site).toString(),
+        link: new URL(getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}/`), site).toString(),
         content: renderFeedHtml(post.body ?? ''),
       })),
     });
