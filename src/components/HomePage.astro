@@ -26,8 +26,8 @@ const recentPosts = sortByDateDesc(
   <section class="hero">
     <div class="hero-head">
       <h1>{meta.name}</h1>
+      {meta.bio && <p class="bio">{meta.bio}</p>}
     </div>
-    {meta.bio && <p class="bio">{meta.bio}</p>}
   </section>
 
   {recentPosts.length > 0 && (
@@ -54,7 +54,14 @@ const recentPosts = sortByDateDesc(
     padding: 1.5rem 0 2rem;
     border-bottom: 1px solid var(--color-border);
   }
-  .hero-head > h1 { margin: 0 0 0.5rem; }
+  .hero-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .hero-head > h1 { margin: 0; }
   .bio {
     font-size: 1.05rem;
     color: var(--color-muted);

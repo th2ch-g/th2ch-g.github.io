@@ -1,4 +1,4 @@
-/* Shared GitHub-inspired surfaces and system typography for both themes. */
+/* Shared GitHub-inspired surfaces and typography for both themes. */
 :root {
   --color-bg: var(--color-base-100);
   --color-fg: var(--color-base-content);
@@ -13,7 +13,7 @@
   --color-nav-marker: #fd8c73;
   --color-warn: var(--color-warning);
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
+    "Mona Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
     Arial, "Hiragino Sans", "Yu Gothic UI", sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji";
   --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
