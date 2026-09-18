@@ -262,6 +262,20 @@ const cvLinks = [
        keeps the same line breaks from the first paint. */
     padding-right: 3.5rem;
   }
+  /* Draw presenter marks independently of platform-specific symbol fonts.
+     Keep the original character in the DOM for selection and copying. */
+  .cv-prose :global(.cv-presenter-marker) {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 0.65em;
+    height: 0.65em;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    vertical-align: 0.05em;
+    overflow: hidden;
+    white-space: nowrap;
+    text-indent: 100%;
+  }
   /* WCAG 2.4.4 / axe `link-in-text-block`: publication entries embed DOI
      links inside the citation prose, so color alone is not enough to
      distinguish them. Underline the in-list anchors. */
