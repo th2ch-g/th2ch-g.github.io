@@ -66,6 +66,8 @@ const { items } = Astro.props;
     color: var(--color-accent);
     text-decoration: none;
   }
-  .breadcrumb-nav a:hover { text-decoration: underline; }
+  @media (hover: hover) {
+    .breadcrumb-nav a:hover { text-decoration: underline 1px; }
+  }
   .breadcrumb-nav [aria-current="page"] { color: var(--color-fg); font-weight: 500; }
 </style>

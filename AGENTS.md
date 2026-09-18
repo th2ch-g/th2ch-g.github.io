@@ -15,7 +15,7 @@ npm run preview      # serve dist/
 npm run check        # astro check (TypeScript on .astro/.ts/.mts)
 npm run check:css    # custom CSS sanity check (scripts/check-css.mjs)
 npm run check:security # reject unsafe link-card URL targets
-npm run check:mobile # Playwright layout checks against an existing dist/
+npm run check:mobile # All built pages: Chromium/Firefox/WebKit touch, 320/393/430/852px, light/dark, mobile axe
 npm run check:interactions # Chromium/Firefox clipboard, search, keyboard, print, and theme checks
 npm run build-assets # rebuild public/icon.png + public/fonts/ + public/qr.png
 npm run sync-citations # refresh src/data/citations.json from CrossRef
@@ -97,6 +97,7 @@ Reading-time: English uses the `reading-time` package; Japanese uses a char-coun
 5. **Image service is `passthroughImageService()`** to avoid sharp's native deps in CI. Don't switch to the default service without first confirming CI compatibility.
 6. **`profile.yaml` is the source of truth for site identity** (name, icon, bio). The icon URL is also consumed by `build-icon.mjs` at build time — changing it requires a rebuild before the new icon appears. Profile links live in the bilingual CV frontmatter; ORCID publication and funding sync read the same CV frontmatter's `orcid` field.
 7. **Never put an HTML comment on its own line between CV list items.** CommonMark ends the list at the comment and starts a new one, so every entry re-renders as "1." on the page and in the PDF. `cv:section` markers therefore wrap a list from outside; per-entry metadata must use a trailing inline comment or an indented continuation line (that's also why the sync script's missing-author placeholder is plain `[authors — TODO]` text).
+8. **Validate mobile behavior for visual and interaction changes.** After building, run `npm run check:mobile` with all three Playwright engines installed. Cover every rendered page in both themes, compact/regular/wide/landscape layouts, and touch navigation, search, copy, theme, locale, and gallery controls. A resized desktop viewport alone is insufficient; report emulation separately from physical-device testing.
 
 ## Editing policy
 

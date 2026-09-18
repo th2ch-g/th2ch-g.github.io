@@ -278,8 +278,10 @@
   line-height: 1.4;
   text-decoration: none;
 }
-.gh-permalink-header:hover .gh-permalink-path {
-  text-decoration: underline;
+@media (hover: hover) {
+  .gh-permalink-header:hover .gh-permalink-path {
+    text-decoration: underline 1px;
+  }
 }
 .gh-permalink-icon {
   flex: none;
@@ -354,8 +356,10 @@
   font-size: 0.8rem;
   text-decoration: none;
 }
-.gh-permalink-more:hover {
-  text-decoration: underline;
+@media (hover: hover) {
+  .gh-permalink-more:hover {
+    text-decoration: underline 1px;
+  }
 }
 
 /* Heading anchor links injected by rehype-autolink-headings. The `#` glyph

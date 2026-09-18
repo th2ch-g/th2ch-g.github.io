@@ -61,7 +61,10 @@ const { series, posts, currentId, lang } = Astro.props;
     margin-left: 0.4rem;
     text-decoration: none;
   }
-  .series-name:hover { color: var(--color-accent); text-decoration: underline; }
+  .series-name:hover { color: var(--color-accent); }
+  @media (hover: hover) {
+    .series-name:hover { text-decoration: underline 1px; }
+  }
   .series-list {
     list-style: none;
     padding: 0;

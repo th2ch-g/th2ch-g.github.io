@@ -24,7 +24,7 @@
     "check:interactions": "node scripts/check-interactions.mjs",
     "check:css": "node scripts/check-css.mjs",
     "check:lighthouse": "lhci autorun --config=./lighthouserc.json",
-    "check:mobile": "node scripts/verify-mobile-fixes.mjs",
+    "check:mobile": "node scripts/verify-mobile-fixes.mjs && node scripts/check-mobile-pages.mjs",
     "check:security": "node scripts/check-public-http.mjs",
     "sync-citations": "node scripts/sync-citation-counts.mjs",
     "sync-bibtex": "node scripts/sync-bibtex.mjs"

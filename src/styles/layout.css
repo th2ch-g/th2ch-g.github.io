@@ -36,7 +36,11 @@ a {
 }
 a:hover {
   color: var(--color-accent-hover);
-  text-decoration: underline;
+}
+/* Touch browsers can retain :hover after a tap. Only mouse-like pointers
+   add hover underlines; inline prose links retain their permanent cue. */
+@media (hover: hover) {
+  a:hover { text-decoration: underline 1px; }
 }
 
 main {
