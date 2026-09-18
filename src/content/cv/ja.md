@@ -54,6 +54,15 @@ huggingface: https://huggingface.co/wasarou
    [第38回分子シミュレーション討論会](https://sympo.mol-sim.jp/mssj38/), アクリエひめじ（兵庫県姫路市）, 2024年12月2–4日.
 
 ### 口頭発表
+
+1. <span class="cv-presenter-marker">◯</span> **松岡佑真**, **堂浦智裕**, **植田誉志史**, **Tran Phuoc Duy**, **浅田秀基**, **大松陽輝**, **<u>堀立樹</u>**, **岩田想**, **北尾彰朗**, **高橋重成**, **清中茂樹**.
+   「[既知承認薬の治療ポテンシャルを向上させる新たなGPCRケモジェネティクス戦略](https://pub.confit.atlas.jp/ja/event/biosympo2026/presentation/3A-1-01)」
+   [第20回バイオ関連化学シンポジウム](https://pub.confit.atlas.jp/ja/event/biosympo2026), 東北大学青葉山東キャンパス（宮城県仙台市）, 2026年9月10–12日.
+
+1. <span class="cv-presenter-marker">◯</span> **松岡佑真**, **井上始**, **<u>堀立樹</u>**, **Tran Phuoc Duy**, **北尾彰朗**, **堂浦智裕**, **清中茂樹**.
+   「[標的GPCR生理機能をオフターゲット・フリーに解析可能な新たなケモジェネティクス戦略](https://pub.confit.atlas.jp/ja/event/biosympo2025/session/3B05-07)」
+   [第19回バイオ関連化学シンポジウム](https://pub.confit.atlas.jp/ja/event/biosympo2025), 京都大学桂キャンパス（京都府京都市）, 2025年9月2–4日.
+
 1. <span class="cv-presenter-marker">◯</span> **田中裕之**, **<u>堀立樹</u>**, **山本祥平**, **豊田敦**, **矢野健太郎**, **山根京子**, **伊藤武彦**.
    「[ワサビゲノム解読の現状](https://jsbreeding.jp/meeting/143/pdf/143program.pdf)」
    [日本育種学会第143回講演会](https://jsbreeding.jp/meeting/143/), 静岡大学, 2023年3月17–18日.

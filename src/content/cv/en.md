@@ -56,6 +56,15 @@ huggingface: https://huggingface.co/wasarou
    [The 38th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj38/), Acrie Himeji (Himeji, Hyogo, Japan), December 2-4, 2024.
 
 ### Oral
+
+1. <span class="cv-presenter-marker">◯</span> **Yuma Matsuoka**, **Tomohiro Doura**, **Yoshifumi Ueda**, **Duy Phuoc Tran**, **Hideki Asada**, **Haruki Omatsu**, **<u>Tatsuki Hori</u>**, **So Iwata**, **Akio Kitao**, **Nobuaki Takahashi**, **Shigeki Kiyonaka**.
+   "[A New GPCR Chemogenetic Strategy to Enhance the Therapeutic Potential of Approved Drugs](https://pub.confit.atlas.jp/ja/event/biosympo2026/presentation/3A-1-01)"
+   [The 20th Symposium on Bio-Related Chemistry](https://pub.confit.atlas.jp/ja/event/biosympo2026), Tohoku University, Aobayama East Campus (Sendai, Miyagi, Japan), September 10-12, 2026.
+
+1. <span class="cv-presenter-marker">◯</span> **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Tomohiro Doura**, **Shigeki Kiyonaka**.
+   "[A New Chemogenetic Strategy for Off-Target-Free Analysis of Target GPCR Physiological Functions](https://pub.confit.atlas.jp/ja/event/biosympo2025/session/3B05-07)"
+   [The 19th Symposium on Bio-Related Chemistry](https://pub.confit.atlas.jp/ja/event/biosympo2025), Kyoto University, Katsura Campus (Kyoto, Kyoto, Japan), September 2-4, 2025.
+
 1. <span class="cv-presenter-marker">◯</span> **Hiroyuki Tanaka**, **<u>Tatsuki Hori</u>**, **Shohei Yamamoto**, **Atsushi Toyoda**, **Kentaro Yano**, **Kyoko Yamane**, **Takehiko Itoh**.
    "[Current Status of Wasabi Genome Decoding](https://jsbreeding.jp/meeting/143/pdf/143program.pdf)"
    [The 143rd Meeting of the Japanese Society of Breeding](https://jsbreeding.jp/meeting/143/), Shizuoka University, March 17-18, 2023.
