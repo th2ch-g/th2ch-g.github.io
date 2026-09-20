@@ -134,19 +134,35 @@ async function assertTouchFlows(context, prefix) {
       });
     });
     const menu = page.locator('li.cv-has-bibtex details').first();
+    const toolbar = page.locator('[data-cv-actions] details');
+    for (const control of [menu, toolbar]) {
+      assert.ok(Number(await control.locator('summary').evaluate((element) => getComputedStyle(element).opacity)) >= 0.5,
+        'CV copy controls are hidden on a touch device');
+    }
     await menu.locator('summary').tap();
     await menu.getByRole('button', { name: 'BibTeX', exact: true }).tap();
     await page.waitForFunction(() => globalThis.__copiedText.startsWith('@'));
     assert.equal(await menu.getAttribute('open'), null, 'Copy menu stays open after a touch selection');
+    await toolbar.locator('summary').tap();
+    await toolbar.getByRole('button', { name: 'Copy all', exact: true }).tap();
+    await page.waitForFunction(() => globalThis.__copiedText.length > 100 && !globalThis.__copiedText.startsWith('@'));
+    assert.equal(await toolbar.getAttribute('open'), null, 'Copy-all menu stays open after a touch selection');
 
     const index = await (await context.request.get(server.url + '/search-index.json')).json();
-    const article = index.items.find((item) => /[a-z]{4}/i.test(item.title)) ?? index.items[0];
+    const postItems = index.items.filter((item) => item.lang === (prefix ? 'ja' : 'en')
+      && item.url.startsWith(`${prefix}/posts/`) && !item.url.includes('/series/') && item.date);
+    const article = postItems.find((item) => /[a-z]{4}/i.test(item.title)) ?? postItems[0];
     const query = article.title.match(/[a-z]{4,}/i)?.[0] ?? article.title;
     for (const fallback of [false, true]) {
       if (fallback) await page.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
       await visit(page, `${prefix}/`);
       await page.locator('[data-search-open]').tap();
       const input = page.locator(fallback ? '.search-fallback__input' : '.pagefind-ui__search-input');
+      await input.fill('Gallery');
+      const resultSelector = fallback ? '.search-fallback__link' : '.pagefind-ui__result-link';
+      await page.waitForFunction(({ selector, expectedPath }) =>
+        [...document.querySelectorAll(selector)].some((link) =>
+          new URL(link.href).pathname === expectedPath), { selector: resultSelector, expectedPath: `${prefix}/gallery/` });
       await input.fill(query);
       const result = page.locator(fallback ? '.search-fallback__link' : '.pagefind-ui__result-link')
         .filter({ hasText: article.title }).first();

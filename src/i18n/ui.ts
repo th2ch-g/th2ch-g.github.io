@@ -24,7 +24,7 @@ export const ui = {
     'sitemap.qrNote': 'Scan with a phone camera to open the site homepage.',
     'sitemap.xmlNote': 'XML version for crawlers:',
     'search.title': 'Search',
-    'search.placeholder': 'Search posts...',
+    'search.placeholder': 'Search this site...',
     'search.close': 'Close search',
     'search.noResults': 'No results.',
     'search.results': '{n} results',

@@ -145,10 +145,8 @@ const cvLinks = [
      client-side and appended into `.cv-header-actions`, which is OUTSIDE
      `.cv-prose`, so it carries no scoped-style hash — the menu selectors must
      be :global() and live here rather than reusing the `.cv-prose`-scoped
-     copy-menu rules. Unlike the hover-revealed section/per-item triggers, this
-     is the page toolbar, so it stays fully visible. `.cv-header-btn` is the
-     chip skin (mirrors the former `.cv-action`); `.cv-menu-trigger` adds the
-     inline-flex layout + caret. */
+     copy-menu rules. Reveal it around the header, matching the section and
+     per-item triggers. Keep open menus and copy feedback visible. */
   .cv-header-actions :global(.cv-menu) {
     position: relative;
     display: inline-block;
@@ -164,7 +162,15 @@ const cvLinks = [
     box-shadow: var(--shadow-soft);
     cursor: pointer;
     font-family: inherit;
-    transition: border-color 120ms ease, background-color 120ms ease;
+    opacity: 0;
+    transition: opacity 160ms ease, border-color 120ms ease, background-color 120ms ease;
+  }
+  .cv-header:hover :global(.cv-header-btn),
+  .cv-header:focus-within :global(.cv-header-btn),
+  .cv-header-actions :global(.cv-menu[open] .cv-header-btn),
+  .cv-header-actions :global(.cv-menu.is-copied .cv-header-btn),
+  .cv-header-actions :global(.cv-menu.is-failed .cv-header-btn) {
+    opacity: 1;
   }
   .cv-header-actions :global(.cv-menu-trigger) {
     display: inline-flex;
@@ -307,11 +313,6 @@ const cvLinks = [
     opacity: 0;
     transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease;
   }
-  /* Keep publication copy menus discoverable without requiring hover. Other
-     CV entries retain the quieter hover-only copy affordance. */
-  .cv-prose :global(li.cv-has-bibtex .cv-copy-btn) {
-    opacity: 0.7;
-  }
   .cv-prose :global(li.cv-copyable:hover .cv-copy-btn),
   .cv-prose :global(li.cv-copyable:focus-within .cv-copy-btn),
   .cv-prose :global(.cv-copy-btn:focus-visible),
@@ -330,6 +331,7 @@ const cvLinks = [
   }
   /* Touch devices have no hover — keep the buttons faintly visible. */
   @media (hover: none) {
+    .cv-header-actions :global(.cv-header-btn) { opacity: 0.55; }
     .cv-prose :global(.cv-copy-btn) { opacity: 0.55; }
   }
   /* Don't render the buttons in printed output. */

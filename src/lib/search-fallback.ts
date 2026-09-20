@@ -1,8 +1,11 @@
+import type { Lang } from '@/i18n/ui';
+
 export interface SearchIndexItem {
-  slug: string;
+  url: string;
+  lang: Lang;
   title: string;
   description: string;
-  date: string;
+  date?: string;
   body: string;
 }
 
@@ -23,12 +26,6 @@ function itemScore(item: SearchIndexItem, terms: string[]): number {
     if (description.includes(term)) return score + 2;
     return score + 1;
   }, 0);
-}
-
-function resultUrl(postsBase: string, slug: string): string {
-  const base = postsBase.endsWith('/') ? postsBase.slice(0, -1) : postsBase;
-  const encodedSlug = slug.split('/').map(encodeURIComponent).join('/');
-  return `${base}/${encodedSlug}`;
 }
 
 export function createFallback(
@@ -70,7 +67,7 @@ export function createFallback(
     const matches = items
       .map((item) => ({ item, score: itemScore(item, terms) }))
       .filter(({ score }) => score >= 0)
-      .sort((a, b) => b.score - a.score || b.item.date.localeCompare(a.item.date));
+      .sort((a, b) => b.score - a.score || (b.item.date ?? '').localeCompare(a.item.date ?? ''));
 
     if (matches.length === 0) {
       status.textContent = dialog.dataset.noResults ?? 'No results.';
@@ -79,15 +76,13 @@ export function createFallback(
 
     const resultLabel = dialog.dataset.resultsLabel ?? '{n} results';
     status.textContent = resultLabel.replace('{n}', String(matches.length));
-    const postsBase = dialog.dataset.postsBase ?? '/posts';
-
     for (const { item } of matches.slice(0, 20)) {
       const listItem = document.createElement('li');
       listItem.className = 'search-fallback__result';
 
       const link = document.createElement('a');
       link.className = 'search-fallback__link';
-      link.href = resultUrl(postsBase, item.slug);
+      link.href = item.url;
       link.textContent = item.title;
       listItem.appendChild(link);
 

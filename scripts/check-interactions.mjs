@@ -1,14 +1,26 @@
 import assert from 'node:assert/strict';
-import { resolve } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve, sep } from 'node:path';
 import { chromium, firefox } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
 
-const server = await startStaticServer(resolve(import.meta.dirname, '../dist'));
+const distDir = resolve(import.meta.dirname, '../dist');
+const server = await startStaticServer(distDir);
 const index = await (await fetch(`${server.url}/search-index.json`)).json();
-const article = index.items.find((item) => /[a-z]{4}/i.test(item.title)) ?? index.items[0];
+const postItems = index.items.filter((item) => item.lang === 'en' && /^\/posts\/[^/]+\/$/.test(item.url));
+const article = postItems.find((item) => /[a-z]{4}/i.test(item.title)) ?? postItems[0];
 assert.ok(article, 'Search checks require a published article');
 const query = article.title.match(/[a-z]{4,}/i)?.[0] ?? article.title;
-const postPath = `/posts/${article.slug}/`;
+const postPath = article.url;
+
+// Compare against rendered pages so newly added routes cannot silently escape fallback search.
+const renderedPaths = readdirSync(distDir, { recursive: true })
+  .filter((file) => file.endsWith('.html') && file !== '404.html'
+    && readFileSync(resolve(distDir, file), 'utf8').includes('<main'))
+  .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
+  .sort();
+assert.deepEqual(index.items.map((item) => decodeURI(item.url)).sort(), renderedPaths,
+  'Fallback search does not cover every public content page exactly once');
 
 async function newPage(browser, path, options = {}) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce', ...options });
@@ -47,12 +59,40 @@ async function copyFromMenu(menu, label) {
   return copy;
 }
 
+async function waitForOpacity(control, opacity) {
+  const element = await control.elementHandle();
+  await control.page().waitForFunction(({ element, opacity }) =>
+    getComputedStyle(element).opacity === opacity, { element, opacity });
+  await element.dispose();
+}
+
 async function checkCv(browser, path) {
   const { page, errors } = await newPage(browser, path);
   await page.locator('[data-cv-actions] summary').waitFor();
   await mockClipboard(page);
   const paper = page.locator('li.cv-has-bibtex').first();
   const menu = paper.locator('details');
+  for (const [region, button] of [
+    [page.locator('.cv-header'), page.locator('[data-cv-actions] summary')],
+    [paper, menu.locator('summary')],
+  ]) {
+    await button.scrollIntoViewIfNeeded();
+    await page.mouse.move(0, 0);
+    assert.equal(await button.evaluate((element) => getComputedStyle(element).opacity), '0',
+      'CV copy control is visible before hover or focus');
+    await region.hover();
+    await waitForOpacity(button, '1');
+    await page.mouse.move(0, 0);
+    await waitForOpacity(button, '0');
+    await button.focus();
+    await waitForOpacity(button, '1');
+    await button.press('Enter');
+    await button.evaluate((element) => element.blur());
+    assert.equal(await button.evaluate((element) => getComputedStyle(element).opacity), '1',
+      'An open CV copy menu loses its trigger when focus moves');
+    await page.keyboard.press('Escape');
+    await button.evaluate((element) => element.blur());
+  }
   const text = await copyFromMenu(menu, 'Text');
   assert.ok(text['text/plain'].length > 30);
   assert.doesNotMatch(text['text/plain'], /cited by|Copy list|BibTeX/);
@@ -123,6 +163,28 @@ async function checkSearch(browser, path, fallback) {
   }
   const destination = new URL(await result.getAttribute('href'), server.url);
   assert.ok(destination.pathname.startsWith(path === '/ja/' ? '/ja/posts/' : '/posts/'));
+  assert.equal(await input.getAttribute('placeholder'), 'Search this site...');
+  const paperTitle = await page.locator('li.cv-has-bibtex a[href*="doi.org"]').first().textContent();
+  const cvQuery = paperTitle.match(/[a-z]{4,}/i)?.[0] ?? paperTitle;
+  const prefix = path === '/ja/' ? '/ja' : '';
+  const resultSelector = fallback ? '.search-fallback__link' : '.pagefind-ui__result-link';
+  for (const [term, expectedPath] of [
+    [cvQuery, path],
+    ['Google AdSense', `${prefix}/privacy/`],
+    ['Gallery', `${prefix}/gallery/`],
+    ['Contact', `${prefix}/contact/`],
+    ['Sitemap', `${prefix}/sitemap/`],
+  ]) {
+    await input.fill(term);
+    await page.waitForFunction(({ selector, expectedPath }) =>
+      [...document.querySelectorAll(selector)].some((link) =>
+        new URL(link.href).pathname === expectedPath), { selector: resultSelector, expectedPath });
+    const destinations = await page.locator(resultSelector).evaluateAll((links) =>
+      links.map((link) => new URL(link.href).pathname));
+    assert.ok(destinations.every((pathname) => pathname.startsWith('/ja/') === (path === '/ja/')),
+      'Search mixes content from the other locale');
+    if (fallback) assert.equal(new Set(destinations).size, destinations.length, 'Search repeats a page');
+  }
   await input.fill('qzxqzxqzxqzxqzx');
   if (fallback) {
     await page.waitForFunction(() => /no results/i.test(document.querySelector('.search-fallback__status').textContent));

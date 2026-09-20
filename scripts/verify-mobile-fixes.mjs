@@ -145,7 +145,11 @@ async function assertCvBibtexCopy() {
   const firstPaper = papers.first();
   const trigger = firstPaper.locator('summary.cv-copy-btn');
   const opacity = Number.parseFloat(await trigger.evaluate((element) => getComputedStyle(element).opacity));
-  assert.ok(opacity >= 0.65, `CV BibTeX menu is hidden before hover (opacity ${opacity})`);
+  assert.equal(opacity, 0, 'CV BibTeX menu is visible before hover');
+  await firstPaper.hover();
+  await page.waitForFunction(() => getComputedStyle(
+    document.querySelector('li.cv-has-bibtex summary.cv-copy-btn'),
+  ).opacity === '1');
 
   await page.evaluate(() => {
     Object.defineProperty(navigator, 'clipboard', {

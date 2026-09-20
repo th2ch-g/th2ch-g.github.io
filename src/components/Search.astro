@@ -1,5 +1,4 @@
 ---
-import { getRelativeLocaleUrl } from 'astro:i18n';
 import { tUi, type Lang } from '@/i18n/ui';
 import Octicon from './Octicon.astro';
 
@@ -28,7 +27,7 @@ const assetBase = import.meta.env.BASE_URL.endsWith('/')
   data-search-dev={import.meta.env.DEV ? '' : undefined}
   data-pagefind-base={`${assetBase}pagefind/`}
   data-search-index-url={`${assetBase}search-index.json`}
-  data-posts-base={getRelativeLocaleUrl(lang, '/posts')}
+  data-search-lang={lang}
   data-no-results={tUi('search.noResults')}
   data-results-label={tUi('search.results')}
   aria-label={tUi('search.title')}
