@@ -2,9 +2,7 @@
 import '@/styles/global.css';
 import '@/styles/fonts.css';
 import monaSansLatin from '@fontsource-variable/mona-sans/files/mona-sans-latin-wght-normal.woff2?url';
-// KaTeX styles are required for `rehype-katex`-rendered formulae to display
-// correctly. Imported globally so any page (CV, posts) can contain math.
-import 'katex/dist/katex.min.css';
+import katexStyles from 'katex/dist/katex.min.css?url';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import Lightbox from '@/components/Lightbox.astro';
@@ -56,6 +54,10 @@ const meta = await getProfileMeta(lang);
 const adsenseClientId = meta.integrations.adsense?.clientId;
 const googleAnalyticsId = meta.integrations.analytics?.googleAnalyticsId;
 const productionHost = Astro.site?.hostname;
+// Inspect the rendered slot so math works in any content collection without
+// adding a render-blocking stylesheet to pages that contain no formulae.
+const content = await Astro.slots.render('default');
+const hasMath = content.includes('class="katex"');
 
 // Site-wide description fallback: the verbatim bio. Ensures no page
 // ships a thin/empty <meta name="description"> (search engines scrape the
@@ -240,6 +242,7 @@ const jsonLd = {
         for directive rationale. */}
     <meta http-equiv="Content-Security-Policy" content={csp} />
     <link rel="preload" href={monaSansLatin} as="font" type="font/woff2" crossorigin="anonymous" />
+    {hasMath && <link rel="stylesheet" href={katexStyles} />}
     <meta name="generator" content={Astro.generator} />
     <title>{documentTitle}</title>
     {metaDescription && <meta name="description" content={metaDescription} />}
@@ -247,13 +250,13 @@ const jsonLd = {
     {/* Favicons, all guarded on a configured icon (forkable — no icon, no
         tags). build-icon.mjs writes /favicon.ico (16/32/48 PNG-in-ICO) and
         the 256px /icon.png. /favicon.ico is the path Google's favicon system
-        and legacy browsers probe directly; the PNG covers modern browsers;
-        apple-touch-icon covers iOS and some social crawlers. */}
+        and legacy browsers probe directly; a 32px PNG covers tab favicons;
+        the 180px touch icon covers iOS and some social crawlers. */}
     {meta.icon && (
       <>
         <link rel="icon" href="/favicon.ico" />
-        <link rel="icon" type="image/png" href="/icon.png" sizes="256x256" />
-        <link rel="apple-touch-icon" href="/icon.png" />
+        <link rel="icon" type="image/png" href="/icon-32.png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/icon-180.png" sizes="180x180" />
       </>
     )}
 
@@ -431,7 +434,7 @@ const jsonLd = {
     <a class="skip-link" href="#main-content">{tUi('a11y.skipToMain')}</a>
     <Header lang={lang} availableLocales={locales} />
     <main id="main-content" tabindex="-1" data-pagefind-body data-copy-label={tUi('code.copy')} data-copied-label={tUi('code.copied')} data-copy-failed-label={tUi('code.copy.failed')}>
-      <slot />
+      <Fragment set:html={content} />
     </main>
     <Footer lang={lang} />
     <Lightbox />

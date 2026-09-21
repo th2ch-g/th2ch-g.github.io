@@ -44,13 +44,6 @@ const otherHasPost = (
 ).some((p) => localeSlug(p.id) === slug);
 const availableLocales: Lang[] = otherHasPost ? ['ja', 'en'] : [lang];
 const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
-// Twitter widgets.js is ~50KB and ships a privacy-relevant cookie. Inject it
-// only when the post body actually contains an X / Twitter status URL that
-// `remark-twitter-embed` would promote into a `<blockquote class="twitter-tweet">`.
-// Pattern mirrors src/plugins/remark-twitter-embed.mjs so both files agree on
-// the set of URLs that need the embed library.
-const TWEET_URL_PATTERN = /^https?:\/\/(?:twitter\.com|x\.com|mobile\.twitter\.com)\/[A-Za-z0-9_]{1,15}\/status\/\d+(?:\?[^\s]*)?\/?$/m;
-const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
 ---
 <Base
   lang={lang}
@@ -120,18 +113,11 @@ const hasTweet = TWEET_URL_PATTERN.test(post.body ?? '');
       </p>
     </article>
   </div>
-  {hasTweet && (
-    <script
-      is:inline
-      async
-      src="https://platform.twitter.com/widgets.js"
-      charset="utf-8"
-    ></script>
-  )}
-
   <script>
     import { wireHeadingAnchorCopy } from '@/lib/heading-anchor';
+    import { wireTweetEmbeds } from '@/lib/tweet-embeds';
     wireHeadingAnchorCopy();
+    wireTweetEmbeds();
   </script>
 
   <script>

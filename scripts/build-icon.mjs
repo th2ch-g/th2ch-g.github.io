@@ -18,15 +18,28 @@ const OUT = resolve(ROOT, 'public/icon.png');
 const PROFILE = resolve(ROOT, 'src/content/profile.yaml');
 // Classic favicon path. Google's favicon system and legacy browsers probe
 // /favicon.ico directly, so emit a real ICO (16/32/48 PNG-in-ICO) next to
-// the hi-res icon.png used by the rel=icon PNG link.
+// the PNG variants used by modern browsers.
 const ICO_OUT = resolve(ROOT, 'public/favicon.ico');
 const REFRESH_MS = 60 * 60 * 1000;
-// 256 covers every consumer at 2x density: the home avatar (72px CSS →
-// 144px retina), the OG-card credit thumb (re-sized to 80px in
-// og-image.ts), and the favicon.ico tiles (<= 48px). The previous 512
-// produced a ~330 KB PNG that the home page downloaded just to draw at
-// 72px; 256 quarters the pixel count (~90 KB) with no visible loss.
+// Keep the full-size master for social cards. Header, favicon and touch
+// icon consumers use PNG variants sized for their display density.
 const SIZE = 256;
+const ICON_SIZES = [32, 64, 96, 128, 180];
+const variantPath = (size) => resolve(ROOT, `public/icon-${size}.png`);
+
+async function writeIconVariants(image) {
+  for (const size of ICON_SIZES) {
+    const png = await image.clone().resize({ w: size, h: size }).getBuffer('image/png');
+    writeFileSync(variantPath(size), png);
+  }
+}
+
+async function ensureIconVariants() {
+  if (!existsSync(OUT)) return;
+  const masterMtime = statSync(OUT).mtimeMs;
+  if (ICON_SIZES.every((size) => existsSync(variantPath(size)) && statSync(variantPath(size)).mtimeMs >= masterMtime)) return;
+  await writeIconVariants(await Jimp.read(OUT));
+}
 
 // Assemble a Windows ICO from one or more PNG buffers. Each directory entry
 // points at a PNG-encoded image — supported by every modern browser and
@@ -61,6 +74,9 @@ if (!src) {
   // stale PNG so downstream consumers (favicon link, OG credit row,
   // PostEntry thumb fallback) can fall back to "no icon" rendering.
   if (existsSync(ICO_OUT)) unlinkSync(ICO_OUT);
+  for (const size of ICON_SIZES) {
+    if (existsSync(variantPath(size))) unlinkSync(variantPath(size));
+  }
   if (existsSync(OUT)) {
     unlinkSync(OUT);
     console.log(`[build-icon] \`icon.url\` is empty — removed stale ${OUT}`);
@@ -75,6 +91,7 @@ if (!force && existsSync(OUT) && existsSync(ICO_OUT)) {
   const outputMtime = Math.min(statSync(OUT).mtimeMs, statSync(ICO_OUT).mtimeMs);
   const profileMtime = statSync(PROFILE).mtimeMs;
   if (outputMtime >= profileMtime && Date.now() - outputMtime < REFRESH_MS) {
+    await ensureIconVariants();
     console.log('[build-icon] cached icon is fresh, skipping');
     process.exit(0);
   }
@@ -117,6 +134,7 @@ try {
   mkdirSync(dirname(OUT), { recursive: true });
   const png = await image.getBuffer('image/png');
   writeFileSync(OUT, png);
+  await writeIconVariants(image);
   console.log(`[build-icon] wrote ${OUT} (${(png.length / 1024).toFixed(1)} KB)`);
 
   // Also emit /favicon.ico from the same circular master at the three sizes
@@ -136,10 +154,17 @@ try {
   // contract used by `build-fonts.mjs`. Any stale `public/icon.png` from a
   // previous run is intentionally preserved so the site keeps a usable
   // favicon / OG credit thumb until the URL works again.
+  // Derive missing variants from the last good master during outages.
+  try {
+    await ensureIconVariants();
+  } catch (variantError) {
+    console.warn(`[build-icon] icon variants skipped: ${variantError.message}`);
+  }
   if (existsSync(OUT) && existsSync(ICO_OUT)) {
     const retryAfter = new Date();
-    utimesSync(OUT, retryAfter, retryAfter);
-    utimesSync(ICO_OUT, retryAfter, retryAfter);
+    for (const output of [OUT, ICO_OUT, ...ICON_SIZES.map(variantPath)]) {
+      if (existsSync(output)) utimesSync(output, retryAfter, retryAfter);
+    }
   }
   console.warn(`[build-icon] skipped: ${err.message}`);
   process.exit(0);
