@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
 interface Props {
@@ -21,9 +20,11 @@ const { images, intervalMs = 5000 } = Astro.props;
       {images.map((img, i) => (
         <div class:list={['slide', { active: i === 0 }]} aria-hidden={i === 0 ? 'false' : 'true'}>
           {i === 0 ? (
-            <Image
-              src={img}
+            <img
+              src={img.src}
               alt=""
+              width={img.width}
+              height={img.height}
               loading="eager"
               fetchpriority="high"
               decoding="sync"
@@ -31,7 +32,7 @@ const { images, intervalMs = 5000 } = Astro.props;
           ) : (
             // Inactive slides are absolutely positioned inside the viewport.
             // Giving them `src` here defeats native lazy loading and fetches
-            // the entire gallery at once, so the slideshow wires it on demand.
+            // the entire gallery at once. Load on demand and prefetch one ahead.
             <img
               data-src={img.src}
               alt=""

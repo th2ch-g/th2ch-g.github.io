@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -48,13 +47,34 @@ const slideshowImages = photos.map((p) => p.src);
   {photos.length > 0 && <PhotoSlideshow images={slideshowImages} />}
   {photos.length > 0 && (
     <div class="masonry">
+      <noscript>
+        <style is:inline>.masonry img[data-src] { display: none; }</style>
+      </noscript>
       {photos.map((photo, i) => (
         <button
           type="button"
           class="photo-btn card"
           aria-label={`${tUi('nav.photos')} ${i + 1}`}
         >
-          <Image src={photo.src} alt="" loading="lazy" class="photo" />
+          <img
+            data-src={photo.src.src}
+            alt=""
+            decoding="async"
+            width={photo.src.width}
+            height={photo.src.height}
+            style={`aspect-ratio: ${photo.src.width} / ${photo.src.height}`}
+            class="photo"
+          />
+          <noscript>
+            <img
+              src={photo.src.src}
+              alt=""
+              loading="lazy"
+              width={photo.src.width}
+              height={photo.src.height}
+              class="photo"
+            />
+          </noscript>
         </button>
       ))}
     </div>
@@ -62,7 +82,9 @@ const slideshowImages = photos.map((p) => p.src);
 </Base>
 
 <script>
+  import { wireGalleryImages } from '@/lib/gallery-images';
   import { wirePhotoLightbox } from '@/lib/lightbox';
+  wireGalleryImages();
   wirePhotoLightbox('.photo-btn');
 </script>
 

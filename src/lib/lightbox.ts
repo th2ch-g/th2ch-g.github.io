@@ -9,7 +9,7 @@ export function wirePhotoLightbox(selector: string): void {
     const items = buttons.flatMap((btn) => {
       const img = btn.querySelector('img');
       return img
-        ? [{ src: img.currentSrc || img.src, alt: img.alt }]
+        ? [{ src: img.dataset.src || img.currentSrc || img.src, alt: img.alt }]
         : [];
     });
 

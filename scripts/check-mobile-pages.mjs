@@ -178,6 +178,8 @@ async function assertTouchFlows(context, prefix) {
     const currentSlide = () => page.locator('.slideshow-progress-current').textContent();
     const before = await currentSlide();
     await page.locator('.photo-slideshow .next').tap();
+    await page.waitForFunction((before) =>
+      document.querySelector('.slideshow-progress-current').textContent !== before, before);
     assert.notEqual(await currentSlide(), before, 'Slideshow ignores touch navigation');
     await page.locator('.photo-btn').first().tap();
     const lightbox = page.locator('#lightbox');

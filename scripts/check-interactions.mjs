@@ -314,15 +314,19 @@ async function checkNavigationAndGallery(browser) {
   const current = () => page.locator('.slideshow-progress-current').textContent();
   const total = await page.locator('.slideshow-progress-total').textContent();
   await slideshow.locator('.prev').click();
+  await page.waitForFunction((total) =>
+    document.querySelector('.slideshow-progress-current').textContent === total, total);
   assert.equal(await current(), total, 'Previous slide does not wrap to the last image');
   await slideshow.locator('.prev').focus();
   await page.keyboard.press('ArrowRight');
+  await page.waitForFunction(() => document.querySelector('.slideshow-progress-current').textContent === '1');
   assert.equal(await current(), '1', 'Arrow navigation does not wrap to the first image');
   await slideshow.locator('[data-speed="8000"]').click();
   assert.equal(await slideshow.locator('[aria-pressed="true"]').getAttribute('data-speed'), '8000');
   await slideshow.locator('.fullscreen-btn').click();
   await page.waitForFunction(() => document.fullscreenElement?.classList.contains('photo-slideshow'));
   await page.keyboard.press('ArrowRight');
+  await page.waitForFunction(() => document.querySelector('.slideshow-progress-current').textContent === '2');
   assert.equal(await current(), '2', 'Fullscreen arrow navigation does not advance the image');
   await slideshow.locator('.fullscreen-btn').click();
   await page.waitForFunction(() => !document.fullscreenElement);

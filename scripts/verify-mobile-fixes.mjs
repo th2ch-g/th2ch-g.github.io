@@ -229,8 +229,8 @@ try {
   await galleryPage.goto(`${url}/gallery/`, { waitUntil: 'networkidle' });
   assert.equal(
     await galleryPage.locator('.photo-slideshow img[src]').count(),
-    1,
-    'Inactive slideshow images load during initial page rendering',
+    2,
+    'The slideshow must load only the first frame and one prefetched frame',
   );
   const activeSlideIndex = () =>
     galleryPage.locator('.photo-slideshow .slide').evaluateAll(
@@ -251,6 +251,9 @@ try {
     clientX: 80,
     clientY: 185,
   });
+  await galleryPage.waitForFunction((before) =>
+    [...document.querySelectorAll('.photo-slideshow .slide')]
+      .findIndex((slide) => slide.classList.contains('active')) !== before, slideBeforeSwipe);
   assert.notEqual(
     await activeSlideIndex(),
     slideBeforeSwipe,

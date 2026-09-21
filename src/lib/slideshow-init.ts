@@ -20,6 +20,9 @@ function initSlideshow(root: SlideshowEl) {
 
   let interval = Number(root.dataset.interval ?? 5000);
   let current = 0;
+  let requested = 0;
+  let navigationVersion = 0;
+  let switching = false;
   let timer: number | undefined;
   let autoplayEnabled = !reduceMotion;
   let hoverPaused = false;
@@ -27,17 +30,58 @@ function initSlideshow(root: SlideshowEl) {
   let keyboardMode = false;
   let swipeStart: { x: number; y: number; pointerId: number } | null = null;
 
-  const loadSlide = (index: number) => {
-    const image = slides[index].querySelector<HTMLImageElement>('img[data-src]');
-    const source = image?.dataset.src;
-    if (!image || !source) return;
-    image.src = source;
-    image.removeAttribute('data-src');
+  const slideLoads = new Map<number, Promise<boolean>>();
+  const loadSlide = (index: number, priority: 'high' | 'low') => {
+    const image = slides[index].querySelector<HTMLImageElement>('img');
+    if (!image) return Promise.resolve(false);
+    if (priority === 'high' || !slideLoads.has(index)) image.fetchPriority = priority;
+    const pending = slideLoads.get(index);
+    if (pending) return pending;
+
+    const source = image.dataset.src;
+    if (source) {
+      image.src = source;
+      image.removeAttribute('data-src');
+    }
+    const ready = image.decode().then(() => true, () => {
+      slideLoads.delete(index);
+      // Leave the visible slide in place and allow a failed image to retry.
+      image.dataset.src = source || image.src;
+      // WebKit otherwise reuses the failed request when the same URL is set.
+      image.removeAttribute('src');
+      return false;
+    });
+    slideLoads.set(index, ready);
+    return ready;
   };
 
-  const show = (next: number) => {
-    const nextIndex = (next + slides.length) % slides.length;
-    loadSlide(nextIndex);
+  const prefetchNext = () => {
+    if (slides.length > 1) void loadSlide((current + 1) % slides.length, 'low');
+  };
+
+  const canAutoplay = () => {
+    const inFullscreen = document.fullscreenElement === root;
+    const interactionPaused = !inFullscreen && (hoverPaused || focusPaused);
+    return slides.length > 1 && autoplayEnabled && !document.hidden && !interactionPaused;
+  };
+
+  const show = async (next: number, automatic = false) => {
+    stop();
+    const nextIndex = ((next % slides.length) + slides.length) % slides.length;
+    requested = nextIndex;
+    const version = ++navigationVersion;
+    switching = true;
+    const loaded = await loadSlide(nextIndex, 'high');
+    if (version !== navigationVersion) return;
+    switching = false;
+    if (automatic && !canAutoplay()) {
+      requested = current;
+      return;
+    }
+    if (!loaded) {
+      start();
+      return;
+    }
     slides[current].classList.remove('active');
     slides[current].setAttribute('aria-hidden', 'true');
 
@@ -50,6 +94,8 @@ function initSlideshow(root: SlideshowEl) {
     if (progressFill) progressFill.style.width = `${ratio}%`;
     if (progressBar) progressBar.setAttribute('aria-valuenow', String(current + 1));
     if (progressCurrent) progressCurrent.textContent = String(current + 1);
+    prefetchNext();
+    start();
   };
 
   const stop = () => {
@@ -60,20 +106,17 @@ function initSlideshow(root: SlideshowEl) {
   };
   const start = (delay = interval) => {
     stop();
-    const inFullscreen = document.fullscreenElement === root;
-    const interactionPaused = !inFullscreen && (hoverPaused || focusPaused);
-    if (slides.length < 2 || !autoplayEnabled || document.hidden || interactionPaused) return;
+    if (switching || !canAutoplay()) return;
     timer = window.setTimeout(() => {
-      show(current + 1);
-      start();
+      timer = undefined;
+      void show(requested + 1, true);
     }, delay);
   };
 
   root.querySelectorAll<HTMLButtonElement>('.nav').forEach((btn) => {
     btn.addEventListener('click', () => {
       const dir = Number(btn.dataset.dir ?? 1);
-      show(current + dir);
-      start();
+      void show(requested + dir);
     });
   });
 
@@ -93,7 +136,7 @@ function initSlideshow(root: SlideshowEl) {
     const deltaY = event.clientY - swipeStart.y;
     swipeStart = null;
     if (Math.abs(deltaX) >= 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      show(current + (deltaX < 0 ? 1 : -1));
+      void show(requested + (deltaX < 0 ? 1 : -1));
     }
     start();
   });
@@ -146,9 +189,8 @@ function initSlideshow(root: SlideshowEl) {
 
   root.addEventListener('photoslideshow:goto', ((e: Event) => {
     const detail = (e as CustomEvent<{ index?: number; fullscreen?: boolean }>).detail ?? {};
-    if (typeof detail.index === 'number') {
-      show(detail.index);
-      start();
+    if (typeof detail.index === 'number' && Number.isInteger(detail.index)) {
+      void show(detail.index);
     }
     if (detail.fullscreen && document.fullscreenElement !== root) {
       enterFullscreen();
@@ -225,8 +267,7 @@ function initSlideshow(root: SlideshowEl) {
     const lb = document.getElementById('lightbox');
     if (lb && !lb.hidden) return;
     e.preventDefault();
-    show(current + (e.key === 'ArrowRight' ? 1 : -1));
-    start();
+    void show(requested + (e.key === 'ArrowRight' ? 1 : -1));
   });
 
   document.addEventListener('visibilitychange', () => {
@@ -234,8 +275,15 @@ function initSlideshow(root: SlideshowEl) {
     else start();
   });
 
+  // Let the first frame finish before using bandwidth for one adjacent frame.
+  void loadSlide(current, 'high').then((loaded) => {
+    if (loaded && navigationVersion === 0) prefetchNext();
+  });
   start(INITIAL_AUTOPLAY_DELAY);
-  root.__cleanup = stop;
+  root.__cleanup = () => {
+    stop();
+    navigationVersion++;
+  };
 }
 
 export function wireSlideshows(): void {
