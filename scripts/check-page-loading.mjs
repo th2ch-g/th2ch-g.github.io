@@ -69,7 +69,9 @@ async function checkTweets(browser, path, mode) {
     } else {
       const nearby = await page.locator('.tweet-embed').evaluateAll((embeds) => embeds.some((embed) =>
         embed.getBoundingClientRect().top <= innerHeight + 300));
-      assert.equal(initialCount, Number(nearby), 'Distant embeds start third-party work during initial loading');
+      if (nearby && !requests.includes(widgetUrl)) await page.waitForRequest(widgetUrl);
+      assert.equal(requests.filter((url) => url === widgetUrl).length, Number(nearby),
+        `Embed requests do not match initial visibility: ${path} (${mode})`);
     }
     await links.first().scrollIntoViewIfNeeded();
     assert.equal(await links.first().isVisible(), true, 'The fallback source link is unavailable');
