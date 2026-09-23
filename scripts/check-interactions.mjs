@@ -95,9 +95,9 @@ async function checkCv(browser, path) {
   }
   const text = await copyFromMenu(menu, 'Text');
   assert.ok(text['text/plain'].length > 30);
-  assert.doesNotMatch(text['text/plain'], /cited by|Copy list|BibTeX/);
+  assert.doesNotMatch(text['text/plain'], /Copy list|BibTeX/);
   assert.match(text['text/html'], /font-size:10.5pt;color:#000;background-color:#ffffff/);
-  assert.doesNotMatch(text['text/html'], /<(?:button|details|a)\b|citation-badge|heading-anchor/);
+  assert.doesNotMatch(text['text/html'], /<(?:button|details|a)\b|heading-anchor/);
   assert.match(text['text/html'], /Times New Roman/);
   if (path === '/ja/') assert.match(text['text/html'], /MS Mincho/);
 
@@ -115,7 +115,7 @@ async function checkCv(browser, path) {
   const toolbar = page.locator('[data-cv-actions] details');
   const all = await copyFromMenu(toolbar, 'Copy all');
   assert.ok(all['text/plain'].length > section['text/plain'].length);
-  assert.doesNotMatch(all['text/html'], /cv-copy-actions|cv-section-actions|citation-badge|heading-anchor/);
+  assert.doesNotMatch(all['text/html'], /cv-copy-actions|cv-section-actions|heading-anchor/);
   if (path === '/ja/') assert.match(all['text/html'], /font-family:'MS Mincho'/);
   const allBib = await copyFromMenu(toolbar, 'Copy .bib');
   const response = await page.request.get(server.url + (path === '/ja/' ? '/ja/cv.bib' : '/cv.bib'));

@@ -1,11 +1,8 @@
 ---
 import { tUi, type Lang } from '@/i18n/ui';
 import { getCv } from '@/lib/content';
-import { allCitations } from '@/lib/citations';
 import { allBibtex } from '@/lib/bibtex';
 import { render } from 'astro:content';
-import { siGithub, siOrcid, siHuggingface } from 'simple-icons';
-import { kaggleMonogram } from '@/lib/brand-icons';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -17,14 +14,14 @@ if (!cv) {
 const { Content } = await render(cv);
 const cvLinks = [
   cv.data.orcid
-    ? { label: 'ORCID', url: `https://orcid.org/${cv.data.orcid}`, icon: siOrcid.path }
+    ? { label: 'ORCID', url: `https://orcid.org/${cv.data.orcid}` }
     : undefined,
-  cv.data.github ? { label: 'GitHub', url: cv.data.github, icon: siGithub.path } : undefined,
-  cv.data.kaggle ? { label: 'Kaggle', url: cv.data.kaggle, icon: kaggleMonogram } : undefined,
+  cv.data.github ? { label: 'GitHub', url: cv.data.github } : undefined,
+  cv.data.kaggle ? { label: 'Kaggle', url: cv.data.kaggle } : undefined,
   cv.data.huggingface
-    ? { label: 'Hugging Face', url: cv.data.huggingface, icon: siHuggingface.path }
+    ? { label: 'Hugging Face', url: cv.data.huggingface }
     : undefined,
-].filter((link): link is { label: string; url: string; icon: string } => Boolean(link));
+].filter((link): link is { label: string; url: string } => Boolean(link));
 ---
   <section id="cv" class="cv-layout" aria-label={tUi('nav.cv')}>
     <div class="cv-content">
@@ -35,9 +32,6 @@ const cvLinks = [
               {cvLinks.map((link) => (
                 <li>
                   <a class="btn btn-ghost btn-sm" href={link.url} target="_blank" rel="noopener noreferrer">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d={link.icon} />
-                    </svg>
                     {link.label}
                   </a>
                 </li>
@@ -60,9 +54,6 @@ const cvLinks = [
         class="prose cv-prose"
         data-cv-lang={lang}
         data-copy-label={tUi('code.copy')}
-        data-citations={JSON.stringify(allCitations)}
-        data-citation-label={tUi('citation.label')}
-        data-citation-source={tUi('citation.source')}
         data-bibtex={JSON.stringify(allBibtex)}
         data-bibtex-label={tUi('cv.copy.bibtex')}
         data-bibtex-aria={tUi('cv.copy.bibtex.aria')}
@@ -127,7 +118,6 @@ const cvLinks = [
     color: var(--color-fg);
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
     min-height: 2rem;
     font-size: 0.875rem;
     font-weight: 500;
@@ -135,7 +125,6 @@ const cvLinks = [
     padding: 0.375rem 0.5rem;
     text-underline-offset: 0.15em;
   }
-  .cv-profile-links svg { flex-shrink: 0; color: var(--color-muted); }
   .cv-profile-links a.btn:hover,
   .cv-profile-links a.btn:focus-visible {
     color: var(--color-accent);
@@ -544,27 +533,4 @@ const cvLinks = [
     .cv-prose :global(:is(h1, h2, h3, h4, h5, h6)) { padding-right: 0; }
     .cv-prose :global(.cv-section-actions) { display: none; }
   }
-
-  /* CrossRef cited-by badge appended next to DOI links by the script above.
-     Kept visually quiet so it sits next to a paper title without competing
-     with the link. Hidden in print because the count goes stale between
-     rebuilds. */
-  .cv-prose :global(.citation-badge) {
-    display: inline-block;
-    margin-left: 0.4rem;
-    padding: 0 0.4rem;
-    font-size: 0.75rem;
-    line-height: 1.5;
-    color: var(--color-muted);
-    background: transparent;
-    border: 1px solid var(--color-border);
-    border-radius: 2rem;
-    vertical-align: 0.05em;
-    user-select: none;
-    white-space: nowrap;
-  }
-  @media print {
-    .cv-prose :global(.citation-badge) { display: none; }
-  }
-
 </style>

@@ -11,7 +11,7 @@
     "build-assets": "node scripts/run-scripts-parallel.mjs build-icon build-fonts build-qr build-github-og",
     "optimize-images": "node scripts/optimize-images.mjs",
     "predev": "npm run build-assets",
-    "prebuild": "node scripts/run-scripts-parallel.mjs build-assets sync-citations sync-bibtex",
+    "prebuild": "node scripts/run-scripts-parallel.mjs build-assets sync-bibtex",
     "prestart": "npm run build-assets",
     "dev": "astro dev",
     "start": "astro dev",
@@ -28,7 +28,6 @@
     "check:lighthouse": "lhci autorun --config=./lighthouserc.json",
     "check:mobile": "node scripts/verify-mobile-fixes.mjs && node scripts/check-mobile-pages.mjs",
     "check:security": "node scripts/check-public-http.mjs",
-    "sync-citations": "node scripts/sync-citation-counts.mjs",
     "sync-bibtex": "node scripts/sync-bibtex.mjs"
   },
   "dependencies": {

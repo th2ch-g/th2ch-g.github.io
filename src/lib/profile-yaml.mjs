@@ -1,7 +1,7 @@
 // Shallow regex-based reader for src/content/profile.yaml. Lives in lib/ so
 // both Astro-side .ts and build-time .mjs scripts can share one parse path.
 // We avoid a real YAML dep because every field exposed here is a top-level
-// scalar — `sync-citation-counts.mjs` already established this pattern.
+// scalar.
 //
 // Path resolution uses `process.cwd()` rather than `import.meta.url` so the
 // helper works equally from build-time scripts (running directly from src)

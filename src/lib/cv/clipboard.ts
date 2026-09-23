@@ -17,7 +17,7 @@ export function fontFamilyFor(lang: 'ja' | 'en', isPresentation: boolean): strin
 // Clone before removing controls so every copy scope leaves the live CV intact.
 function cloneContent(element: Element): HTMLElement {
   const clone = element.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .citation-badge, .heading-anchor').forEach((control) => control.remove());
+  clone.querySelectorAll('.cv-copy-actions, .cv-section-actions, .heading-anchor').forEach((control) => control.remove());
   return clone;
 }
 

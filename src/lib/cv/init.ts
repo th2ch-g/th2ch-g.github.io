@@ -1,5 +1,4 @@
 import type { Lang } from '../../i18n/ui';
-import type { CitationEntry } from '../citations';
 import type { BibtexEntry } from '../bibtex';
 import { buildCopyButton, buildCopyMenu, setupCopyMenuDismissal } from './actions';
 import { copyAll, copyBibtex, copyItem, copySection, collectSectionBibtex, fontFamilyFor } from './clipboard';
@@ -14,29 +13,6 @@ function readSnapshot<T>(value: string | undefined): Record<string, T> {
   }
 }
 
-function addCitationBadges(prose: HTMLElement): void {
-  const citations = readSnapshot<CitationEntry>(prose.dataset.citations);
-  const label = prose.dataset.citationLabel ?? 'cited by {n}';
-  const source = prose.dataset.citationSource ?? 'via CrossRef';
-  prose.querySelectorAll<HTMLAnchorElement>('a[href*="doi.org/"]').forEach((anchor) => {
-    const match = anchor.href.match(/^https?:\/\/(?:dx\.)?doi\.org\/(.+)$/i);
-    if (!match) return;
-    let doi: string;
-    try {
-      doi = decodeURIComponent(match[1]).toLowerCase().replace(/[.,;]+$/, '');
-    } catch {
-      return;
-    }
-    const entry = citations[doi];
-    if (!entry || typeof entry.count !== 'number' || entry.count <= 0) return;
-    const badge = document.createElement('span');
-    badge.className = 'citation-badge badge badge-outline badge-sm';
-    badge.textContent = label.replace('{n}', String(entry.count));
-    badge.title = `${source} · ${entry.fetchedAt.slice(0, 10)}`;
-    anchor.insertAdjacentElement('afterend', badge);
-  });
-}
-
 export function setupCv(): void {
   const prose = document.querySelector<HTMLElement>('.cv-prose[data-cv-lang]');
   if (!prose || prose.dataset.cvReady === '1') return;
@@ -45,7 +21,6 @@ export function setupCv(): void {
   const copyLabel = prose.dataset.copyLabel ?? 'Copy';
   const sectionCopyLabel = prose.dataset.sectionCopyLabel ?? 'Copy list';
   const bibtexEntries = readSnapshot<BibtexEntry>(prose.dataset.bibtex);
-  addCitationBadges(prose);
 
   // Nested annotations remain part of their parent entry's clipboard payload.
   prose.querySelectorAll<HTMLElement>(':scope > ol > li, :scope > ul > li').forEach((li) => {

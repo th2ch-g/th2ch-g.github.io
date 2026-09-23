@@ -18,7 +18,6 @@ npm run check:security # reject unsafe link-card URL targets
 npm run check:mobile # All built pages: Chromium/Firefox/WebKit touch, 320/393/430/852px, light/dark, mobile axe
 npm run check:interactions # Chromium/Firefox clipboard, search, keyboard, print, and theme checks
 npm run build-assets # rebuild public/icon.png + public/fonts/ + public/qr.png
-npm run sync-citations # refresh src/data/citations.json from CrossRef
 npm run sync-bibtex    # refresh src/data/bibtex.json from CrossRef
 ```
 
@@ -65,7 +64,7 @@ Each page's `getStaticPaths` is evaluated independently by Astro and **must be a
 2. `scripts/build-fonts.mjs` — populates `public/fonts/`.
 3. `scripts/build-qr.mjs` — generates `public/qr.png` from the deployment URL (used in the CV PDF footer / share contexts).
 
-`prebuild` additionally runs `sync-citation-counts.mjs` + `sync-bibtex.mjs`, which refresh `src/data/{citations,bibtex}.json` from CrossRef. **Commit these JSON files** — they are fail-soft snapshots (the scripts preserve existing per-DOI values on fetch errors), so a missing committed snapshot would leave CV cited-by badges and BibTeX buttons empty during a CrossRef outage or initial fork build.
+`prebuild` additionally runs `sync-bibtex.mjs`, which refreshes `src/data/bibtex.json` from CrossRef. **Commit this JSON file** — it is a fail-soft snapshot (the script preserves existing per-DOI values on fetch errors), so a missing committed snapshot would leave CV BibTeX buttons empty during a CrossRef outage or initial fork build.
 
 `npm run build` then runs `astro build`, `scripts/inject-sitemap-xsl.mjs` (post-processes the generated sitemap to reference `public/sitemap.xsl` for human-readable rendering), and `pagefind --site dist` (search index). Home's CV supports browser printing and copy/BibTeX actions; there is no separate PDF generation step.
 

@@ -1,10 +1,6 @@
-// Shared scaffolding for the two CrossRef sync scripts
-// (sync-citation-counts.mjs, sync-bibtex.mjs). Both scripts walk the same
-// DOI list extracted from the bilingual CV markdown, fetch one resource per
-// DOI from CrossRef under a polite-pool User-Agent, fail-soft on per-DOI
-// errors (keep the previous snapshot value), and write a sorted JSON file
-// under src/data/. This module centralises every step except the per-DOI
-// fetch itself.
+// CrossRef snapshot helpers for sync-bibtex.mjs. Extract DOIs from the
+// bilingual CV markdown, fetch each resource under a polite-pool User-Agent,
+// preserve existing values on per-DOI errors, and write sorted JSON.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -29,8 +25,8 @@ export async function extractDoisFromCv() {
     const text = await readFile(file, 'utf8');
     for (const m of text.matchAll(DOI_URL)) {
       // Decode percent-encoding so the snapshot key matches the runtime
-      // lookup key CVPage.astro builds (it decodeURIComponent's the href
-      // before looking up the citation/BibTeX entry). A DOI may legitimately
+      // lookup key src/lib/cv/sections.ts builds (it decodes the href
+      // before looking up the BibTeX entry). A DOI may legitimately
       // contain encoded characters; without decoding the lookup would miss.
       // Fall back to the raw match on a malformed escape sequence.
       let doi = m[1];
@@ -80,8 +76,7 @@ export async function writeSnapshot(outPath, data) {
 //   - persist(snapshot, doi, value, now): mutate snapshot in place
 //   - formatLog(value) -> string: per-DOI success log suffix
 //
-// All other behaviour (fail-soft on errors, sorted write, summary line)
-// is fixed so the two scripts stay byte-identical for unchanged DOI sets.
+// The helper handles per-DOI errors, sorted output, and the summary line.
 export async function runDoiSync({ outPath, fetchOne, persist, formatLog }) {
   const ua = await politeUserAgent();
   const dois = await extractDoisFromCv();

@@ -57,8 +57,6 @@ export const ui = {
     'cv.copy.section.menu.aria': 'Copy options for this section',
     'cv.copy.item.text': 'Text',
     'cv.actions.menu.aria': 'CV actions',
-    'citation.label': 'cited by {n}',
-    'citation.source': 'via CrossRef',
     'code.copy': 'Copy',
     'code.copied': 'Copied',
     'code.copy.failed': 'Copy failed',

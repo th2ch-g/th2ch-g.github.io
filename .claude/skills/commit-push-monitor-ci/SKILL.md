@@ -40,7 +40,7 @@ Review the full diff. The worktree may hold changes the user made and did not me
   git status --short
   ```
 
-- Never create an empty commit, and never stage secrets, `.env` files, build artifacts, or regenerable output. Note that `src/data/citations.json` and `src/data/bibtex.json` **are** committed on purpose (see `CLAUDE.md`) — if `prebuild` refreshed them, decide whether that refresh belongs in this commit or should be reverted, rather than sweeping it in silently.
+- Never create an empty commit, and never stage secrets, `.env` files, build artifacts, or regenerable output. Note that `src/data/bibtex.json` **is** committed on purpose (see `CLAUDE.md`) — if `prebuild` refreshed it, decide whether that refresh belongs in this commit or should be reverted, rather than sweeping it in silently.
 
 ### 3. Commit
 
