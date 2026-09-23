@@ -222,8 +222,14 @@ async function checkSearchRecovery(browser) {
   assert.equal(await page.locator('[data-search-error]').isVisible(), false);
   await page.keyboard.press('Escape');
   await page.unroute('**/pagefind/pagefind-ui.js');
+  let pagefindRetries = 0;
+  await page.route('**/pagefind/pagefind-ui.js', (route) => {
+    pagefindRetries += 1;
+    return route.continue();
+  });
   await page.locator('[data-search-open]').click();
   await page.waitForLoadState('networkidle');
+  assert.equal(pagefindRetries, 0, 'Reopening an active fallback retries Pagefind');
   assert.equal(await page.locator('[data-search-dialog] input').count(), 1,
     'Reopening fallback search creates duplicate search interfaces');
   assert.equal(await page.locator('.search-fallback__input').inputValue(), query);

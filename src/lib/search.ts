@@ -93,7 +93,7 @@ export function setupSearch(): void {
   };
 
   const prepareSearch = async () => {
-    if (dialog.hasAttribute('data-search-dev')) {
+    if (fallbackInput || fallbackLoading || dialog.hasAttribute('data-search-dev')) {
       await loadFallback();
       return;
     }

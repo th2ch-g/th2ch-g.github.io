@@ -471,8 +471,17 @@ try {
     'Standalone post date is not English YYYY-MM-DD',
   );
   const githubCards = detailPage.locator('.link-card[href^="https://github.com/"]');
+  assert.ok(await githubCards.count(), 'Post has no GitHub cards');
+  for (const card of await githubCards.all()) {
+    assert.ok((await card.locator('.link-card-title').textContent()).trim(), 'GitHub card has no title');
+    assert.equal(await card.locator('.link-card-title').isVisible(), true);
+    if (await card.locator('img').count() === 0) {
+      assert.match(await card.getAttribute('class'), /\blink-card--no-image\b/);
+      assert.equal(await card.locator('.link-card-thumb').count(), 0,
+        'A card without a downloaded preview leaves a blank thumbnail');
+    }
+  }
   const previews = githubCards.locator('.link-card-thumb img');
-  assert.ok(await previews.count(), 'Post has no self-hosted GitHub card previews');
   for (const preview of await previews.all()) {
     assert.match(await preview.getAttribute('src') ?? '', /^\/github-og\//,
       'GitHub card still depends on an upstream preview image');
@@ -482,22 +491,31 @@ try {
       'Self-hosted GitHub card image failed to decode');
   }
 
-  const card = githubCards.filter({ has: detailPage.locator('.link-card-thumb img') }).first();
-  const cardHref = await card.getAttribute('href');
-  const cardTitle = await card.locator('.link-card-title').textContent();
-  const previewUrl = new URL(await card.locator('img').getAttribute('src'), url).href;
-  await detailPage.route(previewUrl, (route) => route.abort());
+  const fixtureCard = (name, src) => `<a class="link-card" data-preview-check="${name}" href="#${name}">
+    <div class="link-card-thumb"><img src="${src}" alt="" width="1200" height="630" loading="lazy" decoding="async" /></div>
+    <div class="link-card-body"><p class="link-card-title">${name}</p></div>
+  </a>`;
+  await detailPage.route(new URL('/__checks__/missing-preview.png', url).href, (route) => route.abort());
+  await detailPage.route(detailPage.url(), async (route) => {
+    const response = await route.fetch();
+    const html = await response.text();
+    const fixture = fixtureCard('available', '/icon.png')
+      + fixtureCard('missing', '/__checks__/missing-preview.png');
+    await route.fulfill({ response, body: html.replace('</main>', `${fixture}</main>`) });
+  });
   await detailPage.reload({ waitUntil: 'networkidle' });
-  const fallbackCard = detailPage.locator('.link-card').filter({ hasText: cardTitle });
+  const availableCard = detailPage.locator('[data-preview-check="available"]');
+  await availableCard.scrollIntoViewIfNeeded();
+  await availableCard.locator('img').evaluate((image) => image.decode());
+  assert.ok(await availableCard.locator('img').evaluate((image) => image.naturalWidth > 0),
+    'A valid card preview was removed');
+  const fallbackCard = detailPage.locator('[data-preview-check="missing"]');
   await fallbackCard.scrollIntoViewIfNeeded();
-  await detailPage.waitForFunction((href) => {
-    const link = [...document.querySelectorAll('.link-card')]
-      .find((element) => element.getAttribute('href') === href);
-    return link?.classList.contains('link-card--no-image');
-  }, cardHref);
+  await detailPage.waitForFunction(() => document.querySelector('[data-preview-check="missing"]')
+    ?.classList.contains('link-card--no-image'));
   assert.equal(await fallbackCard.locator('.link-card-thumb').count(), 0,
     'Failed card image leaves a blank thumbnail');
-  assert.equal(await fallbackCard.getAttribute('href'), cardHref,
+  assert.equal(await fallbackCard.getAttribute('href'), '#missing',
     'Image failure changes the card destination');
   assert.equal(await fallbackCard.locator('.link-card-title').isVisible(), true,
     'Image failure hides the card title');
