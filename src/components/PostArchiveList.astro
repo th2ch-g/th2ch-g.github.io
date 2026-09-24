@@ -3,7 +3,6 @@ import type { CollectionEntry } from 'astro:content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { tUi, type Lang } from '@/i18n/ui';
 import { formatMonthDay, localeSlug } from '@/lib/content';
-import Octicon from './Octicon.astro';
 
 interface Props {
   posts: CollectionEntry<'posts'>[];
@@ -61,7 +60,6 @@ posts.forEach((post) => {
               {formatMonthDay(post.data.pubDate)}
             </time>
             <a href={getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}`)}>
-              <Octicon name="file" />
               <span>
                 {post.data.title}
                 {post.data.draft && <span class="draft-badge">{tUi('posts.draft')}</span>}
@@ -108,15 +106,11 @@ posts.forEach((post) => {
   .row:last-child { border-bottom: 0; }
   .row:hover { background: var(--color-card); }
   .row > a {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
     color: var(--color-fg);
     font-size: 0.875rem;
     overflow-wrap: anywhere;
   }
   .row > a:hover { color: var(--color-accent); }
-  .row :global(.octicon) { margin-top: 0.125rem; color: var(--color-muted); }
   .row[hidden] { display: none; }
   .date {
     font-variant-numeric: tabular-nums;
@@ -141,7 +135,6 @@ posts.forEach((post) => {
     font-size: 1.05rem;
     line-height: 1.5;
   }
-  .post-archive-list.large-titles .row :global(.octicon) { margin-top: 0.25rem; }
   .post-archive-list.large .date { font-size: 0.92rem; }
   @media (max-width: 540px) {
     .row { grid-template-columns: 1fr; gap: 0.1rem; }
