@@ -19,7 +19,7 @@ async function newLocalPage(viewport) {
 
 async function assertHomeLocales() {
   const page = await newLocalPage({ width: 1280, height: 900 });
-  for (const [lang, path, other] of [['en', '/', '/ja/'], ['ja', '/ja/', '/']]) {
+  for (const [lang, path, other] of [['en', '/?lang=en', '/?lang=ja'], ['ja', '/?lang=ja', '/?lang=en']]) {
     await page.goto(`${url}${path}`, { waitUntil: 'domcontentloaded' });
     await page.locator('[data-cv-actions] summary').waitFor();
     assert.equal(await page.locator('html').getAttribute('lang'), lang);
@@ -32,12 +32,12 @@ async function assertHomeLocales() {
       'Home is missing its publication section');
     assert.equal(await page.locator('.nav-list a[href$="/cv"]').count(), 0,
       'Navigation still links to the removed CV page');
-    assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute('href')).pathname, path);
+    assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute('href')).searchParams.get('lang'), lang);
     assert.equal(new URL(await page.locator('link[hreflang="en"]').getAttribute('href')).pathname, '/');
-    assert.equal(new URL(await page.locator('link[hreflang="ja"]').getAttribute('href')).pathname, '/ja/');
+    assert.equal(new URL(await page.locator('link[hreflang="ja"]').getAttribute('href')).searchParams.get('lang'), 'ja');
     assert.equal(new URL(await page.locator('link[hreflang="x-default"]').getAttribute('href')).pathname, '/');
     const previewUrl = new URL(await page.locator('meta[property="og:image"]').getAttribute('content'));
-    assert.equal(previewUrl.pathname, `${path}og/default.png`);
+    assert.equal(previewUrl.pathname, `${lang === 'ja' ? '/ja' : ''}/og/default.png`);
     assert.match(previewUrl.searchParams.get('v'), /^[a-f0-9]{12}$/,
       'Social preview URL does not include a renderer revision');
     assert.equal(await page.locator('.lang-switch a:not([aria-current])').getAttribute('href'), other);
@@ -46,15 +46,15 @@ async function assertHomeLocales() {
   }
 
   for (const [from, to] of [
-    ['/en/', '/'], ['/cv/', '/ja/#cv'], ['/en/cv/', '/#cv'],
-    ['/en/posts/', '/posts'], ['/en/contact/', '/contact'],
-    ['/en/posts/dotfiles-2026-summer/', '/posts/dotfiles-2026-summer'],
+    ['/en/', '/?lang=en'], ['/cv/', '/?lang=ja#cv'], ['/en/cv/', '/?lang=en#cv'], ['/ja/', '/?lang=ja'],
+    ['/en/posts/', '/posts?lang=en'], ['/en/contact/', '/contact?lang=en'],
+    ['/en/posts/dotfiles-2026-summer/', '/posts/dotfiles-2026-summer?lang=en'],
   ]) {
     const target = new URL(to, url);
     await page.goto(`${url}${from}`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL((location) =>
-      location.pathname.replace(/\/$/, '') + location.hash ===
-      target.pathname.replace(/\/$/, '') + target.hash,
+      location.pathname.replace(/\/$/, '') + location.search + location.hash ===
+      target.pathname.replace(/\/$/, '') + target.search + target.hash,
     );
     await page.locator('main').waitFor();
   }
@@ -126,7 +126,7 @@ async function assertStableFirstPaint() {
       }
     }).observe({ type: 'layout-shift', buffered: true });
   });
-  for (const path of ['/', '/ja/']) {
+  for (const path of ['/?lang=en', '/?lang=ja']) {
     await page.goto(`${url}${path}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1000);
     const shift = await page.evaluate(() => globalThis.__layoutShiftTotal);
@@ -221,7 +221,7 @@ try {
   await assertStableFirstPaint();
   await assertHeadingAnchorClearsHeader('/posts/dotfiles-2026-summer/');
   await assertHeadingAnchorClearsHeader('/');
-  await assertHeadingAnchorClearsHeader('/ja/');
+  await assertHeadingAnchorClearsHeader('/?lang=ja');
   await assertCvBibtexCopy();
   await assertFirefoxTouchAutoplay();
 
@@ -449,7 +449,7 @@ try {
   const rootFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
     .map((label) => label.trim())
     .filter((label) => label.endsWith('Policy'));
-  await desktopPage.goto(`${url}/ja/posts/`, { waitUntil: 'domcontentloaded' });
+  await desktopPage.goto(`${url}/posts/?lang=ja`, { waitUntil: 'domcontentloaded' });
   const japanesePostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
     .map((title) => title.trim());
   assert.deepEqual(japanesePostTitles, rootPostTitles, 'JA and EN routes do not show the same posts');

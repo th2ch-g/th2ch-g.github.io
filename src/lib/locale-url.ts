@@ -1,8 +1,13 @@
-import { getRelativeLocaleUrl } from 'astro:i18n';
 import type { Lang } from '@/i18n/ui';
 
-// Astro formats locale URLs as directories. Static image endpoints
-// are files, so their public URLs must not end in a slash.
+export function getRelativeLocaleUrl(lang: Lang, path: string): string {
+  const url = new URL(path, 'https://locale.invalid');
+  url.pathname = url.pathname.replace(/^\/(en|ja)(?=\/|$)/, '') || '/';
+  url.searchParams.set('lang', lang);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+// Static binary assets keep distinct filenames for each language.
 export function getLocaleFileUrl(lang: Lang, path: string): string {
-  return getRelativeLocaleUrl(lang, path).replace(/\/$/, '');
+  return `${lang === 'ja' ? '/ja' : ''}${path.replace(/\/$/, '')}`;
 }

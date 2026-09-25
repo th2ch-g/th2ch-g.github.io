@@ -4,7 +4,7 @@ import PostArchiveList from './PostArchiveList.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import type { CollectionEntry } from 'astro:content';
-import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import { sortByDateDesc } from '@/lib/content';
 
 interface Props {

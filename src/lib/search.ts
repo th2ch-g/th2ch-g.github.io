@@ -51,7 +51,7 @@ export function setupSearch(): void {
       if (!response.ok) throw new Error(`Search index request failed: ${response.status}`);
       const payload = await response.json() as { items?: SearchIndexItem[] };
       if (!Array.isArray(payload.items)) throw new Error('Search index response is invalid');
-      const lang = dialog.dataset.searchLang ?? document.documentElement.lang;
+      const lang = document.documentElement.lang;
       fallbackInput = createFallback(host, dialog, payload.items.filter((item) => item.lang === lang));
     })().catch((error) => {
       fallbackLoading = undefined;

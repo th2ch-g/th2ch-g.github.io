@@ -1,5 +1,5 @@
 ---
-import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import { languages, tUi, type Lang } from '@/i18n/ui';
 
 interface Props {
@@ -13,17 +13,14 @@ interface Props {
 const { lang, availableLocales } = Astro.props;
 const visible = availableLocales ?? (Object.keys(languages) as Lang[]);
 
-// Strip the current locale prefix from the path so we can append the target one.
-// Preserve query parameters when switching content locales.
 const currentPath = Astro.url.pathname.replace(/^\/(en|ja)(?=\/|$)/, '') || '/';
-const search = Astro.url.search;
 ---
 {visible.length > 1 && <div class="lang-switch join" aria-label={tUi('lang.switch')}>
   {(Object.keys(languages) as Lang[])
     .filter((code) => visible.includes(code))
     .map((code) => (
     <a
-      href={`${getRelativeLocaleUrl(code, currentPath)}${search}`}
+      href={getRelativeLocaleUrl(code, currentPath)}
       class:list={['pill', { active: code === lang }]}
       aria-current={code === lang ? 'true' : undefined}
       hreflang={code}

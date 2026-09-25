@@ -2,7 +2,6 @@
 title: 🪦👋 RIP mogura
 description: PyMOL-rsが出ていたのでmoguraをそっ閉じ😇
 pubDate: 2026-05-12
-draft: false
 ---
 
 # mogura: ClaudeCode無き時代に作ったRust製Visualizer

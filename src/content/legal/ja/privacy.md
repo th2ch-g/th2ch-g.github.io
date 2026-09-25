@@ -76,4 +76,4 @@ EU/EEA 在住の訪問者は、GDPR に基づくデータアクセス・削除�
 
 ## 7. お問い合わせ
 
-プライバシーに関するご質問は、[GitHub Issue]({{repoUrl}}/issues) または[お問い合わせフォーム](/contact)からお願いします。
+プライバシーに関するご質問は、[GitHub Issue]({{repoUrl}}/issues) または[お問い合わせフォーム](/contact?lang=ja)からお願いします。

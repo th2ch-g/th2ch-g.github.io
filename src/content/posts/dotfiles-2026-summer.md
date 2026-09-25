@@ -2,7 +2,6 @@
 title: dotfiles 2026年夏
 description: 最近導入した設定
 pubDate: 2026-06-13
-draft: false
 ---
 
 # 2026年夏時点で、最近取り入れた特筆すべき設定たち

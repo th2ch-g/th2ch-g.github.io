@@ -25,6 +25,7 @@ try {
 const pages = readdirSync(distDir, { recursive: true })
   .filter((file) => file.endsWith('.html') && readFileSync(resolve(distDir, file), 'utf8').includes('<main'))
   .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
+  .flatMap((path) => path === '/404.html' ? [path] : ['en', 'ja'].map((lang) => `${path}?lang=${lang}`))
   .sort();
 
 const { url: base, close } = await startStaticServer(distDir);

@@ -1,5 +1,5 @@
 ---
-import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import { tUi, type Lang } from '@/i18n/ui';
 import { getProfileMeta } from '@/lib/content';
 import LanguageSwitcher from './LanguageSwitcher.astro';
@@ -42,7 +42,7 @@ const withSlash = (p: string) => (p.endsWith('/') ? p : p + '/');
 const current = withSlash(Astro.url.pathname);
 
 function isActive(href: string, match: 'exact' | 'prefix'): boolean {
-  const target = withSlash(href);
+  const target = withSlash(new URL(href, Astro.url).pathname);
   return match === 'exact' ? current === target : current === target || current.startsWith(target);
 }
 
@@ -50,7 +50,7 @@ function isActive(href: string, match: 'exact' | 'prefix'): boolean {
 // item), so it carries the accessible name and the `aria-current` marker that
 // the nav list would otherwise provide for `/`.
 const homeHref = getRelativeLocaleUrl(lang, '/');
-const atHome = current === withSlash(homeHref);
+const atHome = current === '/';
 ---
 <header class="site-header">
   <div class="inner">

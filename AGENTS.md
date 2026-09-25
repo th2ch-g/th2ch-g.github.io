@@ -10,7 +10,7 @@ Astro + TypeScript (strict), Markdown content collections, Pagefind for search, 
 
 ```bash
 npm run dev          # astro dev (port 4321) — predev runs build-icon + build-fonts + build-qr
-npm run build        # astro build → inject-sitemap-xsl → pagefind --site dist
+npm run build        # astro build → build-search
 npm run preview      # serve dist/
 npm run check        # astro check (TypeScript on .astro/.ts/.mts)
 npm run check:css    # custom CSS sanity check (scripts/check-css.mjs)
@@ -27,14 +27,15 @@ Docker: `docker compose up dev` (HMR on 4321) or `up prod` (nginx on 8080).
 
 ## Architecture
 
-### Bilingual routing (en default, ja under `/ja/`)
+### Bilingual routing with query parameters
 
-`astro.config.mjs` sets `prefixDefaultLocale: false`, so:
-- English pages live at `/`, `/posts/`, etc., served from `src/pages/*.astro`.
-- Japanese pages live at `/ja/`, `/ja/posts/`, etc., served from `src/pages/ja/*.astro` — these are **manually mirrored thin wrappers** that import the same component and pass `lang="ja"`.
-- Home renders the profile followed by `CVSection.astro`; there is no standalone CV page or recent-posts section on Home. The old `/cv` and `/en/cv` pages redirect to the matching Home CV section. Legacy `/en/` pages redirect to English root routes; old image endpoints remain as compatibility aliases. RSS, Atom, JSON Feed, OPML, and WebSub support have been removed.
+Pages use `?lang=en` and `?lang=ja` on the same path; English is the default when the parameter is missing or invalid. GitHub Pages serves static HTML, so Base selects the document language before painting and LocaleContent installs the matching profile, CV, or legal content before browser modules initialize. JavaScript-disabled browsers and crawlers receive the English content and metadata.
 
-When adding a page, create both: `src/pages/foo.astro` and `src/pages/ja/foo.astro`. Shared rendering goes in `src/components/FooPage.astro`. Use `getRelativeLocaleUrl` for page links and `getLocaleFileUrl` for OG file paths; the latter removes Astro's directory-style trailing slash.
+- Create only `src/pages/foo.astro`; shared rendering lives in `src/components/FooPage.astro`.
+- Use `getRelativeLocaleUrl` from `src/lib/locale-url.ts` for page links. Language switching preserves other query parameters and fragments; navigation, search, shortcuts, and sharing retain the selected language.
+- `getLocaleFileUrl` keeps distinct paths for static OG image assets, since query parameters cannot select different files on GitHub Pages.
+- Home contains the profile and CV. Legacy `/ja/` and `/en/` pages redirect to query URLs; old CV routes redirect to the Home CV section. RSS, Atom, JSON Feed, OPML, WebSub, and XML sitemaps are removed; the HTML sitemap remains.
+- Pagefind indexes both languages from `search-index.json` via `scripts/build-search.mjs`, using explicit query URLs instead of crawling the English-only static fallback.
 
 UI strings are English-only and live in `src/i18n/ui.ts`; use `tUi(key)` for all visible and accessible interface labels in both routes. `lang` selects content, routes, document language, and locale metadata only. Keep localized prose in content collections or `profile.yaml`, not in the UI dictionary. Render grouped post-list dates as `MM-DD` beneath an ISO year heading, and standalone component dates as `YYYY-MM-DD`.
 
@@ -43,13 +44,13 @@ UI strings are English-only and live in `src/i18n/ui.ts`; use `tUi(key)` for all
 Defined in `src/content.config.ts`. Four collections:
 
 - `cv` — `src/content/cv/{ja,en}.md`. Frontmatter carries `orcid` (the iD the `orcid-cv-sync` skill pulls from; both locales must declare the same one) plus optional `github` / `kaggle` / `huggingface` URLs rendered in the CV header. Funding / publication / presentation lists are wrapped in `<!-- cv:section <kind> -->` … `<!-- /cv:section -->` markers, `kind` ∈ `funding` / `peer-reviewed` / `preprints` / `presentations`. Those markers are the **only** contract for "which list is what": `remark-cv-sections` turns them into `data-cv-section` attributes that `CVSection.astro` reads, and the sync script inserts new entries right after the matching start marker. Heading text is free-form — renaming or translating a heading changes nothing.
-- `legal` — `src/content/legal/{ja,en}/<slug>.md` with `title` / `description` / `updatedDate` frontmatter. The slug after the locale becomes the URL (`/<slug>` and `/ja/<slug>`), so keep it short and stable.
+- `legal` — `src/content/legal/{ja,en}/<slug>.md` with `title` / `description` / `updatedDate` frontmatter. The slug after the locale becomes the URL (`/<slug>?lang=en` and `/<slug>?lang=ja`), so keep it short and stable.
 - `profileMeta` — single file `src/content/profile.yaml`. Per-locale fields use `{ ja, en }` sub-objects; shared values stay flat. Read via `getProfileMeta(lang)` (in `src/lib/content.ts`), which flattens to a per-locale plain object. Throws if the file is missing — fail loudly at build time rather than degrade silently.
-- `posts` — shared Japanese content under `src/content/posts/<slug>.md`, with optional co-located images. The same entries render at `/posts/` and `/ja/posts/`; route locale changes interface chrome and URL prefixes only. `entry.id` is the slug directly.
+- `posts` — shared Japanese content under `src/content/posts/<slug>.md`, with optional co-located images. The same entries render at `/posts/?lang=en` and `/posts/?lang=ja`; route locale changes interface chrome and query parameters only. `entry.id` is the slug directly.
 
 The gallery at `/gallery` is **not** a collection — loose images under `src/content/gallery/` are loaded via `import.meta.glob` from `PhotosListPage.astro`.
 
-`getByLang(collection, lang)` filters by `id.startsWith('<lang>/')`. `getPublishedByLang('posts', lang, { includeDevDrafts })` adds draft filtering — drafts visible only in `npm run dev`. **Sitemaps and OG endpoints must omit `includeDevDrafts`** so drafts never leak into public metadata.
+`getByLang('posts', lang)` returns every shared post in both development and production. There is no draft flag or publication filter; every Markdown file under `src/content/posts/` is included in page routes, search, backlinks, and OG images.
 
 Browser behavior lives in `src/lib/`: `cv/` separates section discovery, clipboard formatting, action controls, and initialization; `clipboard.ts` shares rich/text/legacy writes with code and share buttons; `search.ts` handles the dialog and loading while `search-fallback.ts` renders fallback results. `Base.astro` marks the main content with `data-pagefind-body` to keep page chrome out of search excerpts.
 
@@ -66,7 +67,7 @@ Each page's `getStaticPaths` is evaluated independently by Astro and **must be a
 
 `prebuild` additionally runs `sync-bibtex.mjs`, which refreshes `src/data/bibtex.json` from CrossRef. **Commit this JSON file** — it is a fail-soft snapshot (the script preserves existing per-DOI values on fetch errors), so a missing committed snapshot would leave CV BibTeX buttons empty during a CrossRef outage or initial fork build.
 
-`npm run build` then runs `astro build`, `scripts/inject-sitemap-xsl.mjs` (post-processes the generated sitemap to reference `public/sitemap.xsl` for human-readable rendering), and `pagefind --site dist` (search index). Home's CV supports browser printing and copy/BibTeX actions; there is no separate PDF generation step.
+`npm run build` then runs `astro build` and `scripts/build-search.mjs` (bilingual Pagefind index with query URLs). Home's CV supports browser printing and copy/BibTeX actions; there is no separate PDF generation step.
 
 OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm. `og-config.ts` uses Mona Sans with 600-weight headings and 400-weight descriptions, matching site typography, with Noto Sans JP and emoji fallbacks. `og-version.ts` gives preview URLs a renderer/font-source hash so social crawlers can fetch updated images.
 
@@ -85,7 +86,6 @@ Custom remark plugins in `src/plugins/`:
 
 Plus rehype: KaTeX, slug, autolink-headings (prepend `#`), external-links (`target=_blank`). The Shiki transformer in `astro.config.mjs` projects `data-language` and optional `data-filename` (from code-fence meta `title="…"`) onto every `<pre>`, surfaced by `global.css`.
 
-Reading-time: English uses the `reading-time` package; Japanese uses a char-count estimate (~500 chars/min) because CJK has no word spacing.
 
 ## Critical gotchas (do not relearn the hard way)
 

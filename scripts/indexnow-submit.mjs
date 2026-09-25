@@ -1,16 +1,8 @@
-// Optional post-deploy IndexNow ping. Reads the sitemap from `dist/`,
-// extracts every URL, and POSTs them in one batch to api.indexnow.org.
-// Skip when the indexnow key is empty so the script is a safe no-op
-// in default configurations.
-//
-// Run after a successful deploy:
-//
-//   node scripts/indexnow-submit.mjs
-//
-// CI integration: add a workflow step gated on `secrets.INDEXNOW_KEY`.
+// Optional post-deploy IndexNow ping using the built page inventory.
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { siteUrl } from '../src/lib/profile-yaml.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const distDir = resolve(ROOT, 'dist');
@@ -21,45 +13,18 @@ if (!key) {
   process.exit(0);
 }
 
-let sitemap = '';
+const SITE = await siteUrl();
+const KEY_LOCATION = new URL('/indexnow-key.txt', SITE).href;
+let items;
 try {
-  sitemap = await readFile(join(distDir, 'sitemap-index.xml'), 'utf-8');
+  ({ items } = JSON.parse(await readFile(join(distDir, 'search-index.json'), 'utf8')));
 } catch {
-  console.warn('[indexnow] sitemap-index.xml not found — run `npm run build` first.');
+  console.warn('[indexnow] Search index not found - run npm run build first.');
   process.exit(0);
 }
-
-// `<loc>https://...</loc>` extraction. Sitemap-index points at shards,
-// each shard contains the actual URLs; gather URLs from every reachable
-// shard before submitting.
-const shardUrls = Array.from(sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)).map((m) => m[1]);
-
-// Derive the site origin from the first shard URL rather than hardcoding
-// it here. Sitemap shards are absolute URLs whose origin matches astro
-// config's `site:`, so we stay in sync without depending on env vars or
-// re-importing the Astro config.
-if (shardUrls.length === 0) {
-  console.warn('[indexnow] sitemap-index.xml has no <loc> entries — skipping.');
-  process.exit(0);
-}
-const SITE = new URL(shardUrls[0]).origin;
-const KEY_LOCATION = `${SITE}/indexnow-key.txt`;
-const urls = new Set();
-for (const shardUrl of shardUrls) {
-  try {
-    const res = await fetch(shardUrl, { signal: AbortSignal.timeout(15_000) });
-    if (!res.ok) continue;
-    const body = await res.text();
-    for (const m of body.matchAll(/<loc>([^<]+)<\/loc>/g)) {
-      urls.add(m[1]);
-    }
-  } catch {
-    // Ignore unreachable shards (including AbortError on timeout); submit whatever we have.
-  }
-}
-
+const urls = new Set(items.map((item) => new URL(item.url, SITE).href));
 if (urls.size === 0) {
-  console.warn('[indexnow] no URLs found in sitemap shards — skipping submission.');
+  console.warn('[indexnow] No pages found - skipping submission.');
   process.exit(0);
 }
 

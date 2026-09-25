@@ -1,0 +1,22 @@
+---
+interface Props { target: string }
+const { target } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting</title>
+    <link rel="canonical" href={new URL(target, Astro.site)} />
+    <script is:inline define:vars={{ target }}>
+      const destination = new URL(target, location.origin);
+      for (const [key, value] of new URLSearchParams(location.search)) {
+        if (key !== 'lang') destination.searchParams.append(key, value);
+      }
+      if (location.hash) destination.hash = location.hash;
+      location.replace(destination.href);
+    </script>
+    <noscript><meta http-equiv="refresh" content={`0;url=${target}`} /></noscript>
+  </head>
+  <body><a href={target}>Continue</a></body>
+</html>

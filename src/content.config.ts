@@ -51,7 +51,7 @@ const cv = defineCollection({
 
 // Legal documents (privacy policy, terms of service, ...). One entry per
 // locale per document. The slug after the locale is used in the URL
-// (`/<slug>` and `/en/<slug>`), so keep it short and stable.
+// (`/<slug>?lang=en` and `/<slug>?lang=ja`), so keep it short and stable.
 const legal = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/legal' }),
   schema: z.object({
@@ -187,7 +187,7 @@ const profileMeta = defineCollection({
 
 // Posts are shared Japanese content. Files live directly under
 // `src/content/posts/`; both JA and EN routes render the same entries while
-// keeping their own interface chrome and URL prefixes.
+// selecting their language through query parameters.
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
@@ -199,10 +199,6 @@ const posts = defineCollection({
     // adjacent-post navigator all depend on it.
     pubDate: z.coerce.date(),
     updatedDate: nullable(z.coerce.date()),
-    // null-tolerant boolean: YAML `draft:` (no value) deserialises to
-    // null, which `z.boolean()` would reject; coerce it to undefined
-    // so the `.default(false)` engages.
-    draft: z.preprocess(blankToUndefined, z.boolean().default(false)),
     // Optional series identifier — posts sharing the same `series`
     // string are linked at the bottom of each post in chronological
     // order. Free-form so authors can name a series without registering

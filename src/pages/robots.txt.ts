@@ -1,12 +1,6 @@
 import type { APIRoute } from 'astro';
-import { requireSite } from '@/lib/site';
 
-// AI training / retrieval crawler opt-out. Disallowed UAs are listed
-// inline because the policy is site-wide and the list itself isn't
-// identity — forks can adopt this verbatim or strip it. The
-// `Sitemap:` URLs are the only identity-bearing part and are derived
-// from `astro.config.mjs#site` (which itself reads from profile.yaml),
-// so a fork only has to edit `profile.yaml` to retarget them.
+// AI training and retrieval crawler opt-out, applied site-wide.
 const DISALLOWED_AI_BOTS = [
   'GPTBot',
   'OAI-SearchBot',
@@ -46,8 +40,7 @@ const DISALLOWED_AI_BOTS = [
   'Scrapy',
 ];
 
-export const GET: APIRoute = async (context) => {
-  const site = requireSite(context).toString().replace(/\/$/, '');
+export const GET: APIRoute = async () => {
   const body =
     '# Goal: opt out of AI training and AI-assistant retrieval crawlers\n' +
     '# while keeping the site discoverable through traditional web search.\n' +
@@ -63,10 +56,7 @@ export const GET: APIRoute = async (context) => {
     '# --- Everything else (Googlebot, Bingbot, DuckDuckBot, etc.): allowed ---\n' +
     '\n' +
     'User-agent: *\n' +
-    'Allow: /\n' +
-    '\n' +
-    `Sitemap: ${site}/sitemap-index.xml\n` +
-    `Sitemap: ${site}/sitemap-images.xml\n`;
+    'Allow: /\n';
 
   return new Response(body, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },

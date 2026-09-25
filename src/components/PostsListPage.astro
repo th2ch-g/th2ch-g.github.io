@@ -2,14 +2,14 @@
 import Base from '@/layouts/Base.astro';
 import PostArchiveList from './PostArchiveList.astro';
 import { tUi, type Lang } from '@/i18n/ui';
-import { getPublishedByLang, sortByDateDesc } from '@/lib/content';
+import { getByLang, sortByDateDesc } from '@/lib/content';
 import { getLocaleFileUrl } from '@/lib/locale-url';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 
 const posts = sortByDateDesc(
-  await getPublishedByLang('posts', lang, { includeDevDrafts: true }),
+  await getByLang('posts', lang),
   'pubDate',
 );
 ---

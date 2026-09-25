@@ -1,0 +1,24 @@
+---
+import LegacyRedirect from '@/components/LegacyRedirect.astro';
+import { getLegalByLang, getByLang, localeSlug } from '@/lib/content';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
+import type { Lang } from '@/i18n/ui';
+
+export async function getStaticPaths() {
+  const posts = await getByLang('posts', 'en');
+  const legal = await getLegalByLang('en');
+  const paths = [
+    '', 'cv', 'posts', 'gallery', 'contact', 'sitemap',
+    ...legal.map((doc) => doc.slug),
+    ...posts.map((post) => `posts/${localeSlug(post.id)}`),
+    ...new Set(posts.flatMap((post) => post.data.series ? [`posts/series/${post.data.series}`] : [])),
+  ];
+  return (['en', 'ja'] as Lang[]).flatMap((lang) => paths.map((path) => ({
+    params: { locale: lang, path: path || undefined },
+    props: { target: getRelativeLocaleUrl(lang, path === 'cv' ? '/#cv' : `/${path}`) },
+  })));
+}
+
+const { target } = Astro.props;
+---
+<LegacyRedirect target={target} />

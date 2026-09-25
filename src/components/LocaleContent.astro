@@ -1,0 +1,17 @@
+<div data-locale-content><slot name="en" /></div>
+<template data-locale-template="ja"><slot name="ja" /></template>
+<script is:inline>
+  (() => {
+    const script = document.currentScript;
+    const template = script.previousElementSibling;
+    const fallback = template.previousElementSibling;
+    const content = document.documentElement.lang === 'ja' ? template.content : fallback;
+    fallback.replaceWith(...content.childNodes);
+    template.remove();
+    script.remove();
+  })();
+</script>
+<style>
+  [data-locale-content] { display: contents; }
+  :global(html[lang="ja"]) [data-locale-content] { display: none; }
+</style>

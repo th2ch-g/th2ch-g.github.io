@@ -4,7 +4,7 @@ description: Terms of use, copyright, and disclaimer for this site.
 updatedDate: 2026-05-13
 ---
 
-This page describes the terms of use, content copyright, and disclaimer for "{{siteHandle}}" ({{site}}, hereinafter "this site"). For details on personal information, please refer to the separate [Privacy Policy](/en/privacy).
+This page describes the terms of use, content copyright, and disclaimer for "{{siteHandle}}" ({{site}}, hereinafter "this site"). For details on personal information, please refer to the separate [Privacy Policy](/privacy?lang=en).
 
 ## 1. Disclaimer
 
@@ -62,4 +62,4 @@ This policy may be changed without prior notice. When significant changes occur,
 
 ## 7. Contact
 
-For questions about this policy, please open a [GitHub issue]({{repoUrl}}/issues) or use the [contact form](/en/contact).
+For questions about this policy, please open a [GitHub issue]({{repoUrl}}/issues) or use the [contact form](/contact?lang=en).

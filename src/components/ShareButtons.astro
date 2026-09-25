@@ -1,16 +1,17 @@
 ---
 import { siX, siBluesky, siHatenabookmark, siFacebook } from 'simple-icons';
 import { tUi, type Lang } from '@/i18n/ui';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
 
 interface Props {
   lang: Lang;
   title: string;
 }
-const { title } = Astro.props;
+const { title, lang } = Astro.props;
 
 // Build the share URL against Astro.site (production host) so links shared
 // from a dev preview still resolve to the public page, not localhost.
-const shareUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const shareUrl = new URL(getRelativeLocaleUrl(lang, Astro.url.pathname), Astro.site).toString();
 
 const u = encodeURIComponent(shareUrl);
 const tt = encodeURIComponent(title);
@@ -44,7 +45,7 @@ const targets = [
 
 const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
 ---
-<div class="share" aria-label={tUi('share.title')}>
+<div class="share" data-share-base={shareUrl} aria-label={tUi('share.title')}>
   <span class="share-label">{tUi('share.title')}</span>
   <ul class="share-list">
     {targets.map((target) => (
@@ -194,8 +195,6 @@ const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
     color: var(--color-accent-hover);
     border-color: var(--color-accent-hover);
   }
-  /* Warning amber matches the draft-badge color so failure states read
-     consistently with the rest of the site. */
   .share-btn.is-failed {
     color: var(--color-warn);
     border-color: var(--color-warn);

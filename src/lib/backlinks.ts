@@ -38,9 +38,7 @@ function extractPostsSlugs(body: string): string[] {
 
 async function getBacklinkMap(lang: Lang): Promise<Map<string, Citer[]>> {
   if (cache) return cache;
-  const posts = (await getByLang('posts', lang)).filter(
-    (p) => !p.data.draft || import.meta.env.DEV,
-  );
+  const posts = await getByLang('posts', lang);
   const map = new Map<string, Citer[]>();
   for (const post of posts) {
     const targets = extractPostsSlugs(post.body ?? '');

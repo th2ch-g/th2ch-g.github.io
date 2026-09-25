@@ -9,6 +9,7 @@ const distDir = resolve(import.meta.dirname, '../dist');
 const paths = readdirSync(distDir, { recursive: true })
   .filter((file) => file.endsWith('.html') && readFileSync(resolve(distDir, file), 'utf8').includes('<main'))
   .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
+  .flatMap((path) => path === '/404.html' ? [path] : ['en', 'ja'].map((lang) => `${path}?lang=${lang}`))
   .sort();
 assert.ok(paths.length, 'Build the site before checking mobile pages');
 
@@ -97,22 +98,22 @@ async function assertTapFeedback(page) {
   }
 }
 
-async function assertTouchFlows(context, prefix) {
+async function assertTouchFlows(context, lang) {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
-    await visit(page, `${prefix}/`);
+    await visit(page, `/?lang=${lang}`);
     await page.locator('[data-nav-toggle]').tap();
     await page.locator('.nav-list a').first().tap();
-    await page.waitForURL((url) => url.pathname.replace(/\/$/, '') === `${prefix}/posts`);
+    await page.waitForURL((url) => url.pathname.replace(/\/$/, '') === '/posts' && url.searchParams.get('lang') === lang);
     const firstPost = page.locator('[data-post-row] a').first();
     const postUrl = new URL(await firstPost.getAttribute('href'), server.url);
     await firstPost.tap();
     await page.waitForURL(postUrl.href);
     await page.locator('article').waitFor();
 
-    await visit(page, `${prefix}/`);
+    await visit(page, `/?lang=${lang}`);
     const previousTheme = await page.locator('html').getAttribute('data-theme');
     await page.locator('[data-theme-toggle]').tap();
     const nextTheme = await page.locator('html').getAttribute('data-theme');
@@ -121,10 +122,10 @@ async function assertTouchFlows(context, prefix) {
     assert.equal(await page.locator('html').getAttribute('data-theme'), nextTheme);
     await page.locator('[data-theme-toggle]').tap();
 
-    const otherLocale = page.locator('.lang-switch a').filter({ hasText: prefix ? 'EN' : 'JA' });
+    const otherLocale = page.locator('.lang-switch a').filter({ hasText: lang === 'ja' ? 'EN' : 'JA' });
     await otherLocale.tap();
-    await page.waitForURL((url) => url.pathname === (prefix ? '/' : '/ja/'));
-    await visit(page, `${prefix}/`);
+    await page.waitForURL((url) => url.pathname === '/' && url.searchParams.get('lang') === (lang === 'ja' ? 'en' : 'ja'));
+    await visit(page, `/?lang=${lang}`);
     await page.locator('li.cv-has-bibtex').first().waitFor();
     await page.evaluate(() => {
       globalThis.__copiedText = '';
@@ -149,20 +150,20 @@ async function assertTouchFlows(context, prefix) {
     assert.equal(await toolbar.getAttribute('open'), null, 'Copy-all menu stays open after a touch selection');
 
     const index = await (await context.request.get(server.url + '/search-index.json')).json();
-    const postItems = index.items.filter((item) => item.lang === (prefix ? 'ja' : 'en')
-      && item.url.startsWith(`${prefix}/posts/`) && !item.url.includes('/series/') && item.date);
+    const postItems = index.items.filter((item) => item.lang === lang
+      && item.url.startsWith('/posts/') && !item.url.includes('/series/') && item.date);
     const article = postItems.find((item) => /[a-z]{4}/i.test(item.title)) ?? postItems[0];
     const query = article.title.match(/[a-z]{4,}/i)?.[0] ?? article.title;
     for (const fallback of [false, true]) {
       if (fallback) await page.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
-      await visit(page, `${prefix}/`);
+      await visit(page, `/?lang=${lang}`);
       await page.locator('[data-search-open]').tap();
       const input = page.locator(fallback ? '.search-fallback__input' : '.pagefind-ui__search-input');
       await input.fill('Gallery');
       const resultSelector = fallback ? '.search-fallback__link' : '.pagefind-ui__result-link';
       await page.waitForFunction(({ selector, expectedPath }) =>
         [...document.querySelectorAll(selector)].some((link) =>
-          new URL(link.href).pathname === expectedPath), { selector: resultSelector, expectedPath: `${prefix}/gallery/` });
+          new URL(link.href).pathname + new URL(link.href).search === expectedPath), { selector: resultSelector, expectedPath: `/gallery/?lang=${lang}` });
       await input.fill(query);
       const result = page.locator(fallback ? '.search-fallback__link' : '.pagefind-ui__result-link')
         .filter({ hasText: article.title }).first();
@@ -174,7 +175,7 @@ async function assertTouchFlows(context, prefix) {
       await page.locator('article').waitFor();
     }
 
-    await visit(page, `${prefix}/gallery/`);
+    await visit(page, `/gallery/?lang=${lang}`);
     const currentSlide = () => page.locator('.slideshow-progress-current').textContent();
     const before = await currentSlide();
     await page.locator('.photo-slideshow .next').tap();
@@ -257,11 +258,11 @@ try {
             }
             await page.close();
             if (name === 'phone') {
-              for (const prefix of ['', '/ja']) {
+              for (const lang of ['en', 'ja']) {
                 try {
-                  await assertTouchFlows(context, prefix);
+                  await assertTouchFlows(context, lang);
                 } catch (error) {
-                  failures.push(`${label} ${prefix || '/'} touch flow: ${error.message}`);
+                  failures.push(`${label} ${lang} touch flow: ${error.message}`);
                   console.error(failures.at(-1));
                 }
               }

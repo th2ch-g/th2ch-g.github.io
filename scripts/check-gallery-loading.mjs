@@ -180,7 +180,7 @@ try {
   for (const engine of [chromium, firefox, webkit]) {
     const browser = await engine.launch();
     try {
-      for (const path of ['/gallery/', '/ja/gallery/']) {
+      for (const path of ['/gallery/?lang=en', '/gallery/?lang=ja']) {
         let sources;
         for (const viewport of [{ width: 393, height: 852 }, { width: 1280, height: 900 }]) {
           sources = await checkViewportLoading(browser, path, viewport);

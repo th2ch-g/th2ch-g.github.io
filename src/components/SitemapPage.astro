@@ -1,10 +1,10 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import {
   formatDate,
   getLegalLinksByLang,
-  getPublishedByLang,
+  getByLang,
   localeSlug,
   sortByDateDesc,
 } from '@/lib/content';
@@ -16,7 +16,7 @@ interface Props {
 }
 const { lang } = Astro.props;
 
-const posts = sortByDateDesc(await getPublishedByLang('posts', lang), 'pubDate');
+const posts = sortByDateDesc(await getByLang('posts', lang), 'pubDate');
 // Legal docs are appended to the static-page list dynamically so a new
 // src/content/legal/<lang>/<slug>.md file shows up here without any
 // code edit. Order: fixed nav pages first, then alphabetised legal docs.
@@ -35,7 +35,6 @@ const pages = [
 
 const title = tUi('sitemap.title');
 const description = tUi('sitemap.description');
-const xmlNote = tUi('sitemap.xmlNote');
 // Read `site:` directly from profile.yaml — the same source `build-qr.mjs`
 // consumes. This keeps the displayed URL / alt text and the PNG existence
 // in lock-step: if `site:` is null, the PNG is never generated AND the
@@ -97,10 +96,6 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
     </section>
   )}
 
-  <p class="muted xml-note">
-    {xmlNote}{' '}
-    <a href="/sitemap-index.xml" target="_blank" rel="noopener noreferrer">/sitemap-index.xml</a>
-  </p>
 </Base>
 
 <style>
@@ -153,15 +148,6 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
     color: var(--color-muted);
     white-space: nowrap;
     flex: 0 0 auto;
-  }
-  .xml-note {
-    margin-top: 3rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--color-border);
-    font-size: 0.85rem;
-  }
-  .xml-note a {
-    font-family: var(--font-mono);
   }
   .qr-note {
     margin: 0 0 1rem;

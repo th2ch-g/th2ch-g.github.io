@@ -7,7 +7,7 @@ import { startStaticServer } from './lib/static-server.mjs';
 const distDir = resolve(import.meta.dirname, '../dist');
 const server = await startStaticServer(distDir);
 const index = await (await fetch(`${server.url}/search-index.json`)).json();
-const postItems = index.items.filter((item) => item.lang === 'en' && /^\/posts\/[^/]+\/$/.test(item.url));
+const postItems = index.items.filter((item) => item.lang === 'en' && /^\/posts\/[^/]+\/$/.test(new URL(item.url, server.url).pathname));
 const article = postItems.find((item) => /[a-z]{4}/i.test(item.title)) ?? postItems[0];
 assert.ok(article, 'Search checks require a published article');
 const query = article.title.match(/[a-z]{4,}/i)?.[0] ?? article.title;
@@ -18,6 +18,7 @@ const renderedPaths = readdirSync(distDir, { recursive: true })
   .filter((file) => file.endsWith('.html') && file !== '404.html'
     && readFileSync(resolve(distDir, file), 'utf8').includes('<main'))
   .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
+  .flatMap((path) => ['en', 'ja'].map((lang) => `${path}?lang=${lang}`))
   .sort();
 assert.deepEqual(index.items.map((item) => decodeURI(item.url)).sort(), renderedPaths,
   'Fallback search does not cover every public content page exactly once');
@@ -99,7 +100,7 @@ async function checkCv(browser, path) {
   assert.match(text['text/html'], /font-size:10.5pt;color:#000;background-color:#ffffff/);
   assert.doesNotMatch(text['text/html'], /<(?:button|details|a)\b|heading-anchor/);
   assert.match(text['text/html'], /Times New Roman/);
-  if (path === '/ja/') assert.match(text['text/html'], /MS Mincho/);
+  if (path === '/?lang=ja') assert.match(text['text/html'], /MS Mincho/);
 
   const bib = await copyFromMenu(menu, 'BibTeX');
   assert.match(bib['text/plain'], /^@\w+\{/);
@@ -116,9 +117,9 @@ async function checkCv(browser, path) {
   const all = await copyFromMenu(toolbar, 'Copy all');
   assert.ok(all['text/plain'].length > section['text/plain'].length);
   assert.doesNotMatch(all['text/html'], /cv-copy-actions|cv-section-actions|heading-anchor/);
-  if (path === '/ja/') assert.match(all['text/html'], /font-family:'MS Mincho'/);
+  if (path === '/?lang=ja') assert.match(all['text/html'], /font-family:'MS Mincho'/);
   const allBib = await copyFromMenu(toolbar, 'Copy .bib');
-  const response = await page.request.get(server.url + (path === '/ja/' ? '/ja/cv.bib' : '/cv.bib'));
+  const response = await page.request.get(server.url + (path === '/?lang=ja' ? '/ja/cv.bib' : '/cv.bib'));
   assert.equal(response.status(), 200);
   assert.equal(allBib['text/plain'], await response.text());
 
@@ -162,27 +163,27 @@ async function checkSearch(browser, path, fallback) {
       'Search excerpts include hidden page chrome');
   }
   const destination = new URL(await result.getAttribute('href'), server.url);
-  assert.ok(destination.pathname.startsWith(path === '/ja/' ? '/ja/posts/' : '/posts/'));
+  assert.ok(destination.pathname.startsWith('/posts/') && destination.searchParams.get('lang') === (path === '/?lang=ja' ? 'ja' : 'en'));
   assert.equal(await input.getAttribute('placeholder'), 'Search this site...');
   const paperTitle = await page.locator('li.cv-has-bibtex a[href*="doi.org"]').first().textContent();
   const cvQuery = paperTitle.match(/[a-z]{4,}/i)?.[0] ?? paperTitle;
-  const prefix = path === '/ja/' ? '/ja' : '';
+  const lang = path === '/?lang=ja' ? 'ja' : 'en';
   const resultSelector = fallback ? '.search-fallback__link' : '.pagefind-ui__result-link';
   for (const [term, expectedPath] of [
-    [cvQuery, path],
-    ['Google AdSense', `${prefix}/privacy/`],
-    ['Gallery', `${prefix}/gallery/`],
-    ['Contact', `${prefix}/contact/`],
-    ['Sitemap', `${prefix}/sitemap/`],
+    [cvQuery, `/?lang=${lang}`],
+    ['Google AdSense', `/privacy/?lang=${lang}`],
+    ['Gallery', `/gallery/?lang=${lang}`],
+    ['Contact', `/contact/?lang=${lang}`],
+    ['Sitemap', `/sitemap/?lang=${lang}`],
   ]) {
     await input.fill(term);
     await page.waitForFunction(({ selector, expectedPath }) =>
       [...document.querySelectorAll(selector)].some((link) =>
-        new URL(link.href).pathname === expectedPath), { selector: resultSelector, expectedPath });
+        new URL(link.href).pathname + new URL(link.href).search === expectedPath), { selector: resultSelector, expectedPath });
     const destinations = await page.locator(resultSelector).evaluateAll((links) =>
-      links.map((link) => new URL(link.href).pathname));
-    assert.ok(destinations.every((pathname) => pathname.startsWith('/ja/') === (path === '/ja/')),
-      'Search mixes content from the other locale');
+      links.map((link) => new URL(link.href).href));
+    assert.ok(destinations.every((href) => new URL(href).searchParams.get('lang') === lang),
+      `Search mixes content from the other locale (${lang}, ${term}): ${destinations.join(', ')}`);
     if (fallback) assert.equal(new Set(destinations).size, destinations.length, 'Search repeats a page');
   }
   await input.fill('qzxqzxqzxqzxqzx');
@@ -303,16 +304,16 @@ async function checkCopyAndTheme(browser) {
 }
 
 async function checkNavigationAndGallery(browser) {
-  const { page, errors } = await newPage(browser, '/ja/', { viewport: { width: 393, height: 852 } });
+  const { page, errors } = await newPage(browser, '/?lang=ja', { viewport: { width: 393, height: 852 } });
   const toggle = page.locator('[data-nav-toggle]');
   await toggle.click();
   await page.locator('.cv-prose h2').first().click();
   assert.equal(await toggle.getAttribute('aria-expanded'), 'false', 'Outside click leaves navigation open');
-  for (const [key, destination] of [['b', '/ja/posts'], ['p', '/ja/gallery'], ['c', '/ja/#cv'], ['h', '/ja/']]) {
+  for (const [key, destination] of [['b', '/posts?lang=ja'], ['p', '/gallery?lang=ja'], ['c', '/?lang=ja#cv'], ['h', '/?lang=ja']]) {
     const target = new URL(destination, server.url);
     await page.keyboard.press('g');
     await page.keyboard.press(key);
-    await page.waitForURL((location) => `${location.pathname.replace(/\/$/, '')}${location.hash}` === `${target.pathname.replace(/\/$/, '')}${target.hash}`);
+    await page.waitForURL((location) => `${location.pathname.replace(/\/$/, '')}${location.search}${location.hash}` === `${target.pathname.replace(/\/$/, '')}${target.search}${target.hash}`);
     await page.waitForLoadState('networkidle');
   }
   await page.goto(server.url + '/gallery/', { waitUntil: 'networkidle' });
@@ -357,7 +358,7 @@ try {
   for (const engine of [chromium, firefox]) {
     const browser = await engine.launch();
     try {
-      for (const path of ['/', '/ja/']) {
+      for (const path of ['/', '/?lang=ja']) {
         await checkCv(browser, path);
         await checkSearch(browser, path, false);
         await checkSearch(browser, path, true);

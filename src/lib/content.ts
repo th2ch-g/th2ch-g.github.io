@@ -1,5 +1,4 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import readingTime from 'reading-time';
 import type { Lang } from '@/i18n/ui';
 
 type LangAware = 'posts';
@@ -29,7 +28,7 @@ export async function getByLang<C extends LangAware>(
   _lang: Lang,
 ): Promise<CollectionEntry<C>[]> {
   // Posts are shared content. The route locale controls interface chrome and
-  // URL prefixes, never which post entries are returned.
+  // language query parameter, never which post entries are returned.
   const entries = await getCollection(collection);
   if (import.meta.env.DEV && collection === 'posts') {
     const posts = entries as unknown as CollectionEntry<'posts'>[];
@@ -40,22 +39,6 @@ export async function getByLang<C extends LangAware>(
     }
   }
   return entries as CollectionEntry<C>[];
-}
-
-// Filter to non-draft entries. Public metadata callers omit `includeDevDrafts`
-// so drafts never leak into public metadata (even in `npm run dev`).
-// Internal page-route callers (series index, etc.) pass
-// `{ includeDevDrafts: true }` to preview drafts during local dev. Only
-// `posts` carries a `draft` field — the photo gallery is loaded via
-// `import.meta.glob` (not a collection) so it has no draft semantics.
-export async function getPublishedByLang(
-  collection: 'posts',
-  lang: Lang,
-  opts?: { includeDevDrafts?: boolean },
-): Promise<CollectionEntry<'posts'>[]> {
-  const entries = await getByLang(collection, lang);
-  const allowDev = opts?.includeDevDrafts === true && import.meta.env.DEV;
-  return entries.filter((e) => !e.data.draft || allowDev);
 }
 
 export async function getCv(lang: Lang) {
@@ -249,7 +232,7 @@ export async function getSeriesPosts(
   series: string,
   lang: Lang,
 ): Promise<CollectionEntry<'posts'>[]> {
-  const all = await getPublishedByLang('posts', lang, { includeDevDrafts: true });
+  const all = await getByLang('posts', lang);
   return all
     .filter((p) => p.data.series === series)
     .sort((a, b) => a.data.pubDate.getTime() - b.data.pubDate.getTime());
@@ -264,7 +247,7 @@ export async function getAdjacentPosts(
   lang: Lang,
 ): Promise<{ prev: CollectionEntry<'posts'> | null; next: CollectionEntry<'posts'> | null }> {
   const all = sortByDateDesc(
-    await getPublishedByLang('posts', lang, { includeDevDrafts: true }),
+    await getByLang('posts', lang),
     'pubDate',
   );
   const idx = all.findIndex((p) => p.id === current.id);
@@ -275,10 +258,7 @@ export async function getAdjacentPosts(
   };
 }
 
-// Strip non-prose tokens that bloat reading-time estimates: fenced/inline
-// code, display/inline math, HTML tags, and bare URLs. A reader skims past
-// these rather than reading them char-by-char, so including them
-// systematically over-estimates the time required.
+// Count prose without code, formulae, HTML markup, or bare URLs.
 function stripNonProse(body: string): string {
   return body
     .replace(/```[\s\S]*?```/g, '')
@@ -289,26 +269,7 @@ function stripNonProse(body: string): string {
     .replace(/https?:\/\/\S+/g, '');
 }
 
-// Reading time estimate. The `reading-time` package counts whitespace-
-// separated words at ~200 WPM, which matches English well but undercounts
-// Japanese (which is mostly contiguous CJK with no spaces). For `ja`, fall
-// back to a character-based estimate at ~500 chars/min — a common figure
-// for native-speaker silent reading. Always >=1 minute so very short
-// posts don't read as "0 min".
-export function getReadingMinutes(body: string, lang: Lang): number {
-  const prose = stripNonProse(body);
-  if (lang === 'ja') {
-    const cjkChars = prose.replace(/\s+/g, '').length;
-    return Math.max(1, Math.ceil(cjkChars / 500));
-  }
-  return Math.max(1, Math.ceil(readingTime(prose).minutes));
-}
-
-// Word count for schema.org/BlogPosting's `wordCount` property. Uses the
-// same `stripNonProse` pass as the reading-time estimate so the published
-// metadata stays consistent with the displayed minutes. For Japanese,
-// schema.org treats `wordCount` as a character count — there's no word
-// boundary, and search engines (Google, Bing) document this convention.
+// Word count for structured metadata; Japanese uses non-whitespace characters.
 export function getWordCount(body: string, lang: Lang): number {
   const prose = stripNonProse(body);
   if (lang === 'ja') {

@@ -10,7 +10,7 @@ const { url, close } = await startStaticServer(distDir);
 const browser = await chromium.launch();
 const page = await browser.newPage();
 const results = [];
-for (const path of ['/', '/en/']) {
+for (const path of ['/?lang=en', '/?lang=ja']) {
   for (const theme of ['light', 'dark']) {
     await page.goto(`${url}${path}`, { waitUntil: 'networkidle' });
     await page.evaluate((t) => {

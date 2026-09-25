@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { getRelativeLocaleUrl } from 'astro:i18n';
-import { tUi, type Lang } from '@/i18n/ui';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
+import type { Lang } from '@/i18n/ui';
 import { formatMonthDay, localeSlug } from '@/lib/content';
 
 interface Props {
@@ -62,7 +62,6 @@ posts.forEach((post) => {
             <a href={getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}`)}>
               <span>
                 {post.data.title}
-                {post.data.draft && <span class="draft-badge">{tUi('posts.draft')}</span>}
               </span>
             </a>
           </li>
@@ -115,18 +114,6 @@ posts.forEach((post) => {
   .date {
     font-variant-numeric: tabular-nums;
     font-size: 0.75rem;
-  }
-  .draft-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.02rem 0.4rem;
-    border: 1px solid var(--color-warn);
-    border-radius: 999px;
-    color: var(--color-warn);
-    font-size: 0.68rem;
-    font-weight: 600;
-    line-height: 1.4;
-    vertical-align: middle;
   }
   .post-archive-list.large .year h3 { font-size: 1rem; }
   .post-archive-list.large .count-inline { font-size: 0.8em; }

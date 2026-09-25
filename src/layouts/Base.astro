@@ -10,19 +10,15 @@ import Shortcuts from '@/components/Shortcuts.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import { getProfileMeta } from '@/lib/content';
 import type { ImageMetadata } from 'astro';
-import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getRelativeLocaleUrl, getLocaleFileUrl } from '@/lib/locale-url';
 import { versionOgImage } from '@/lib/og-version';
-import { getLocaleFileUrl } from '@/lib/locale-url';
 
 interface Props {
   title: string;
   description?: string;
   lang: Lang;
-  // Locales in which this page exists. Most pages are fully mirrored (ja + en),
-  // which is the default. Content pages lacking a translation pass a subset
-  // so the language switcher and hreflang alternates never point at a
-  // non-existent URL (which 404s,
-  // and for hreflang is silently dropped by search engines anyway).
+  japanese?: { title?: string; description?: string };
+  // Only advertise languages with available content.
   availableLocales?: Lang[];
   // Per-page social-card image. Pass an Astro `image()` asset (preferred — its
   // bundled path is resolved against `Astro.site`) or a fully-qualified URL.
@@ -47,7 +43,7 @@ interface Props {
   // JSON-LD. The trailing item (the current page) typically omits `url`.
   breadcrumbs?: Array<{ name: string; url?: string }>;
 }
-const { title, description, lang, image, article, breadcrumbs, availableLocales } = Astro.props;
+const { title, description, lang, image, article, breadcrumbs, availableLocales, japanese } = Astro.props;
 const locales = availableLocales ?? (['en', 'ja'] as Lang[]);
 const localePath = Astro.url.pathname.replace(/^\/(?:en|ja)(?=\/|$)/, '') || '/';
 const meta = await getProfileMeta(lang);
@@ -74,7 +70,7 @@ const metaDescription = description ?? meta.bio;
 const siteName = meta.name;
 const documentTitle = !siteName || title === siteName ? title : `${title} | ${siteName}`;
 
-const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+const canonical = new URL(getRelativeLocaleUrl(lang, localePath), Astro.site).toString();
 // Locale-aware default OG card. Generated at build time by
 // `src/pages/og/default.png.ts` (and the /ja/ mirror), 1200x630.
 const defaultOgPath = getLocaleFileUrl(lang, '/og/default.png');
@@ -231,6 +227,34 @@ const jsonLd = {
     ...(breadcrumbLd ? [breadcrumbLd] : []),
   ],
 };
+const japaneseMeta = await getProfileMeta('ja');
+const japaneseTitle = japanese?.title ?? title;
+const japaneseDescription = japanese?.description ?? description ?? japaneseMeta.bio;
+const japaneseCanonical = new URL(getRelativeLocaleUrl('ja', localePath), Astro.site).toString();
+const japaneseImageUrl = new URL(ogImageUrl);
+if (japaneseImageUrl.origin === Astro.url.origin && /^\/(?:ja\/)?og\//.test(japaneseImageUrl.pathname)) {
+  japaneseImageUrl.pathname = getLocaleFileUrl('ja', japaneseImageUrl.pathname.replace(/^\/ja/, ''));
+}
+const japaneseImage = japaneseImageUrl.origin === Astro.url.origin
+  ? versionOgImage(japaneseImageUrl) : japaneseImageUrl.toString();
+const japaneseJsonLd = {
+  ...jsonLd,
+  '@graph': [
+    personLd,
+    { ...websiteLd, description: japaneseMeta.bio, inLanguage: 'ja-JP' },
+    ...(articleLd ? [{ ...articleLd, url: japaneseCanonical, image: japaneseImage,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': japaneseCanonical } }] : []),
+    ...(breadcrumbLd ? [{ ...breadcrumbLd, itemListElement: breadcrumbLd.itemListElement.map((item) => ({
+      ...item,
+      ...(item.item ? { item: new URL(getRelativeLocaleUrl('ja', item.item), Astro.site).toString() } : {}),
+    })) }] : []),
+  ],
+};
+const japaneseMetadata = {
+  documentTitle: !siteName || japaneseTitle === siteName ? japaneseTitle : `${japaneseTitle} | ${siteName}`,
+  title: japaneseTitle, description: japaneseDescription ?? '', canonical: japaneseCanonical,
+  image: japaneseImage, imageAlt: japaneseDescription ?? japaneseTitle, jsonLd: japaneseJsonLd,
+};
 ---
 <!doctype html>
 <html lang={lang} data-theme="dark">
@@ -241,6 +265,10 @@ const jsonLd = {
         browser applies it to the rest of <head>. See `csp` const above
         for directive rationale. */}
     <meta http-equiv="Content-Security-Policy" content={csp} />
+    <script is:inline define:vars={{ locales }}>
+      const requestedLanguage = new URLSearchParams(location.search).get('lang');
+      document.documentElement.lang = locales.includes(requestedLanguage) ? requestedLanguage : 'en';
+    </script>
     <link rel="preload" href={monaSansLatin} as="font" type="font/woff2" crossorigin="anonymous" />
     {hasMath && <link rel="stylesheet" href={katexStyles} />}
     <meta name="generator" content={Astro.generator} />
@@ -308,7 +336,6 @@ const jsonLd = {
     {metaDescription && <meta name="twitter:description" content={metaDescription} />}
     <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:image:alt" content={ogImageAlt} />
-    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
     <!-- Hreflang alternates so search engines understand the bilingual pair. -->
     {locales.map((locale) => (
@@ -334,6 +361,36 @@ const jsonLd = {
       type="application/ld+json"
       set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')}
     />
+    <script is:inline define:vars={{ japaneseMetadata }}>
+      if (document.documentElement.lang === 'ja') {
+        document.title = japaneseMetadata.documentTitle;
+        document.querySelector('link[rel="canonical"]').href = japaneseMetadata.canonical;
+        const values = {
+          'description': japaneseMetadata.description,
+          'og:title': japaneseMetadata.title,
+          'og:description': japaneseMetadata.description,
+          'og:url': japaneseMetadata.canonical,
+          'og:locale': 'ja_JP',
+          'og:locale:alternate': 'en_US',
+          'og:image': japaneseMetadata.image,
+          'og:image:alt': japaneseMetadata.imageAlt,
+          'twitter:title': japaneseMetadata.title,
+          'twitter:description': japaneseMetadata.description,
+          'twitter:image': japaneseMetadata.image,
+          'twitter:image:alt': japaneseMetadata.imageAlt,
+        };
+        for (const [key, value] of Object.entries(values)) {
+          let tag = document.querySelector(`meta[name="${key}"], meta[property="${key}"]`);
+          if (!tag && value) {
+            tag = document.createElement('meta');
+            tag.setAttribute(key.startsWith('og:') ? 'property' : 'name', key);
+            document.head.appendChild(tag);
+          }
+          if (tag) tag.content = value;
+        }
+        document.querySelector('script[type="application/ld+json"]').textContent = JSON.stringify(japaneseMetadata.jsonLd);
+      }
+    </script>
 
     {/* Webmention discovery links — register at https://webmention.io to obtain endpoints. */}
     {meta.integrations.webmention && (
@@ -444,7 +501,10 @@ const jsonLd = {
       import { onReady } from '@/lib/dom-ready';
       import { setupLinkCardImages } from '@/lib/link-card-images';
       import { setupCodeCopy } from '@/lib/code-copy';
+      import { setupLocaleLinks } from '@/lib/locale-client';
       onReady(() => {
+        setupLocaleLinks();
+        window.addEventListener('hashchange', setupLocaleLinks);
         setupLinkCardImages();
         setupCodeCopy();
       });

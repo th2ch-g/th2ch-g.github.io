@@ -1,7 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import { tUi, type Lang } from '@/i18n/ui';
-import { formatDate, getReadingMinutes, getWordCount } from '@/lib/content';
+import { formatDate, getWordCount } from '@/lib/content';
 import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content';
 import ShareButtons from '@/components/ShareButtons.astro';
@@ -13,9 +13,9 @@ import Backlinks from '@/components/Backlinks.astro';
 import Breadcrumbs from '@/components/Breadcrumbs.astro';
 import { getAdjacentPosts, getSeriesPosts } from '@/lib/content';
 import { getBacklinks } from '@/lib/backlinks';
-import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import { getLocaleFileUrl } from '@/lib/locale-url';
-import { localeSlug, getPublishedByLang } from '@/lib/content';
+import { localeSlug } from '@/lib/content';
 
 interface Props {
   post: CollectionEntry<'posts'>;
@@ -26,7 +26,6 @@ const { Content } = await render(post);
 // Post bodies are authored once in Japanese and shared by both route locales.
 // Interface chrome follows `lang`; prose metrics and language metadata do not.
 const contentLang: Lang = 'ja';
-const readingMinutes = getReadingMinutes(post.body ?? '', contentLang);
 const wordCount = getWordCount(post.body ?? '', contentLang);
 const { prev, next } = await getAdjacentPosts(post, lang);
 const seriesPosts = post.data.series ? await getSeriesPosts(post.data.series, lang) : [];
@@ -34,20 +33,10 @@ const backlinks = await getBacklinks(post, lang);
 // Always use the build-time-generated OG card so social previews keep a
 // consistent 1200x630 frame, accent border, and avatar.
 const slug = localeSlug(post.id);
-// Does the opposite locale have this same post? If not, the language switcher
-// and hreflang alternate must NOT advertise a /<other>/posts/<slug> URL — it
-// isn't generated (see buildPostsDetailPaths) and would 404. The draft filter
-// mirrors getStaticPaths so dev (drafts visible) and prod stay consistent.
-const otherLang: Lang = lang === 'ja' ? 'en' : 'ja';
-const otherHasPost = (
-  await getPublishedByLang('posts', otherLang, { includeDevDrafts: true })
-).some((p) => localeSlug(p.id) === slug);
-const availableLocales: Lang[] = otherHasPost ? ['ja', 'en'] : [lang];
 const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
 ---
 <Base
   lang={lang}
-  availableLocales={availableLocales}
   title={post.data.title}
   description={post.data.description}
   image={ogImageUrl}
@@ -79,7 +68,6 @@ const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
           narrow results by publication year. Locale indexes are automatic. */}
       <span data-pagefind-filter={`year:${post.data.pubDate.getUTCFullYear()}`} style="display:none"></span>
       <header class="post-header">
-        {post.data.draft && <p class="draft">[{tUi('posts.draft')}]</p>}
         <h1>{post.data.title}</h1>
         {post.data.description && (
           <p class="lede">{post.data.description}</p>
@@ -89,7 +77,6 @@ const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
           {post.data.updatedDate && (
             <> · {tUi('posts.updated')}: {formatDate(post.data.updatedDate)}</>
           )}
-          <> · {readingMinutes} {tUi('posts.readingTime')}</>
         </p>
       </header>
       {post.data.series && seriesPosts.length > 1 && (
@@ -189,7 +176,6 @@ const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
   article {
     min-width: 0;
   }
-  .draft { color: var(--color-warn); font-weight: 600; }
   .license { font-size: 0.85rem; }
   .license a {
     text-decoration: underline 1px;

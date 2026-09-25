@@ -2,7 +2,6 @@
 title: "Re: Portfolio"
 description: 全部ClaudeCodeくんに書かせました😤(Web系の言語苦手なので)
 pubDate: 2026-05-07
-draft: false
 ---
 
 - 昔にも[ホームページ](https://github.com/th2ch-g/home)をRustで作っていたのですが、結局Rust内でhtmlぽいものを書く必要があったのと、こんなん誰が見んねんて感じだったので閉鎖してました

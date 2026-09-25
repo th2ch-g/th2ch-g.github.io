@@ -1,5 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
+import LocaleContent from './LocaleContent.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import { getLegal, formatDate } from '@/lib/content';
 import { render } from 'astro:content';
@@ -16,13 +17,32 @@ if (!doc) {
   throw new Error(`Legal doc (${lang}/${slug}) is missing. Add src/content/legal/${lang}/${slug}.md`);
 }
 const { Content } = await render(doc);
+const japaneseDoc = await getLegal(slug, 'ja');
+const JapaneseContent = japaneseDoc ? (await render(japaneseDoc)).Content : Content;
 ---
-<Base lang={lang} title={doc.data.title} description={doc.data.description}>
-  <h1>{doc.data.title}</h1>
-  <p class="muted updated">
-    {tUi('legal.updated')}: {formatDate(doc.data.updatedDate)}
-  </p>
-  <div class="prose"><Content /></div>
+<Base
+  lang={lang}
+  title={doc.data.title}
+  description={doc.data.description}
+  availableLocales={japaneseDoc ? ['en', 'ja'] : ['en']}
+  japanese={{ title: japaneseDoc?.data.title, description: japaneseDoc?.data.description }}
+>
+  <LocaleContent>
+    <Fragment slot="en">
+      <h1>{doc.data.title}</h1>
+      <p class="muted updated">
+        {tUi('legal.updated')}: {formatDate(doc.data.updatedDate)}
+      </p>
+      <div class="prose"><Content /></div>
+    </Fragment>
+    <Fragment slot="ja">
+      <h1>{japaneseDoc?.data.title ?? doc.data.title}</h1>
+      <p class="muted updated">
+        {tUi('legal.updated')}: {formatDate(japaneseDoc?.data.updatedDate ?? doc.data.updatedDate)}
+      </p>
+      <div class="prose"><JapaneseContent /></div>
+    </Fragment>
+  </LocaleContent>
 </Base>
 
 <style>

@@ -1,6 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import CVSection from './CVSection.astro';
+import LocaleContent from './LocaleContent.astro';
 import type { Lang } from '@/i18n/ui';
 import { getProfileMeta } from '@/lib/content';
 
@@ -8,20 +9,33 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 
 const meta = await getProfileMeta(lang);
+const japaneseMeta = await getProfileMeta('ja');
 ---
 {/* Home page is titled with the site brand (meta.name), not "Home": this
     collapses `documentTitle` to just the brand and makes og:title /
     twitter:title the brand instead of a generic "Home" on social shares.
     No description is passed: Base falls back to the bio. */}
 <Base lang={lang} title={meta.name}>
-  <section class="hero">
-    <div class="hero-head">
-      <h1>{meta.name}</h1>
-      {meta.bio && <p class="bio">{meta.bio}</p>}
-    </div>
-  </section>
-
-  <CVSection lang={lang} />
+  <LocaleContent>
+    <Fragment slot="en">
+      <section class="hero">
+        <div class="hero-head">
+          <h1>{meta.name}</h1>
+          {meta.bio && <p class="bio">{meta.bio}</p>}
+        </div>
+      </section>
+      <CVSection lang={lang} />
+    </Fragment>
+    <Fragment slot="ja">
+      <section class="hero">
+        <div class="hero-head">
+          <h1>{japaneseMeta.name}</h1>
+          {japaneseMeta.bio && <p class="bio">{japaneseMeta.bio}</p>}
+        </div>
+      </section>
+      <CVSection lang="ja" />
+    </Fragment>
+  </LocaleContent>
 </Base>
 
 <style>

@@ -81,7 +81,7 @@ Look up the collection by the parent directory (`src/content/<collection>/...`).
 | Field | Action |
 |-------|--------|
 | `title`, `description` | translate |
-| `pubDate`, `updatedDate`, `tags`, `draft` | verbatim |
+| `pubDate`, `updatedDate`, `tags` | verbatim |
 | `heroImage`, `heroImageAlt` | path verbatim, alt translate |
 | Body | translate |
 
