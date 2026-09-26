@@ -1,6 +1,6 @@
 ---
 title: ミニツール 2026年秋
-description: 余ったトークンで。。。
+description: トークンの残飯処理
 pubDate: 2026-09-26
 ---
 
@@ -18,8 +18,7 @@ https://github.com/th2ch-g/cuemol_style_in_pymol
 
 https://x.com/Ag_smith/status/2100979076571992348
 
-CueMolのribbon表示は本当に綺麗で素晴らしいです‼️
-Cuemol3になってからvscode風でGUIがかっこよく使いやすくなっているのでもう少ししたらPyMOLから移行したい
+CueMolのribbon表示は素晴らしくて、3になってからvscode風でGUIがかっこよくなっているのでもう少ししたらPyMOLから移行したい
 
 https://x.com/cuemolnohito/status/2043320458406494403
 
@@ -38,6 +37,7 @@ https://github.com/th2ch-g/gh-email-get
 # 通信対戦可能なゲーム by Astra
 
 Sergey先生のprotein_fighterに触発されて通信対戦も可能なゲームをいくつか作ってみた
+
 peer.jsというやつでGithubPagesのような静的サイトでも通信対戦ができる様になっているらしい
 
 https://github.com/sokrypton/protein_fighter
@@ -58,9 +58,12 @@ https://github.com/th2ch-g/game-mario-kart
 
 # topコマンドとかでメッセージを表示する by 人間
 
-topとかでジョブが流れていないことを確認して非schedulerでジョブを投げるスタイルの共用サーバーで~~~イタズラ~~~するためのツール
+topとかでジョブが流れていないことを確認して非schedulerでジョブを投げるスタイルの共用サーバーで~~イタズラ~~するためのツール
+
 `kanban single -m hello`とかでhelloのバイナリが生成され実行される
+
 コア数指定や縦文字、長文字も表示可能で、wgpuでGPUにも対応している
+
 claudeとかのcommitがあるがこれはリファクタリングで、人間がコードを書いてた時代に作った
 
 https://github.com/th2ch-g/kanban
