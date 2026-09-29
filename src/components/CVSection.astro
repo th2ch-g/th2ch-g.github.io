@@ -12,33 +12,10 @@ if (!cv) {
   throw new Error(`CV (${lang}) is missing. Add src/content/cv/${lang}.md`);
 }
 const { Content } = await render(cv);
-const cvLinks = [
-  cv.data.orcid
-    ? { label: 'ORCID', url: `https://orcid.org/${cv.data.orcid}` }
-    : undefined,
-  cv.data.github ? { label: 'GitHub', url: cv.data.github } : undefined,
-  cv.data.kaggle ? { label: 'Kaggle', url: cv.data.kaggle } : undefined,
-  cv.data.huggingface
-    ? { label: 'Hugging Face', url: cv.data.huggingface }
-    : undefined,
-].filter((link): link is { label: string; url: string } => Boolean(link));
 ---
   <section id="cv" class="cv-layout" aria-label={tUi('nav.cv')}>
     <div class="cv-content">
       <div class="cv-header">
-        {cvLinks.length > 0 && (
-          <nav aria-label="Profile links">
-            <ul class="cv-profile-links">
-              {cvLinks.map((link) => (
-                <li>
-                  <a class="btn btn-ghost btn-sm" href={link.url} target="_blank" rel="noopener noreferrer">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
         {/* CV toolbar. Copy-all and .bib actions are collapsed into
             one disclosure menu built client-side by the script below — the
             same affordance as the per-section copy menus. */}
@@ -87,7 +64,7 @@ const cvLinks = [
     /* Reserve the toolbar before its client-side copy menu is attached. */
     min-height: 2rem;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
@@ -103,33 +80,6 @@ const cvLinks = [
     gap: 0.5rem;
     margin-left: auto;
   }
-  .cv-header > nav { flex: 1; min-width: 0; }
-  .cv-profile-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.25rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    font-size: 0.875rem;
-  }
-  .cv-profile-links a.btn {
-    color: var(--color-fg);
-    display: inline-flex;
-    align-items: center;
-    min-height: 2rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    line-height: 1.5;
-    padding: 0.375rem 0.5rem;
-    text-underline-offset: 0.15em;
-  }
-  .cv-profile-links a.btn:hover,
-  .cv-profile-links a.btn:focus-visible {
-    color: var(--color-accent);
-  }
-  .cv-profile-links li:not(:last-child)::after { content: none; }
   /* Page-level toolbar menu (copy all / copy .bib). Built
      client-side and appended into `.cv-header-actions`, which is OUTSIDE
      `.cv-prose`, so it carries no scoped-style hash — the menu selectors must
@@ -244,8 +194,7 @@ const cvLinks = [
   /* Suppress the whole toolbar in printed output. */
   @media print {
     .cv-layout { margin-top: 0; }
-    .cv-header { min-height: 0; margin-bottom: 1rem; padding-bottom: 0.5rem; }
-    .cv-header-actions { display: none; }
+    .cv-header { display: none; }
   }
 
   /* Per-item copy buttons. Markdown rendered by <Content /> doesn't carry

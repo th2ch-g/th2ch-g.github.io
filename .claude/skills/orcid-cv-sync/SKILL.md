@@ -18,28 +18,29 @@ Trigger on phrases like:
 - "論文一覧を最新に"
 - "FundingをCVに記載" / "研究助成を同期"
 
-The user may not say "ORCID" explicitly. If they ask to refresh the publications list and `src/content/cv/ja.md` declares an `orcid:` key, this skill is the right tool.
+The user may not say "ORCID" explicitly. A request to refresh publications or funding can use this skill even when the CV contains no ORCID link.
 
 ## Workflow
 
-1. Confirm `src/content/cv/ja.md` declares `orcid:` in its frontmatter and that the managed publication and funding lists are wrapped in `<!-- cv:section … -->` markers (see "Where the config lives" below). The script auto-detects both; it does **not** read `profile.yaml`.
-2. Run a dry-run first to show the user what will change:
+1. Resolve the target ORCID iD from the user's request or existing repository content/source. Start with profile links in `src/content/cv/{ja,en}.md`; if needed, inspect `src/content/profile.yaml`, other relevant content, and the source/configuration that supplies profile identity. Keep searches scoped to those files; skip dependencies, generated output, examples, and coauthors' records. If the owner's iD is missing, conflicting, or ambiguous, ask the user for the ORCID iD or profile URL before fetching records. Normalize a supplied profile URL to its iD. Never invent an iD, hardcode it in the skill/script, or add CV metadata just to satisfy the sync.
+2. Confirm the managed publication and funding lists are wrapped in `<!-- cv:section … -->` markers (see "Where the config lives" below). The script reads these from the CV body independently of where the ORCID iD was found.
+3. Run a dry-run first with the resolved iD to show the user what will change (`orcid_id` below is the iD obtained in step 1):
    ```bash
-   uv run .claude/skills/orcid-cv-sync/scripts/sync_cv.py
+   uv run .claude/skills/orcid-cv-sync/scripts/sync_cv.py --orcid "$orcid_id"
    ```
-   If `uv` isn't available, fall back to `python3 .claude/skills/orcid-cv-sync/scripts/sync_cv.py`. The script has zero third-party dependencies (only Python stdlib), so any Python 3.9+ works.
-3. The script prints a unified diff for both `ja.md` and `en.md`. Show this to the user verbatim. Do not summarize — they need to see the exact lines being added, and the exact preprint lines being removed.
-4. Ask the user to confirm. If they approve, re-run with `--apply`:
+   Run with `uv`; the script uses only the Python 3.9+ standard library.
+4. The script prints a unified diff for both `ja.md` and `en.md`. Show this to the user verbatim. Do not summarize — they need to see the exact lines being added, and the exact preprint lines being removed.
+5. Ask the user to confirm. If they approve, re-run with `--apply` and the same resolved iD:
    ```bash
-   uv run .claude/skills/orcid-cv-sync/scripts/sync_cv.py --apply
+   uv run .claude/skills/orcid-cv-sync/scripts/sync_cv.py --orcid "$orcid_id" --apply
    ```
-5. After applying, run `npm run check` to confirm the content schema still parses (the profile collection has no required fields, so this should always pass; doing it anyway catches accidental yaml frontmatter corruption).
+6. After applying, run `npm run check` to confirm the CV content still loads.
 
 ## What the script does
 
 `.claude/skills/orcid-cv-sync/scripts/sync_cv.py` does the following, in order:
 
-1. Reads the `orcid:` frontmatter key from `src/content/cv/ja.md` (falling back to `en.md`; a mismatch between the two is a hard error)
+1. Uses `--orcid` when supplied. Otherwise, reads the ORCID profile URL from the body of `src/content/cv/ja.md` (falling back to `en.md`; multiple distinct IDs within one file or a mismatch between the two are hard errors). The script does not search other source/content files or ask questions itself; the skill resolves those cases and passes the confirmed iD explicitly.
 2. Fetches `https://pub.orcid.org/v3.0/<iD>/works` and `/fundings` with `Accept: application/json` — **no authentication required**, the ORCID Public API is anonymous-readable
 3. Fetches `https://pub.orcid.org/v3.0/<iD>/person` once to resolve the record holder's display name. Used only to wrap the user's own author entry in `<u>...</u>` so it stands out visually (matches the existing CV style). If this call fails, every author is just bold.
 4. Reads `ja.md` and `en.md` and extracts every existing DOI via regex `10\.\d{4,9}/[-._;()/:A-Za-z0-9]+`. **The two files have independent "known" sets** so a paper missing from only one side gets added to that side. (Earlier versions unioned them and silently lost coverage on `en.md` whenever a DOI was already in `ja.md`.)
@@ -87,21 +88,25 @@ Funding entries are unordered list items. The stable identity is stored in a tra
 
 ## Where the config lives
 
-Everything the sync needs is stated by the CV files themselves — heading text carries no meaning, so sections can be renamed or translated freely without touching this skill.
+Sync destinations are declared by the CV files themselves. Heading text carries no meaning, so sections can be renamed or translated freely. The ORCID iD can come from existing source/content or the user, following step 1 above; it has no required metadata location.
 
-Frontmatter (both locales; validated by the `cv` schema in `src/content.config.ts`):
+Profile links are ordinary Markdown body content in both locales; no CV frontmatter is required:
 
-```yaml
----
-orcid: 0009-0001-3991-8367
-github: https://github.com/example
-kaggle: https://www.kaggle.com/example
-huggingface: https://huggingface.co/example
----
+```markdown
+### Links
+- orcid: https://orcid.org/0000-0000-0000-0000
+- github: https://github.com/example
+- kaggle: https://www.kaggle.com/example
+- huggingface: https://huggingface.co/example
 ```
 
-Only `orcid` is consumed by the sync script. The optional profile URLs are
-co-located CV metadata rendered by `CVPage.astro`.
+Without `--orcid`, the sync script identifies the ORCID URL independently of
+the heading and link label. Bare URLs, Markdown links, and angle-bracket
+autolinks are supported. Automatic detection requires an unambiguous record
+across the available locales; repeated links to that record are allowed.
+If detection cannot resolve the owner, follow step 1 and pass the confirmed iD
+with `--orcid` instead of requiring edits to the CV. All profile links render
+as part of the CV body in `CVSection.astro`.
 
 Body markers, wrapping each managed list:
 
@@ -113,7 +118,7 @@ Body markers, wrapping each managed list:
 ```
 
 - `kind` vocabulary is locale-independent and identical in `ja.md` / `en.md`: `funding`, `peer-reviewed`, `preprints`, `presentations`. The script writes into the first three; `presentations` exists for the CV page.
-- `src/plugins/remark-cv-sections.mjs` consumes the markers at build time and stamps `data-cv-section="<kind>"` on each wrapped list, which is how `CVPage.astro` decides where the BibTeX button goes and which clipboard font to use. Marker names are therefore a contract shared by the skill and the site — don't rename one side alone.
+- `src/plugins/remark-cv-sections.mjs` consumes the markers at build time and stamps `data-cv-section="<kind>"` on each wrapped list, which is how `CVSection.astro` decides where the BibTeX button goes and which clipboard font to use. Marker names are therefore a contract shared by the skill and the site — don't rename one side alone.
 - **Markers must sit outside the list.** A comment line between two list items splits the `<ol>`, restarting CommonMark's auto-numbering so every entry renders as "1.".
 - Unbalanced markers (`cv:section` without `/cv:section`) abort the run before anything is fetched.
 

@@ -1,14 +1,3 @@
----
-# CV metadata: ORCID identifies the sync record and must match ja.md; the
-# profile URLs render in the CV header. Which lists the sync may write into
-# is declared by the `<!-- cv:section … -->` markers in the body, never by
-# heading text, so headings can be renamed freely.
-orcid: 0009-0001-3991-8367
-github: https://github.com/th2ch-g
-kaggle: https://www.kaggle.com/lst1923
-huggingface: https://huggingface.co/wasarou
----
-
 ## Education
 - B.Sc. (Science), Department of Life Science and Technology, School of Life Science and Technology, Tokyo Institute of Technology, 2019/4/1-2023/3/31
 - M.Sc. (Science), Life Science and Technology Course, Department of Life Science and Technology, School of Life Science and Technology, Institute of Science Tokyo, 2023/4/1-2025/3/31
@@ -85,3 +74,9 @@ huggingface: https://huggingface.co/wasarou
 1. <span class="cv-presenter-marker">◯</span> **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
    "Molecular dynamics simulation of association and dissociation between Adenosine A<sub>2A</sub> receptor and ligand"
    [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [2nd Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 16-17, 2024.
+
+### Links
+- orcid: https://orcid.org/0009-0001-3991-8367
+- github: https://github.com/th2ch-g
+- kaggle: https://www.kaggle.com/lst1923
+- huggingface: https://huggingface.co/wasarou

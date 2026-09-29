@@ -1,14 +1,3 @@
----
-# CV metadata: ORCID identifies the sync record; the profile URLs render in
-# the CV header. Which lists the sync may write into is declared by the
-# `<!-- cv:section … -->` markers in the body, never by heading text, so
-# headings can be renamed or translated freely.
-orcid: 0009-0001-3991-8367
-github: https://github.com/th2ch-g
-kaggle: https://www.kaggle.com/lst1923
-huggingface: https://huggingface.co/wasarou
----
-
 ## 学歴
 - 東京工業大学生命理工学院生命理工学系卒, 学士(理学), 2019/4/1-2023/3/31
 - 東京科学大学生命理工学院生命理工学系生命理工学コース修了, 修士(理学), 2023/4/1-2025/3/31
@@ -83,3 +72,9 @@ huggingface: https://huggingface.co/wasarou
 1. <span class="cv-presenter-marker">◯</span> **<u>堀立樹</u>**, **Tran Phuoc Duy**, **松岡佑真**, **堂浦智裕**, **荒谷剛史**, **浅田秀基**, **岩田想**, **清中茂樹**, **北尾彰朗**.
    "Molecular dynamics simulation of association and dissociation between Adenosine A<sub>2A</sub> receptor and ligand"
    [学術変革領域研究(A)「蛋白質新機能生成」](https://p-func.kuchem.kyoto-u.ac.jp/) [第二回領域会議](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), 淡路夢舞台国際会議場（兵庫県淡路市）, 2024年12月16–17日.
+
+### リンク
+- orcid: https://orcid.org/0009-0001-3991-8367
+- github: https://github.com/th2ch-g
+- kaggle: https://www.kaggle.com/lst1923
+- huggingface: https://huggingface.co/wasarou

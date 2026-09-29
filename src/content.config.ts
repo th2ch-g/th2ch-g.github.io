@@ -31,22 +31,9 @@ const httpUrl = z.url().refine(
   { message: 'URL protocol must be http or https' },
 );
 
-// Per-locale CV prose lives in cv/<lang>.md. The frontmatter keeps the ORCID
-// sync identity and CV-only profile links beside the document they describe.
-// Sync destinations remain declared in the body as `<!-- cv:section … -->`
-// markers, never by heading text or an external file.
+// CV links and sync section markers live in the Markdown body.
 const cv = defineCollection({
   loader: glob({ pattern: '*.md', base: './src/content/cv' }),
-  schema: z.object({
-    // ORCID iD (`0000-0000-0000-0000`, final character may be X). Declared
-    // per locale and expected to match across them — the sync script
-    // refuses to run on a mismatch. Validating the shape here turns a typo
-    // into a build error instead of a 404 from pub.orcid.org.
-    orcid: nullable(z.string().regex(/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/)),
-    github: nullable(httpUrl),
-    kaggle: nullable(httpUrl),
-    huggingface: nullable(httpUrl),
-  }),
 });
 
 // Legal documents (privacy policy, terms of service, ...). One entry per

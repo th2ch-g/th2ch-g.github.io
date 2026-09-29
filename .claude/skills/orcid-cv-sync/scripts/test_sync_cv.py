@@ -57,6 +57,60 @@ FUNDING_RESPONSE = {
 }
 
 
+class OrcidLinkTests(unittest.TestCase):
+    def test_body_links_ignore_heading_and_label_text(self) -> None:
+        orcid_id = "0000-0000-0000-0001"
+        ja = f"### リンク\n- orcid: https://orcid.org/{orcid_id}\n"
+        for en in (
+            f"### Links\n- [ORCID](https://orcid.org/{orcid_id})\n",
+            f"## Profiles\n- <https://orcid.org/{orcid_id}>\n",
+            f"- Research profile: https://orcid.org/{orcid_id}/\n",
+        ):
+            with self.subTest(en=en):
+                self.assertEqual(sync_cv.read_orcid_id(ja, en), orcid_id)
+
+    def test_either_locale_can_supply_the_link(self) -> None:
+        text = "- orcid: https://orcid.org/0000-0000-0000-0001\n"
+        for ja, en in ((text, ""), ("", text)):
+            with self.subTest(ja=ja, en=en):
+                self.assertEqual(sync_cv.read_orcid_id(ja, en), "0000-0000-0000-0001")
+
+    def test_repeated_link_and_checksum_case_are_normalized(self) -> None:
+        text = "- [ORCID](https://orcid.org/0000-0000-0000-000x)\n"
+        self.assertEqual(
+            sync_cv.read_orcid_id(text * 2, text.upper()),
+            "0000-0000-0000-000X",
+        )
+
+    def test_mismatched_locales_are_rejected(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "ORCID iD mismatch"):
+            sync_cv.read_orcid_id(
+                "https://orcid.org/0000-0000-0000-0001",
+                "https://orcid.org/0000-0000-0000-0002",
+            )
+
+    def test_ambiguous_profile_links_are_rejected(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "Multiple ORCID iDs in ja.md"):
+            sync_cv.read_orcid_id(
+                "- https://orcid.org/0000-0000-0000-0001\n"
+                "- https://orcid.org/0000-0000-0000-0002\n",
+                "",
+            )
+
+    def test_missing_or_malformed_links_do_not_select_a_record(self) -> None:
+        for text in (
+            "## Education\n",
+            "---\norcid: 0000-0000-0000-0001\n---\n",
+            "https://notorcid.org/0000-0000-0000-0001",
+            "https://orcid.org.example.com/0000-0000-0000-0001",
+            "https://orcid.org/0000-0000-0000-00012",
+            "https://orcid.org/0000-0000-0000-000Y",
+        ):
+            with self.subTest(text=text):
+                with self.assertRaisesRegex(SystemExit, "ORCID iD not found"):
+                    sync_cv.read_orcid_id(text, "")
+
+
 class FundingSyncTests(unittest.TestCase):
     def test_extract_and_format_bilingual_funding(self) -> None:
         funding = sync_cv.extract_fundings(FUNDING_RESPONSE)[0]

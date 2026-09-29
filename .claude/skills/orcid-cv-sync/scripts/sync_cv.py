@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Sync new publications and funding from ORCID into the bilingual CV.
 
-Everything this script needs lives in the CV markdown itself — it never
-reads ``profile.yaml``. ``src/content/cv/{ja,en}.md`` declare their ORCID
-iD as an ``orcid:`` frontmatter key and mark managed lists with
+The ORCID iD comes from ``--orcid`` or a ``https://orcid.org/<iD>`` link in
+the CV body. The skill can resolve ``--orcid`` from other source/content or
+the user; this script does not search those sources itself.
+``src/content/cv/{ja,en}.md`` mark managed lists with
 ``<!-- cv:section <kind> -->`` … ``<!-- /cv:section -->``.
 Heading text is therefore free-form: renaming or translating a section
 heading cannot break this script (the previous version matched headings
@@ -94,13 +95,9 @@ MONTH_NAMES = (
 # almost anything.
 MIN_TITLE_MATCH_LEN = 20
 
-# CV frontmatter. Scalars only (`key: value`), which is all the CV declares,
-# so a real YAML parser isn't worth a third-party dependency here. The
-# schema in src/content.config.ts validates the same fields at build time.
-FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
-FM_ORCID_RE = re.compile(
-    r"^orcid:\s*(\d{4}-\d{4}-\d{4}-\d{3}[\dX])\s*$",
-    re.IGNORECASE | re.MULTILINE,
+ORCID_URL_RE = re.compile(
+    r"https?://orcid\.org/(\d{4}-\d{4}-\d{4}-\d{3}[\dX])(?=$|[\s/)\]>?#])",
+    re.IGNORECASE,
 )
 
 # CrossRef asks callers to identify themselves; a contact address would move
@@ -173,33 +170,30 @@ def find_repo_root() -> Path:
         p = p.parent
 
 
-def frontmatter(text: str) -> str:
-    """Return the raw frontmatter block, or '' when the file has none."""
-    m = FRONTMATTER_RE.match(text)
-    return m.group(1) if m else ""
-
-
 def read_orcid_id(ja_text: str, en_text: str) -> str:
-    """Read the `orcid:` frontmatter key from the CV markdown.
-
-    Both locales declare it so either file stands on its own; a mismatch is
-    a hard error rather than a silent pick, since syncing the wrong record
-    into one locale is worse than refusing to run.
-    """
-    ja = FM_ORCID_RE.search(frontmatter(ja_text))
-    en = FM_ORCID_RE.search(frontmatter(en_text))
-    if ja and en and ja.group(1).upper() != en.group(1).upper():
+    """Read an unambiguous ORCID profile URL shared by the CV locales."""
+    ids = []
+    for label, text in (("ja.md", ja_text), ("en.md", en_text)):
+        found = set(match.upper() for match in ORCID_URL_RE.findall(text))
+        if len(found) > 1:
+            raise SystemExit(
+                f"Multiple ORCID iDs in {label}: {', '.join(sorted(found))}. "
+                "Pass --orcid with the confirmed profile owner's iD.",
+            )
+        ids.append(next(iter(found), None))
+    ja, en = ids
+    if ja and en and ja != en:
         raise SystemExit(
-            f"ORCID iD mismatch: ja.md declares {ja.group(1)} but en.md "
-            f"declares {en.group(1)}. Fix one of them before syncing.",
+            f"ORCID iD mismatch: ja.md links to {ja} but en.md "
+            f"links to {en}. Pass --orcid with the confirmed owner's iD.",
         )
     found = ja or en
     if not found:
         raise SystemExit(
-            "ORCID iD not found — add `orcid: 0000-0000-0000-0000` to the "
-            "frontmatter of src/content/cv/ja.md (or pass --orcid).",
+            "ORCID iD not found in the CV body — resolve it from repository "
+            "source/content or ask the user, then pass --orcid.",
         )
-    return found.group(1)
+    return found
 
 
 def fetch_orcid_section(orcid_id: str, section: str) -> dict:
@@ -895,7 +889,7 @@ def main() -> int:
     )
     ap.add_argument(
         "--orcid",
-        help="Override ORCID iD (otherwise read from the CV's `orcid:` frontmatter)",
+        help="Override ORCID iD (otherwise read from an ORCID link in the CV body)",
     )
     ap.add_argument(
         "--no-crossref",

@@ -76,7 +76,7 @@ async function assertTapFeedback(page) {
   });
   try {
     for (const selector of [
-      '.cv-profile-links a', '.cv-prose li a', '.row > a', '.breadcrumb-nav a',
+      '.cv-prose li a', '.row > a', '.breadcrumb-nav a',
       '.series-name', '.gh-permalink-header', '.gh-permalink-more',
       '.prose p a:not([class])', '.license a', '.site-footer a',
     ]) {
