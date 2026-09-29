@@ -1,38 +1,26 @@
-name: th
 siteHandle: th2ch-g
 repo: th2ch-g/th2ch-g.github.io
 site: https://th2ch-g.github.io
-bio:
-  ja: 日本人🇯🇵
-  en: Japanese🇯🇵
 icon:
   url: https://avatars.githubusercontent.com/u/76892059
-# Use a canonical viewform URL for Google Forms.
-contactForm: https://docs.google.com/forms/d/e/1FAIpQLScQEsOKEI56HkpHkB6H5v8tgUbh3mZj8Gj_ravXrSWN3uRgOw/viewform
-contactFormEmbed: true
 
-# Leave optional integration fields blank to disable them.
+# Set enabled to false to disable an integration while retaining its settings.
 giscus:
+  enabled: false
   repoId: R_kgDOSWDKhA
   category: Announcements
   categoryId: DIC_kwDOSWDKhM4C8k4s
   mapping: pathname
-  enabled: false
-
-webmention:
-  endpoint:
-  pingback:
-  apiTarget:
 
 analytics:
+  enabled: true
   goatcounterEndpoint:
   googleAnalyticsId: G-2QTGY03ENF
 
-indexnow:
-  key:
-
 adsense:
+  enabled: true
   clientId: ca-pub-3059839485466897
 
 searchConsole:
+  enabled: true
   verification: bxwzCEMK_IUP8oEAAzNpxT0ZUtrZBpZrVhoYjrl68Wc

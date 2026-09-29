@@ -6,7 +6,6 @@ import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content';
 import ShareButtons from '@/components/ShareButtons.astro';
 import Giscus from '@/components/Giscus.astro';
-import Webmentions from '@/components/Webmentions.astro';
 import PostNav from '@/components/PostNav.astro';
 import SeriesNav from '@/components/SeriesNav.astro';
 import Backlinks from '@/components/Backlinks.astro';
@@ -89,7 +88,6 @@ const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
       )}
       <div class="prose"><Content /></div>
       <Backlinks lang={lang} citers={backlinks} />
-      <Webmentions lang={lang} />
       <Giscus lang={lang} />
       <ShareButtons lang={lang} title={post.data.title} />
       <PostNav prev={prev} next={next} lang={lang} />

@@ -132,7 +132,7 @@ async function checkCv(browser, path) {
   await toolbar.locator('summary').click();
   await menu.locator('summary').click();
   assert.equal(await page.locator('.cv-menu[open]').count(), 1, 'Multiple CV menus remain open');
-  await page.locator('.hero h1').click();
+  await page.locator('.cv-prose > h1').click();
   assert.equal(await page.locator('.cv-menu[open]').count(), 0, 'Outside click does not dismiss the CV menu');
 
   // Rich clipboard rejection must retain a usable text copy.
@@ -307,7 +307,9 @@ async function checkNavigationAndGallery(browser) {
   const { page, errors } = await newPage(browser, '/?lang=ja', { viewport: { width: 393, height: 852 } });
   const toggle = page.locator('[data-nav-toggle]');
   await toggle.click();
-  await page.locator('.cv-prose h2').first().click();
+  const navigation = await page.locator('#primary-nav').boundingBox();
+  assert.ok(navigation);
+  await page.mouse.click(8, navigation.y + navigation.height + 16);
   assert.equal(await toggle.getAttribute('aria-expanded'), 'false', 'Outside click leaves navigation open');
   for (const [key, destination] of [['b', '/posts?lang=ja'], ['p', '/gallery?lang=ja'], ['c', '/?lang=ja#cv'], ['h', '/?lang=ja']]) {
     const target = new URL(destination, server.url);

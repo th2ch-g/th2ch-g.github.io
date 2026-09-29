@@ -1,93 +1,23 @@
 ---
 import Base from '@/layouts/Base.astro';
+import LocaleContent from './LocaleContent.astro';
+import ContactContent from './ContactContent.astro';
 import { tUi, type Lang } from '@/i18n/ui';
-import { getProfileMeta } from '@/lib/content';
 
 interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
 
-const meta = await getProfileMeta(lang);
 // Keep a document title and an accessible heading without a visible label.
 const title = tUi('nav.contact');
 const description = tUi('contact.description');
 
-// Build the iframe src from the configured form URL. Google Forms render a
-// chrome-less, embed-friendly page when `embedded=true` is present; the URL
-// API appends it without caring whether the URL already carries a query.
-// The form host must also be allow-listed in `frame-src` (src/layouts/Base.astro).
-let embedSrc: string | null = null;
-if (meta.contactForm && meta.contactFormEmbed) {
-  const u = new URL(meta.contactForm);
-  u.searchParams.set('embedded', 'true');
-  embedSrc = u.toString();
-}
 ---
 <Base lang={lang} title={title} description={description}>
   <h1 class="sr-only">{title}</h1>
-  {meta.contactForm ? (
-    <>
-      {/* Do NOT add a `sandbox` attribute: Google Forms needs its own
-          scripts and same-origin context to load and submit, and sandboxing
-          silently breaks submission. The iframe carries no resize protocol,
-          so the height is fixed (see `.contact-form` below). */}
-      {embedSrc && <iframe
-        class="contact-form"
-        src={embedSrc}
-        title={tUi('contact.embedTitle')}
-        loading="lazy"
-      >…</iframe>}
-      {/* Fallback for browsers/extensions that block the frame, and for
-          visitors who prefer the full-page form. Uses the plain URL. */}
-      <p class="fallback">
-        <a class="contact-link btn btn-sm" href={meta.contactForm} target="_blank" rel="noopener noreferrer">
-          {tUi('contact.cta')}
-        </a>
-      </p>
-    </>
-  ) : (
-    /* Forkable fallback: a fork that leaves `contactForm` blank still gets
-       a coherent page rather than a dangling embed or build error. */
-    <p class="muted">{tUi('contact.unavailable')}</p>
-  )}
+  <LocaleContent>
+    <ContactContent slot="en" lang={lang} />
+    <ContactContent slot="ja" lang="ja" />
+  </LocaleContent>
 </Base>
-
-<style>
-  .contact-form {
-    display: block;
-    width: 100%;
-    /* Google Forms posts no height message to the parent frame, so the
-       height is fixed. Tall enough that a typical contact form fits without
-       an inner scrollbar; bump this if the form grows. */
-    min-height: 1100px;
-    margin-top: 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
-    /* The embedded form is always Google's light theme; pinning the scheme
-       keeps its form controls and scrollbar consistent on the dark site. */
-    color-scheme: light;
-    background: #fff;
-  }
-  .fallback {
-    margin-top: 0.75rem;
-    font-size: 0.9rem;
-  }
-  .contact-link {
-    min-height: 2rem;
-    height: auto;
-    padding: 0.3125rem 0.75rem;
-    border: 1px solid var(--color-border);
-    background: var(--color-button);
-    color: var(--color-fg);
-    font-size: 0.875rem;
-    box-shadow: var(--shadow-soft);
-  }
-  .contact-link:hover {
-    border-color: var(--color-border-strong);
-    background: var(--color-hover);
-    text-decoration: none;
-  }
-  .contact-link:active { background: var(--color-button-active); }
-</style>

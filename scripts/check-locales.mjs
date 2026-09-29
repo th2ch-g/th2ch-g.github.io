@@ -6,7 +6,7 @@ import { startStaticServer } from './lib/static-server.mjs';
 
 const server = await startStaticServer(resolve(import.meta.dirname, '../dist'));
 try {
-  for (const path of ['/sitemap.xml', '/sitemap-index.xml', '/sitemap-0.xml', '/sitemap-images.xml', '/sitemap.xsl']) {
+  for (const path of ['/sitemap.xml', '/sitemap-index.xml', '/sitemap-0.xml', '/sitemap-images.xml', '/sitemap.xsl', '/indexnow-key.txt']) {
     assert.equal((await fetch(server.url + path)).status, 404, `${path} is still published`);
   }
   assert.doesNotMatch(await (await fetch(`${server.url}/robots.txt`)).text(), /^Sitemap:/m);
@@ -45,6 +45,42 @@ try {
       assert.equal(await page.locator('.cv-prose').getAttribute('data-cv-lang'), 'ja');
       await page.reload({ waitUntil: 'networkidle' });
       assert.equal(await page.locator('.cv-prose').getAttribute('data-cv-lang'), 'ja');
+
+      for (const lang of ['en', 'ja']) {
+        await page.goto(`${server.url}/?lang=${lang}`, { waitUntil: 'networkidle' });
+        const identity = await page.locator('.cv-prose').evaluate((prose) => {
+          const heading = prose.querySelector('h1');
+          const clone = heading.cloneNode(true);
+          clone.querySelectorAll('.heading-anchor, .cv-section-actions').forEach((node) => node.remove());
+          const intro = heading.nextElementSibling;
+          const section = prose.querySelector('h2');
+          const toolbar = document.querySelector('.cv-header');
+          return {
+            name: clone.textContent.trim(),
+            bio: intro.textContent.trim(),
+            gap: section.getBoundingClientRect().top - intro.getBoundingClientRect().bottom,
+            toolbarOffset: toolbar.getBoundingClientRect().top - heading.getBoundingClientRect().top,
+          };
+        });
+        assert.equal(await page.locator('main h1').count(), 1, 'The CV duplicates the profile heading');
+        assert.equal(await page.title(), identity.name);
+        assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), identity.bio);
+        assert.equal(await page.locator('meta[property="og:site_name"]').getAttribute('content'), identity.name);
+        assert.equal(await page.locator('.cv-prose h1 .cv-section-actions').count(), 0);
+        assert.equal(await page.locator('.cv-prose h2').first().locator('.cv-section-actions').count(), 1);
+        assert.ok(identity.gap <= 32, `Empty CV toolbar row leaves a ${identity.gap}px gap`);
+        assert.ok(Math.abs(identity.toolbarOffset) <= 1, 'The copy toolbar is detached from the CV title');
+        const graph = await page.locator('script[type="application/ld+json"]').textContent();
+        assert.equal(JSON.parse(graph)['@graph'].find((node) => node['@type'] === 'Person').name, identity.name);
+        assert.equal(await page.locator('link[rel="webmention"], link[rel="pingback"]').count(), 0);
+
+        await page.goto(`${server.url}/contact?lang=${lang}`, { waitUntil: 'networkidle' });
+        assert.equal(await page.locator('[data-contact-lang]').getAttribute('data-contact-lang'), lang);
+        assert.equal(await page.locator('.contact-form').count(), 1);
+        const form = new URL(await page.locator('.contact-form').getAttribute('src'));
+        assert.equal(form.searchParams.get('embedded'), 'true');
+        assert.equal(await page.locator('main a[href*="/forms/"]').count(), 0, 'Contact still shows a redundant form link');
+      }
 
       for (const item of legalPages) {
         await page.goto(server.url + item.url, { waitUntil: 'networkidle' });

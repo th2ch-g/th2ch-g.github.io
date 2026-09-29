@@ -26,7 +26,6 @@ export async function readProfileShallow() {
   cached = {
     siteHandle: text.match(/^siteHandle:\s*(\S+)/m)?.[1],
     repo: text.match(/^repo:\s*(\S+)/m)?.[1],
-    email: text.match(/^email:\s*(\S+)/m)?.[1],
     site: text.match(/^site:\s*(\S+)/m)?.[1],
     iconUrl: blockIconUrl || flatIconUrl,
   };

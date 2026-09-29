@@ -1,3 +1,6 @@
+# th
+日本人🇯🇵
+
 ## 学歴
 - 東京工業大学生命理工学院生命理工学系卒, 学士(理学), 2019/4/1-2023/3/31
 - 東京科学大学生命理工学院生命理工学系生命理工学コース修了, 修士(理学), 2023/4/1-2025/3/31
@@ -74,7 +77,7 @@
    [学術変革領域研究(A)「蛋白質新機能生成」](https://p-func.kuchem.kyoto-u.ac.jp/) [第二回領域会議](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), 淡路夢舞台国際会議場（兵庫県淡路市）, 2024年12月16–17日.
 
 ### リンク
-- orcid: https://orcid.org/0009-0001-3991-8367
-- github: https://github.com/th2ch-g
-- kaggle: https://www.kaggle.com/lst1923
-- huggingface: https://huggingface.co/wasarou
+- [orcid](https://orcid.org/0009-0001-3991-8367)
+- [github](https://github.com/th2ch-g)
+- [kaggle](https://www.kaggle.com/lst1923)
+- [huggingface](https://huggingface.co/wasarou)

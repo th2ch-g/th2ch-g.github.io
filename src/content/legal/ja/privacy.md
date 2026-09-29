@@ -1,7 +1,7 @@
 ---
 title: プライバシーポリシー
 description: 本サイトにおける訪問者情報の取り扱いについて。
-updatedDate: 2026-05-26
+updatedDate: 2026-09-30
 ---
 
 本サイト「{{siteHandle}}」({{site}}、以下「本サイト」) における、訪問者の個人情報の取り扱いについて説明します。
@@ -33,11 +33,7 @@ updatedDate: 2026-05-26
 
 ブラウザの設定で Cookie をブロック、または DNT (Do Not Track) を有効にすることでも一定の追跡を回避できます。
 
-### 2.4 Webmention (有効化時)
-
-[Webmention.io](https://webmention.io) を介して他サイトからの言及を表示する場合があります。受信した webmention の内容は webmention.io 上に保存されます。
-
-### 2.5 Google AdSense
+### 2.4 Google AdSense
 
 本サイトでは [Google AdSense](https://www.google.com/adsense/) により広告を表示しています。AdSense は Cookie を使用し、訪問者の興味関心に基づくパーソナライズ広告を表示する場合があります。訪問履歴は Google および広告配信パートナーが収集します。
 

@@ -29,7 +29,7 @@ Docker: `docker compose up dev` (HMR on 4321) or `up prod` (nginx on 8080).
 
 ### Bilingual routing with query parameters
 
-Pages use `?lang=en` and `?lang=ja` on the same path; English is the default when the parameter is missing or invalid. GitHub Pages serves static HTML, so Base selects the document language before painting and LocaleContent installs the matching profile, CV, or legal content before browser modules initialize. JavaScript-disabled browsers and crawlers receive the English content and metadata.
+Pages use `?lang=en` and `?lang=ja` on the same path; English is the default when the parameter is missing or invalid. GitHub Pages serves static HTML, so Base selects the document language before painting and LocaleContent installs the matching CV, contact, or legal content before browser modules initialize. JavaScript-disabled browsers and crawlers receive the English content and metadata.
 
 - Create only `src/pages/foo.astro`; shared rendering lives in `src/components/FooPage.astro`.
 - Use `getRelativeLocaleUrl` from `src/lib/locale-url.ts` for page links. Language switching preserves other query parameters and fragments; navigation, search, shortcuts, and sharing retain the selected language.
@@ -41,11 +41,12 @@ UI strings are English-only and live in `src/i18n/ui.ts`; use `tUi(key)` for all
 
 ### Content collections
 
-Defined in `src/content.config.ts`. Four collections:
+Defined in `src/content.config.ts`. Five collections:
 
 - `cv` — `src/content/cv/{ja,en}.md`, with no frontmatter metadata. Profile links are ordinary Markdown in the body. The `orcid-cv-sync` skill resolves the ORCID iD from existing content/source or asks the user, then passes it with `--orcid`; the script can also detect an unambiguous ORCID profile link from the CV body. Funding / publication / presentation lists are wrapped in `<!-- cv:section <kind> -->` … `<!-- /cv:section -->` markers, `kind` ∈ `funding` / `peer-reviewed` / `preprints` / `presentations`. Those markers are the **only** contract for "which list is what": `remark-cv-sections` turns them into `data-cv-section` attributes that `CVSection.astro` reads, and the sync script inserts new entries right after the matching start marker. Heading text is free-form — renaming or translating a heading changes nothing.
 - `legal` — `src/content/legal/{ja,en}/<slug>.md` with `title` / `description` / `updatedDate` frontmatter. The slug after the locale becomes the URL (`/<slug>?lang=en` and `/<slug>?lang=ja`), so keep it short and stable.
-- `profileMeta` — single file `src/content/profile.yaml`. Per-locale fields use `{ ja, en }` sub-objects; shared values stay flat. Read via `getProfileMeta(lang)` (in `src/lib/content.ts`), which flattens to a per-locale plain object. Throws if the file is missing — fail loudly at build time rather than degrade silently.
+- `contact` — `src/content/contact/{ja,en}.md`, with no frontmatter. Links use `[label](url)` syntax. A single Google Forms link renders only the embedded form; other Markdown renders as contact prose. `en.md` may be a relative symlink when the content is shared. Contact links and optional `mailto:` addresses are read from these files, not `profile.yaml`.
+- `profileMeta` — single file `src/content/profile.yaml` for shared settings (site handle, repository, deployment URL, icon, and active integrations). `getProfileMeta(lang)` combines these settings with the CV's first H1 as `name` and its following paragraph as `bio`, preserving Markdown formatting in the page while deriving plain text for metadata, OG cards, search, and JSON Resume. Missing CV or profile content fails the build. `giscus`, `analytics`, `adsense`, and `searchConsole` each accept `enabled` (default `true`); `false` suppresses the integration while preserving its configuration. Required IDs or endpoints must still be present to activate an integration.
 - `posts` — shared Japanese content under `src/content/posts/<slug>.md`, with optional co-located images. The same entries render at `/posts/?lang=en` and `/posts/?lang=ja`; route locale changes interface chrome and query parameters only. `entry.id` is the slug directly.
 
 The gallery at `/gallery` is **not** a collection — loose images under `src/content/gallery/` are loaded via `import.meta.glob` from `PhotosListPage.astro`.
@@ -81,7 +82,7 @@ Custom remark plugins in `src/plugins/`:
 - `remark-figure-caption` — image alt text → `<figcaption>`
 - `remark-mermaid-block` — `mermaid` code fence → client-rendered diagram
 - `remark-callouts` — GitHub-style `> [!NOTE]` blockquotes → `<aside class="callout-…">`
-- `remark-profile-vars` — `@profile.<key>` token → value from `profile.yaml` (so MD content can reference site identity without hardcoding)
+- `remark-profile-vars` — `{{site}}`, `{{siteHandle}}`, `{{repo}}`, and `{{repoUrl}}` tokens → shared settings from `profile.yaml`
 - `remark-cv-sections` — consumes the CV's `<!-- cv:section … -->` markers and stamps `data-cv-section` on the lists they wrap; no-op for every other collection
 
 Plus rehype: KaTeX, slug, autolink-headings (prepend `#`), external-links (`target=_blank`). The Shiki transformer in `astro.config.mjs` projects `data-language` and optional `data-filename` (from code-fence meta `title="…"`) onto every `<pre>`, surfaced by `global.css`.
@@ -94,7 +95,7 @@ Plus rehype: KaTeX, slug, autolink-headings (prepend `#`), external-links (`targ
 3. **Do NOT add `@view-transition`** in CSS. Cross-document VT caused an unfixable white flash on this site. Page transitions rely on paint-holding only — there is no `<main>` entrance animation (the fade-in/slide keyframe was removed by user request). See user memory `project_view_transitions_color_scheme.md`.
 4. **`getStaticPaths` must be `export async function`,** not `export const … = async () => …`.
 5. **Image service is `passthroughImageService()`** to avoid sharp's native deps in CI. Don't switch to the default service without first confirming CI compatibility.
-6. **`profile.yaml` is the source of truth for site identity** (name, icon, bio). The icon URL is also consumed by `build-icon.mjs` at build time — changing it requires a rebuild before the new icon appears. Profile links live in the bilingual CV body. ORCID sync resolves the iD from existing source/content or the user; no CV metadata is required.
+6. **Personal content lives in Markdown.** Name, bio, and profile links live in the bilingual CV body; contact links live in `contact/{ja,en}.md`. The CV starts with one H1 and an introductory paragraph; its copy toolbar shares the title row. `profile.yaml` holds shared site settings. Its icon URL is also consumed by `build-icon.mjs` — changing it requires a rebuild. ORCID sync resolves the iD from existing source/content or the user; no CV metadata is required.
 7. **Never put an HTML comment on its own line between CV list items.** CommonMark ends the list at the comment and starts a new one, so every entry re-renders as "1." on the page and in the PDF. `cv:section` markers therefore wrap a list from outside; per-entry metadata must use a trailing inline comment or an indented continuation line (that's also why the sync script's missing-author placeholder is plain `[authors — TODO]` text).
 8. **Validate mobile behavior for visual and interaction changes.** After building, run `npm run check:mobile` with all three Playwright engines installed. Cover every rendered page in both themes, compact/regular/wide/landscape layouts, and touch navigation, search, copy, theme, locale, and gallery controls. A resized desktop viewport alone is insufficient; report emulation separately from physical-device testing.
 
@@ -102,7 +103,7 @@ Plus rehype: KaTeX, slug, autolink-headings (prepend `#`), external-links (`targ
 
 - **Don't mirror ORCID / GitHub.** No `papers`, `works`, or `publications` routes — link out instead. Publications live only in `src/content/cv/{ja,en}.md` (synced via the `orcid-cv-sync` skill).
 - **The CV body controls its rendering and sync destinations.** Publication, funding, and presentation lists are declared inside `src/content/cv/{ja,en}.md` with `cv:section` markers. Don't reintroduce heading-text matching (`/論文|Publication/`-style regexes) anywhere; add or move a marker instead. Skills needing an ORCID iD should inspect relevant source/content or ask the user when it cannot be identified; do not require CV metadata.
-- **Keep the site forkable.** Editing files under `src/content/` (especially `profile.yaml`) should be enough for anyone to reuse this repo as their own portfolio. Do NOT hardcode personal identity (name, handles, ORCID id, email, GitHub URL, affiliation) in components, scripts, or pages — read from `profile.yaml` via `getProfileMeta(lang)` instead.
+- **Keep the site forkable.** Editing files under `src/content/` should be enough for anyone to reuse this repo as their own portfolio. Do NOT hardcode personal identity (name, handles, ORCID id, email, GitHub URL, affiliation) in components, scripts, or pages — use the CV/contact Markdown and shared settings through the helpers in `src/lib/content.ts`.
 
 ## Project-local skills
 

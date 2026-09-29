@@ -2,13 +2,14 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import { languages, tUi, type Lang } from '@/i18n/ui';
-import { formatDate, getCv, getProfileMeta, getByLang, localeSlug, sortByDateDesc } from '@/lib/content';
+import { formatDate, getCv, getContact, getProfileMeta, getByLang, localeSlug, sortByDateDesc } from '@/lib/content';
 import type { SearchIndexItem } from '@/lib/search';
 
 async function localeItems(lang: Lang): Promise<SearchIndexItem[]> {
-  const [meta, cv, legalDocs, published] = await Promise.all([
+  const [meta, cv, contact, legalDocs, published] = await Promise.all([
     getProfileMeta(lang),
     getCv(lang),
+    getContact(lang),
     getCollection('legal', (doc) => doc.id.startsWith(`${lang}/`)),
     getByLang('posts', lang),
   ]);
@@ -28,7 +29,7 @@ async function localeItems(lang: Lang): Promise<SearchIndexItem[]> {
     page('/posts/', tUi('nav.posts'), '', postList(posts)),
     page('/gallery/', tUi('nav.photos')),
     page('/contact/', tUi('nav.contact'), tUi('contact.description'),
-      tUi(meta.contactForm ? 'contact.cta' : 'contact.unavailable')),
+      contact?.body || tUi('contact.unavailable')),
     page('/sitemap/', tUi('sitemap.title'), tUi('sitemap.description'), [
       tUi('sitemap.pages'), tUi('sitemap.posts'), tUi('sitemap.qr'),
       tUi('sitemap.qrNote'),

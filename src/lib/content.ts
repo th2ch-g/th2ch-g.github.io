@@ -1,5 +1,6 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import type { Lang } from '@/i18n/ui';
+import { summarizeMarkdown } from './markdown-summary.mjs';
 
 type LangAware = 'posts';
 
@@ -13,6 +14,16 @@ type LangAware = 'posts';
 // is a real configuration error and must still surface loudly.
 let devPosts: CollectionEntry<'posts'>[] | undefined;
 const devProfileMetaByLang = new Map<Lang, ProfileMeta>();
+const markdownSummaries = new Map<string, { body: string; value: ReturnType<typeof summarizeMarkdown> }>();
+
+function getMarkdownSummary(key: string, body: string) {
+  let cached = markdownSummaries.get(key);
+  if (!cached || cached.body !== body) {
+    cached = { body, value: summarizeMarkdown(body) };
+    markdownSummaries.set(key, cached);
+  }
+  return cached.value;
+}
 
 // Shared posts live directly under `posts/<slug>.md`, so their entry IDs are
 // already URL slugs. Locale-specific collections such as legal still use
@@ -44,6 +55,27 @@ export async function getByLang<C extends LangAware>(
 export async function getCv(lang: Lang) {
   const all = await getCollection('cv');
   return all.find((p) => p.id === lang);
+}
+
+export async function getContact(lang: Lang) {
+  const all = await getCollection('contact');
+  return all.find((entry) => entry.id === lang);
+}
+
+export async function getContactDetails(lang: Lang) {
+  const entry = await getContact(lang);
+  const summary = await getMarkdownSummary(`contact/${lang}`, entry?.body ?? '');
+  const form = summary.links.find((href) => {
+    try {
+      const url = new URL(href);
+      return url.origin === 'https://docs.google.com'
+        && /^\/forms\/.*\/viewform\/?$/.test(url.pathname);
+    } catch {
+      return false;
+    }
+  });
+  const email = summary.links.find((href) => href.startsWith('mailto:'))?.slice(7).split('?')[0];
+  return { entry, form, email, standaloneForm: Boolean(form && summary.standaloneLink === form) };
 }
 
 // Per-locale legal documents (privacy, terms, ...). Stored under
@@ -85,62 +117,49 @@ export async function getLegalLinksByLang(lang: Lang) {
   })).sort((a, b) => a.label.localeCompare(b.label, 'en'));
 }
 
-// Resolves the single-entry `profileMeta` YAML and flattens per-locale
-// `{ ja, en }` sub-objects to plain strings for the requested locale.
-// Throws (rather than returning null) when the entry is missing — this
-// is build-time content; an absent profile.yaml should fail the build
-// loudly rather than silently degrading to placeholder values everywhere.
-//
-// The schema accepts null/missing for every field. This function normalises
-// the raw values so callers can treat them uniformly:
-//   - `name` / `siteHandle`: always strings; if either is blank it falls
-//     back to the other so callers always have *something* to render.
-//   - All other strings: undefined when blank/missing, so callers can
-//     `meta.foo && ...` without juggling '', null, undefined.
+// Combine shared settings with the CV's first H1 and introductory paragraph.
 export async function getProfileMeta(lang: Lang): Promise<ProfileMeta> {
-  const all = await getCollection('profileMeta');
+  const [all, cv] = await Promise.all([getCollection('profileMeta'), getCv(lang)]);
   const meta = all[0];
-  if (!meta) {
+  if (!meta || !cv) {
     if (import.meta.env.DEV) {
       const cached = devProfileMetaByLang.get(lang);
       if (cached) return cached;
     }
     throw new Error(
-      'profileMeta collection is empty: src/content/profile.yaml is missing or unloadable',
+      !meta ? 'profileMeta collection is empty: src/content/profile.yaml is missing or unloadable'
+        : `CV (${lang}) is missing. Add src/content/cv/${lang}.md`,
     );
   }
-  const result = buildProfileMeta(meta.data, lang);
+  const identity = await getMarkdownSummary(`cv/${lang}`, cv.body ?? '');
+  const settings = buildProfileMeta(meta.data);
+  const result = {
+    ...settings,
+    name: identity.title || settings.siteHandle,
+    bio: identity.description,
+  };
   if (import.meta.env.DEV) devProfileMetaByLang.set(lang, result);
   return result;
 }
 
-function buildProfileMeta(data: ProfileData, lang: Lang) {
+function buildProfileMeta(data: ProfileData) {
   // Coerce null / empty strings to undefined so callers only need to test
   // for truthiness, not for the specific blank variant.
   const blank = (s: string | null | undefined) => (s ? s : undefined);
-  const name = blank(data.name);
-  const siteHandle = blank(data.siteHandle);
   return {
-    // name and siteHandle cross-fall-back so neither is ever undefined
-    // when at least one is set. If both are blank, both end up as ''.
-    name: name ?? siteHandle ?? '',
-    siteHandle: siteHandle ?? name ?? '',
+    siteHandle: blank(data.siteHandle) ?? '',
     repo: blank(data.repo),
-    email: blank(data.email),
-    contactForm: blank(data.contactForm),
-    contactFormEmbed: data.contactFormEmbed ?? true,
     // Flatten the icon object to its URL.
     icon: blank(data.icon?.url),
-    bio: blank(data.bio?.[lang]),
     integrations: buildIntegrations(data),
   };
 }
 
-type ProfileMeta = ReturnType<typeof buildProfileMeta>;
+type ProfileMeta = ReturnType<typeof buildProfileMeta> & { name: string; bio?: string };
 
-// Flatten the optional `giscus` / `webmention` / `analytics` / `indexnow`
+// Flatten the optional `giscus` / `analytics` / `adsense` / `searchConsole`
 // blocks in profile.yaml into per-feature objects, returning `undefined`
-// when the feature isn't configured. Components can then guard on
+// when the feature is disabled or isn't configured. Components can guard on
 // truthiness (`{integrations.giscus && <Giscus … />}`) without juggling
 // nested optionality. `giscus.repo` defaults to the top-level `repo`
 // so authors only have to specify it once unless comments live on a
@@ -167,34 +186,24 @@ function buildIntegrations(data: ProfileData) {
   // widget would render with `data-repo=""` otherwise.
   const giscusReady = giscus && giscus.repo ? giscus : undefined;
 
-  const w = data.webmention;
-  const webmention = blank(w?.endpoint)
-    ? {
-        endpoint: blank(w?.endpoint)!,
-        pingback: blank(w?.pingback),
-        apiTarget: blank(w?.apiTarget),
-      }
-    : undefined;
-
   const a = data.analytics;
   const goatcounterEndpoint = blank(a?.goatcounterEndpoint);
   const googleAnalyticsId = blank(a?.googleAnalyticsId);
-  const analytics = goatcounterEndpoint || googleAnalyticsId
+  const analytics = a?.enabled !== false && (goatcounterEndpoint || googleAnalyticsId)
     ? { goatcounterEndpoint, googleAnalyticsId }
     : undefined;
 
-  const i = data.indexnow;
-  const indexnow = blank(i?.key) ? { key: blank(i?.key)! } : undefined;
-
   const ad = data.adsense;
-  const adsense = blank(ad?.clientId) ? { clientId: blank(ad?.clientId)! } : undefined;
+  const adsense = ad?.enabled !== false && blank(ad?.clientId)
+    ? { clientId: blank(ad?.clientId)! }
+    : undefined;
 
   const sc = data.searchConsole;
-  const searchConsole = blank(sc?.verification)
+  const searchConsole = sc?.enabled !== false && blank(sc?.verification)
     ? { verification: blank(sc?.verification)! }
     : undefined;
 
-  return { giscus: giscusReady, webmention, analytics, indexnow, adsense, searchConsole };
+  return { giscus: giscusReady, analytics, adsense, searchConsole };
 }
 
 export function sortByDateDesc<T extends { id: string; data: Record<string, unknown> }>(

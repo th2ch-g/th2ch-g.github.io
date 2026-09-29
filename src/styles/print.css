@@ -1,6 +1,6 @@
 
 /* Print stylesheet for posts. Strip away header/footer/share/
-   comments/webmention/progress chrome so paper output is just the body
+   comments/progress chrome so paper output is just the body
    content with readable typography. Forces light-theme colors so the
    user doesn't accidentally print a dark page (= ink-heavy). */
 @media print {
@@ -26,7 +26,6 @@
   .share,
   .skip-link,
   #giscus,
-  .webmentions,
   .post-nav,
   .series-nav {
     display: none !important;

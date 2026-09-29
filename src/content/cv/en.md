@@ -1,3 +1,6 @@
+# th
+Japanese🇯🇵
+
 ## Education
 - B.Sc. (Science), Department of Life Science and Technology, School of Life Science and Technology, Tokyo Institute of Technology, 2019/4/1-2023/3/31
 - M.Sc. (Science), Life Science and Technology Course, Department of Life Science and Technology, School of Life Science and Technology, Institute of Science Tokyo, 2023/4/1-2025/3/31
@@ -76,7 +79,7 @@
    [Grant-in-Aid for Transformative Research Areas (A) "Generation of New Protein Functions"](https://p-func.kuchem.kyoto-u.ac.jp/) [2nd Area Meeting](https://p-func.kuchem.kyoto-u.ac.jp/meetings/), Awaji Yumebutai International Conference Center (Awaji, Hyogo, Japan), December 16-17, 2024.
 
 ### Links
-- orcid: https://orcid.org/0009-0001-3991-8367
-- github: https://github.com/th2ch-g
-- kaggle: https://www.kaggle.com/lst1923
-- huggingface: https://huggingface.co/wasarou
+- [orcid](https://orcid.org/0009-0001-3991-8367)
+- [github](https://github.com/th2ch-g)
+- [kaggle](https://www.kaggle.com/lst1923)
+- [huggingface](https://huggingface.co/wasarou)

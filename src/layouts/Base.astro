@@ -65,7 +65,7 @@ const metaDescription = description ?? meta.bio;
 // the site name (the home page passes `meta.name`), skip the suffix to avoid
 // "th | th". `<og:title>` keeps the bare page title — SNS previewers render
 // the site name from their own domain/site_name handling.
-// Empty siteName (profile.yaml leaves both name and siteHandle blank) also
+// Empty siteName (the CV heading and siteHandle are both blank) also
 // skips the suffix so the tab doesn't end with a stray "| ".
 const siteName = meta.name;
 const documentTitle = !siteName || title === siteName ? title : `${title} | ${siteName}`;
@@ -123,15 +123,14 @@ const ogLocaleAlternate = lang === 'ja' ? 'en_US' : 'ja_JP';
 //     styles, Astro scoped style sheets). Tightening this would require
 //     migrating to nonce-based CSP, which Astro 6 does not surface for
 //     hand-written `<script is:inline>` blocks.
-//   - `img-src https:` is intentionally broad because webmention author
-//     photos arrive from arbitrary hosts via webmention.io. `data:` is
-//     allowed for the small inline SVGs in markdown rendering.
+//   - `img-src https:` permits remote Markdown images; `data:` allows
+//     the small inline SVGs used by Markdown rendering.
 //   - `frame-ancestors` is honored only when CSP is delivered as a real
 //     HTTP header, not via <meta>. The docker/nginx.conf path therefore
 //     also sets X-Frame-Options; on GitHub Pages the site is unprotected
 //     from framing, which is acceptable for a public personal portfolio.
 //   - Third-party origins listed correspond 1:1 to the configurable
-//     integrations in profile.yaml (giscus, webmention, goatcounter,
+//     integrations in profile.yaml (giscus, goatcounter,
 //     google analytics, adsense) plus the on-demand Twitter widget
 //     loaded by PostDetailPage. AdSense Auto Ads also reach the ad
 //     iframe origins (googleads.g.doubleclick.net, *.googlesyndication.com).
@@ -149,8 +148,7 @@ const csp = [
   // it the iframe falls back to the HTML default 300px width.
   "style-src 'self' 'unsafe-inline' https://giscus.app",
   "script-src 'self' 'unsafe-inline' https://giscus.app https://platform.twitter.com https://*.twimg.com https://gc.zgo.at https://www.googletagmanager.com https://*.googlesyndication.com https://*.google.com https://*.adtrafficquality.google",
-  // docs.google.com hosts the embedded contact form (profile.yaml `contactForm`).
-  // Swap this origin if you point `contactForm` at a different form provider.
+  // Contact Markdown can link to an embedded Google Form.
   "frame-src 'self' https://giscus.app https://platform.twitter.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://docs.google.com",
   // GA4 sends the page_view beacon to whichever of these Google collection
   // endpoints its config resolves to — observed in the wild: www.google-analytics.com,
@@ -158,7 +156,7 @@ const csp = [
   // *.analytics.google.com wildcard), and www.google.com/g/collect. *.google.com
   // also covers AdSense's ep{N}.adtrafficquality.google sodar beacon. Omitting any
   // of these silently drops every hit and GA reports "data collection not active".
-  "connect-src 'self' https://webmention.io https://*.giscus.app https://api.github.com https://gc.zgo.at https://*.twitter.com https://*.google-analytics.com https://*.analytics.google.com https://*.google.com https://*.g.doubleclick.net https://*.googlesyndication.com https://*.adtrafficquality.google",
+  "connect-src 'self' https://*.giscus.app https://api.github.com https://gc.zgo.at https://*.twitter.com https://*.google-analytics.com https://*.analytics.google.com https://*.google.com https://*.g.doubleclick.net https://*.googlesyndication.com https://*.adtrafficquality.google",
 ].join('; ');
 
 // JSON-LD structured data. Person describes the site owner, WebSite
@@ -228,6 +226,7 @@ const jsonLd = {
   ],
 };
 const japaneseMeta = await getProfileMeta('ja');
+const japaneseSiteName = japaneseMeta.name;
 const japaneseTitle = japanese?.title ?? title;
 const japaneseDescription = japanese?.description ?? description ?? japaneseMeta.bio;
 const japaneseCanonical = new URL(getRelativeLocaleUrl('ja', localePath), Astro.site).toString();
@@ -240,9 +239,13 @@ const japaneseImage = japaneseImageUrl.origin === Astro.url.origin
 const japaneseJsonLd = {
   ...jsonLd,
   '@graph': [
-    personLd,
-    { ...websiteLd, description: japaneseMeta.bio, inLanguage: 'ja-JP' },
+    { ...personLd, name: japaneseSiteName },
+    { ...websiteLd, name: japaneseSiteName, description: japaneseMeta.bio, inLanguage: 'ja-JP',
+      alternateName: japaneseMeta.siteHandle && japaneseMeta.siteHandle !== japaneseSiteName
+        ? japaneseMeta.siteHandle : undefined },
     ...(articleLd ? [{ ...articleLd, url: japaneseCanonical, image: japaneseImage,
+      author: { ...articleLd.author, name: japaneseSiteName },
+      publisher: { ...articleLd.publisher, name: japaneseSiteName },
       mainEntityOfPage: { '@type': 'WebPage', '@id': japaneseCanonical } }] : []),
     ...(breadcrumbLd ? [{ ...breadcrumbLd, itemListElement: breadcrumbLd.itemListElement.map((item) => ({
       ...item,
@@ -251,7 +254,9 @@ const japaneseJsonLd = {
   ],
 };
 const japaneseMetadata = {
-  documentTitle: !siteName || japaneseTitle === siteName ? japaneseTitle : `${japaneseTitle} | ${siteName}`,
+  documentTitle: !japaneseSiteName || japaneseTitle === japaneseSiteName
+    ? japaneseTitle : `${japaneseTitle} | ${japaneseSiteName}`,
+  siteName: japaneseSiteName,
   title: japaneseTitle, description: japaneseDescription ?? '', canonical: japaneseCanonical,
   image: japaneseImage, imageAlt: japaneseDescription ?? japaneseTitle, jsonLd: japaneseJsonLd,
 };
@@ -368,6 +373,7 @@ const japaneseMetadata = {
         const values = {
           'description': japaneseMetadata.description,
           'og:title': japaneseMetadata.title,
+          'og:site_name': japaneseMetadata.siteName,
           'og:description': japaneseMetadata.description,
           'og:url': japaneseMetadata.canonical,
           'og:locale': 'ja_JP',
@@ -391,16 +397,6 @@ const japaneseMetadata = {
         document.querySelector('script[type="application/ld+json"]').textContent = JSON.stringify(japaneseMetadata.jsonLd);
       }
     </script>
-
-    {/* Webmention discovery links — register at https://webmention.io to obtain endpoints. */}
-    {meta.integrations.webmention && (
-      <>
-        <link rel="webmention" href={meta.integrations.webmention.endpoint} />
-        {meta.integrations.webmention.pingback && (
-          <link rel="pingback" href={meta.integrations.webmention.pingback} />
-        )}
-      </>
-    )}
 
     {/* Privacy-respecting analytics (GoatCounter). No cookies, no PII.
         Guard on the inner endpoint, not the outer object — schema can

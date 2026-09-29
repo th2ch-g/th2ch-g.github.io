@@ -1,0 +1,38 @@
+---
+import { render } from 'astro:content';
+import { tUi, type Lang } from '@/i18n/ui';
+import { getContactDetails } from '@/lib/content';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const { entry, form, standaloneForm } = await getContactDetails(lang);
+const Content = entry?.body?.trim() && !standaloneForm ? (await render(entry)).Content : undefined;
+const embedUrl = form ? new URL(form) : undefined;
+embedUrl?.searchParams.set('embedded', 'true');
+---
+<div data-contact-lang={lang}>
+  {embedUrl && <iframe
+    class="contact-form"
+    src={embedUrl.toString()}
+    title={tUi('contact.embedTitle')}
+    loading="lazy"
+  >…</iframe>}
+  {Content && <div class="prose contact-prose"><Content /></div>}
+  {!Content && !embedUrl && <p class="muted">{tUi('contact.unavailable')}</p>}
+</div>
+
+<style>
+  .contact-form {
+    display: block;
+    width: 100%;
+    /* Google Forms does not provide a resize protocol. */
+    min-height: 1100px;
+    margin-top: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+    color-scheme: light;
+    background: #fff;
+  }
+  .contact-prose { margin-top: 0.75rem; }
+</style>

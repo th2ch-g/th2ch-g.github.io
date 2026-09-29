@@ -24,7 +24,8 @@ async function assertHomeLocales() {
     await page.locator('[data-cv-actions] summary').waitFor();
     assert.equal(await page.locator('html').getAttribute('lang'), lang);
     assert.equal(await page.locator('main h1').count(), 1, 'Home must have one page heading');
-    assert.equal(await page.locator('.hero + #cv').count(), 1, 'CV does not follow the profile');
+    assert.equal(await page.locator('.cv-prose > h1').count(), 1, 'The profile heading is missing from the CV');
+    assert.equal(await page.locator('.hero').count(), 0, 'Home still renders a separate profile');
     assert.equal(await page.locator('.cv-prose').getAttribute('data-cv-lang'), lang);
     assert.equal(await page.locator('[data-post-row], .posts-section').count(), 0,
       'Home still contains the recent posts list');
@@ -333,16 +334,15 @@ try {
     'Language switcher labels are not EN/JA',
   );
 
-  assert.equal(await mobilePage.locator('.hero img').count(), 0, 'Home still renders a profile image');
-  const heroTopBefore = await mobilePage.locator('.hero').evaluate(
+  const cvTopBefore = await mobilePage.locator('#cv').evaluate(
     (element) => element.getBoundingClientRect().top,
   );
   await mobilePage.click('[data-nav-toggle]');
   await mobilePage.waitForTimeout(200);
-  const heroTopAfter = await mobilePage.locator('.hero').evaluate(
+  const cvTopAfter = await mobilePage.locator('#cv').evaluate(
     (element) => element.getBoundingClientRect().top,
   );
-  assert.equal(heroTopAfter, heroTopBefore, 'Mobile navigation pushes page content down');
+  assert.equal(cvTopAfter, cvTopBefore, 'Mobile navigation pushes page content down');
   await mobilePage.keyboard.press('Escape');
   assert.equal(await mobilePage.locator('[data-nav-toggle]').getAttribute('aria-expanded'), 'false',
     'Escape does not close mobile navigation');
@@ -355,8 +355,8 @@ try {
   );
   assert.equal(await mobilePage.locator('[data-post-row]').count(), 0,
     'Mobile Home still contains posts');
-  assert.equal(await mobilePage.locator('.hero + #cv .cv-prose').count(), 1,
-    'Mobile Home does not contain the CV below the profile');
+  assert.equal(await mobilePage.locator('#cv .cv-prose > h1').count(), 1,
+    'Mobile Home does not contain the CV profile heading');
   await mobilePage.close();
 
   const listPage = await newLocalPage({ width: 393, height: 852 });

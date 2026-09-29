@@ -3,9 +3,9 @@ import { getProfileMeta } from '@/lib/content';
 import { requireSite } from '@/lib/site';
 
 // llms.txt — sitemap-style hint for LLM crawlers. Generated entirely
-// from profile.yaml + the configured site URL so a fork inherits the
+// from the shared site settings and English CV so a fork inherits the
 // correct identity without touching this file. The "About" line is
-// composed from siteHandle + bio (EN flatten); if
+// composed from siteHandle + the CV introduction; if
 // any of those are blank the surrounding punctuation collapses.
 export const GET: APIRoute = async (context) => {
   const site = requireSite(context).toString().replace(/\/$/, '');

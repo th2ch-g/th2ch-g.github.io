@@ -59,17 +59,24 @@ const { Content } = await render(cv);
     margin-top: 0;
     scroll-margin-top: 5rem;
   }
+  .cv-content { position: relative; }
   .cv-header {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 21;
     display: flex;
-    /* Reserve the toolbar before its client-side copy menu is attached. */
-    min-height: 2rem;
     align-items: center;
     justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--color-border);
+  }
+  .cv-prose > :global(h1:first-child) {
+    margin: 0 0 0.5rem;
+    padding-bottom: 0;
+    border-bottom: 0;
+    font-size: 1.625rem;
+  }
+  .cv-prose > :global(h1:first-child + p) {
+    color: var(--color-muted);
   }
   .cv-header-actions {
     display: flex;

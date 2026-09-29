@@ -36,6 +36,10 @@ const cv = defineCollection({
   loader: glob({ pattern: '*.md', base: './src/content/cv' }),
 });
 
+const contact = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/contact' }),
+});
+
 // Legal documents (privacy policy, terms of service, ...). One entry per
 // locale per document. The slug after the locale is used in the URL
 // (`/<slug>?lang=en` and `/<slug>?lang=ja`), so keep it short and stable.
@@ -48,23 +52,11 @@ const legal = defineCollection({
   }),
 });
 
-// Single-file YAML collection holding language-aware structured profile info.
-// Strings that differ per locale use { ja, en } sub-objects; truly shared
-// values (URLs, name) stay flat. Read via `getProfileMeta(lang)`.
-//
-// Every field is `.nullish()` so that authors can leave any value blank
-// (`key:` in YAML deserialises to `null`, not undefined) without tripping
-// schema validation. Required-feeling fields like `name` / `siteHandle` /
-// `repo` are still normalised by `getProfileMeta` — empty strings flow
-// through as empty, and consumers that depend on them (Footer's GH links,
-// for example) guard on truthiness rather than crashing.
+// Shared site settings; personal prose and contact links live in Markdown.
 const profileMeta = defineCollection({
   loader: glob({ pattern: 'profile.yaml', base: './src/content' }),
   schema: z.object({
-    name: z.string().nullish(),
     // Stable site brand / GitHub handle used in the header and footer.
-    // Kept separate from `name` so the human display name can drift
-    // independently from the site identifier.
     siteHandle: z.string().nullish(),
     // `<owner>/<name>` GitHub slug for the source repo. Used by the footer
     // to build source / license URLs. The format is only validated when a
@@ -81,31 +73,14 @@ const profileMeta = defineCollection({
     // which is correct for GitHub User/Org Pages. Set this only when you
     // ship to a custom domain.
     site: nullable(httpUrl),
-    email: z.string().nullish(),
-    // Contact-form URL (e.g. a Google Form). Drives the /contact page CTA
-    // button and the "Contact" nav item. Validated as a URL only when
-    // present; blank disables the button and shows a placeholder instead.
-    contactForm: nullable(httpUrl),
-    // Disable embedding for forms that require sign-in; keep the CTA.
-    contactFormEmbed: nullable(z.boolean()),
     // Avatar source also used by the generated site icon.
     icon: z
       .object({
         url: z.preprocess(blankToUndefined, httpUrl.nullish()),
       })
       .nullish(),
-    bio: z
-      .object({
-        ja: z.string().nullish(),
-        en: z.string().nullish(),
-      })
-      .nullish(),
-    // Third-party integration config. Each block is independently optional;
-    // any blank value (`key:`, `key: ""`, `key: null`) disables the matching
-    // feature at render time so the site still builds with placeholders.
-    // All fields use the shared `nullable()` wrapper so YAML's null and
-    // empty-string forms collapse to undefined consistently with the rest
-    // of the schema.
+    // Each integration defaults to enabled when configured. Set enabled to
+    // false to retain its settings without rendering the integration.
     giscus: z
       .object({
         enabled: z.boolean().default(true),
@@ -119,15 +94,9 @@ const profileMeta = defineCollection({
         mapping: nullable(z.enum(['pathname', 'url', 'title', 'og:title'])),
       })
       .nullish(),
-    webmention: z
-      .object({
-        endpoint: nullable(httpUrl),
-        pingback: nullable(httpUrl),
-        apiTarget: nullable(z.string()),
-      })
-      .nullish(),
     analytics: z
       .object({
+        enabled: z.boolean().default(true),
         goatcounterEndpoint: nullable(httpUrl),
         // GA4 measurement IDs are `G-` followed by 10 uppercase
         // alphanumerics. Validating the shape at build time catches
@@ -136,22 +105,11 @@ const profileMeta = defineCollection({
         googleAnalyticsId: nullable(z.string().regex(/^G-[A-Z0-9]{10}$/)),
       })
       .nullish(),
-    indexnow: z
-      .object({
-        key: nullable(z.string()),
-      })
-      .nullish(),
-    // Google AdSense site verification. Setting `clientId` (form
-    // `ca-pub-XXXXXXXXXXXXXXXX`) enables the
-    // `<meta name="google-adsense-account">` verification tag in <head>
-    // and the auto-generated `/ads.txt` route — the two stage-1
-    // prerequisites for the AdSense application. The actual ad-loader
-    // script is NOT injected by this block; add it manually after the
-    // application is approved (and after measuring Lighthouse impact,
-    // since the loader is large enough to break the perf budget in
-    // lighthouserc.json).
+    // AdSense controls the verification tag, production ad loader,
+    // and generated /ads.txt route together.
     adsense: z
       .object({
+        enabled: z.boolean().default(true),
         // AdSense publisher IDs are exactly 16 digits after `ca-pub-`. The
         // strict length catches transposed / truncated values at build
         // time rather than after a failed AdSense review round-trip.
@@ -166,6 +124,7 @@ const profileMeta = defineCollection({
     // method is the supported path. Token charset is base64url-ish.
     searchConsole: z
       .object({
+        enabled: z.boolean().default(true),
         verification: nullable(z.string().regex(/^[A-Za-z0-9_-]+$/)),
       })
       .nullish(),
@@ -198,4 +157,4 @@ const posts = defineCollection({
 // image files under `src/content/gallery/` loaded via `import.meta.glob`
 // from `PhotosListPage.astro` — there is no per-photo .md any more.
 
-export const collections = { cv, legal, profileMeta, posts };
+export const collections = { cv, contact, legal, profileMeta, posts };

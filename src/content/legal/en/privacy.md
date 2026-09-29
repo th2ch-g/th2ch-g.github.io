@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How visitor information is handled on this site.
-updatedDate: 2026-05-26
+updatedDate: 2026-09-30
 ---
 
 This document describes how the personal information of visitors to "{{siteHandle}}" ({{site}}, "this site") is handled.
@@ -33,11 +33,7 @@ This site uses [Google Analytics 4](https://marketingplatform.google.com/about/a
 
 Blocking cookies in your browser settings, or enabling DNT (Do Not Track), can also prevent some tracking.
 
-### 2.4 Webmention (when enabled)
-
-Mentions from other sites may be displayed via [Webmention.io](https://webmention.io). Received webmentions are stored on webmention.io.
-
-### 2.5 Google AdSense
+### 2.4 Google AdSense
 
 This site displays advertisements via [Google AdSense](https://www.google.com/adsense/). AdSense uses cookies and may show personalized ads based on visitor interests. Browsing history is collected by Google and its advertising partners.
 

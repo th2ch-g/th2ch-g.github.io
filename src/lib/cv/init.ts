@@ -43,7 +43,9 @@ export function setupCv(): void {
 
   // An outer heading claims a shared list before any of its subheadings.
   const claimedLists = new Set<Element>();
+  const profileHeading = prose.querySelector(':scope > h1:first-child');
   prose.querySelectorAll<HTMLHeadingElement>('h1, h2, h3, h4, h5, h6').forEach((heading) => {
+    if (heading === profileHeading) return;
     const list = getSectionList(heading);
     if (!list || claimedLists.has(list)) return;
     claimedLists.add(list);

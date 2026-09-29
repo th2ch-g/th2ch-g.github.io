@@ -5,7 +5,8 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { siteHost, readProfileShallow } from '../../src/lib/profile-yaml.mjs';
+import { siteHost } from '../../src/lib/profile-yaml.mjs';
+import { contactEmail } from '../../src/lib/contact-email.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
@@ -42,11 +43,11 @@ export async function extractDoisFromCv() {
 }
 
 // A reachable mailto in the User-Agent puts requests into CrossRef's
-// "polite pool" with looser shared rate limits. Both the host and the
-// email are sourced from profile.yaml so site identity stays single-sourced.
+// "polite pool" with looser shared rate limits. Use shared site settings
+// for the host and contact Markdown for the optional email address.
 export async function politeUserAgent() {
   const host = await siteHost();
-  const { email } = await readProfileShallow();
+  const email = await contactEmail();
   return email ? `${host} (mailto:${email})` : host;
 }
 

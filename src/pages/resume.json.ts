@@ -1,5 +1,5 @@
 import type { APIContext } from 'astro';
-import { getProfileMeta } from '@/lib/content';
+import { getProfileMeta, getContactDetails } from '@/lib/content';
 
 // JSON Resume schema (https://jsonresume.org/schema/) — a stable, portable
 // representation of a CV. Many tools (HackMyResume, jsonresume-theme-*,
@@ -8,13 +8,14 @@ import { getProfileMeta } from '@/lib/content';
 // JSON Resume consumers expect English.
 export async function GET(_context: APIContext) {
   const meta = await getProfileMeta('en');
+  const contact = await getContactDetails('en');
   const resume = {
     $schema: 'https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json',
     basics: {
       name: meta.name,
       label: meta.bio,
       image: meta.icon,
-      email: meta.email,
+      email: contact.email,
     },
   };
   return new Response(JSON.stringify(resume, null, 2), {

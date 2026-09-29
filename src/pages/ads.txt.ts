@@ -2,8 +2,8 @@ import type { APIRoute } from 'astro';
 import { getProfileMeta } from '@/lib/content';
 
 // `/ads.txt` ownership/authorisation file required by Google AdSense
-// (and the wider IAB ads.txt standard). When no AdSense `clientId` is
-// set in profile.yaml the file ships with only a comment line — which
+// (and the wider IAB ads.txt standard). When AdSense is disabled or its
+// `clientId` is absent, the file ships with only comment lines — which
 // is a valid empty ads.txt: zero publisher records means "no ad system
 // is authorised here", i.e. this site shows no third-party ads. Astro's
 // static-API-routes are always built, so we can't skip the file

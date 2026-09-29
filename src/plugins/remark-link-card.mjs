@@ -13,7 +13,8 @@ import { escapeHtml as esc } from './lib/escape.mjs';
 import { fetchPublicHttp, parsePublicHttpUrl } from './lib/public-http.mjs';
 import { readResponseBuffer } from './lib/response-body.mjs';
 import { replaceWithHtml } from './lib/replace.mjs';
-import { siteHost, readProfileShallow } from '../lib/profile-yaml.mjs';
+import { siteHost } from '../lib/profile-yaml.mjs';
+import { contactEmail } from '../lib/contact-email.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, '../../node_modules/.cache/link-card');
@@ -191,15 +192,14 @@ function extractDoi(url) {
   }
 }
 
-// CrossRef polite-pool User-Agent, sourced from profile.yaml to keep
-// site identity single-sourced (same pattern as scripts/lib/fetch-cache.mjs).
+// CrossRef polite-pool User-Agent from site settings and contact Markdown.
 let crossrefUaPromise = null;
 function crossrefUa() {
   if (!crossrefUaPromise) {
     crossrefUaPromise = (async () => {
       try {
         const host = await siteHost();
-        const { email } = await readProfileShallow();
+        const email = await contactEmail();
         return email ? `${host} (mailto:${email})` : host;
       } catch {
         return 'remark-link-card';

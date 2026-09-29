@@ -94,10 +94,10 @@ Profile links are ordinary Markdown body content in both locales; no CV frontmat
 
 ```markdown
 ### Links
-- orcid: https://orcid.org/0000-0000-0000-0000
-- github: https://github.com/example
-- kaggle: https://www.kaggle.com/example
-- huggingface: https://huggingface.co/example
+- [orcid](https://orcid.org/0000-0000-0000-0000)
+- [github](https://github.com/example)
+- [kaggle](https://www.kaggle.com/example)
+- [huggingface](https://huggingface.co/example)
 ```
 
 Without `--orcid`, the sync script identifies the ORCID URL independently of
