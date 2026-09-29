@@ -7,9 +7,7 @@ icon:
 # Set enabled to false to disable an integration while retaining its settings.
 giscus:
   enabled: false
-  repoId: R_kgDOSWDKhA
   category: Announcements
-  categoryId: DIC_kwDOSWDKhM4C8k4s
   mapping: pathname
 
 analytics:
