@@ -30,7 +30,7 @@ async function visit(page, origin, path) {
   assert.equal(response?.status(), 200, `Page request failed: ${path}`);
   await page.evaluate(() => document.fonts.ready);
   if (await page.locator('pre.mermaid').count()) {
-    await page.waitForFunction(() => [...document.querySelectorAll('pre.mermaid')].every((node) => node.querySelector('svg')));
+    await page.waitForFunction(() => [...document.querySelectorAll('pre.mermaid')].every((node) => node.querySelector(':scope > svg')));
   }
   // Normalize only the gallery's intentionally randomized build-time order.
   await page.evaluate(async () => {

@@ -20,9 +20,11 @@ export function wireMermaid(): void {
             mermaid.initialize({ startOnLoad: false, theme });
             nodes.forEach((node, index) => {
               node.removeAttribute('data-processed');
+              delete node.dataset.mermaidTheme;
               node.textContent = sources[index];
             });
             await mermaid.run({ nodes });
+            nodes.forEach((node) => { node.dataset.mermaidTheme = theme; });
             renderedTheme = theme;
           }
         } finally {

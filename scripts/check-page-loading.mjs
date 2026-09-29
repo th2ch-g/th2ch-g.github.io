@@ -92,13 +92,13 @@ async function checkTweets(browser, path, mode) {
 }
 
 async function checkDiagramThemes(browser, path, fixture = false) {
-  const { page, errors } = await newPage(browser);
-  function signature({ reference, different = false } = {}) {
+  const { page, errors } = await newPage(browser, { colorScheme: 'light' });
+  function signature({ reference, different = false, theme } = {}) {
     const nodes = [...document.querySelectorAll('pre.mermaid')];
-    if (!nodes.length || !nodes.every((node) => node.querySelector('svg'))) return false;
+    if (!nodes.length || !nodes.every((node) => node.querySelector('svg') && node.dataset.mermaidTheme === theme)) return false;
     const next = nodes.map((node) => [...node.querySelectorAll('svg rect, svg text, svg path, svg stop')].map((element) => {
       const { fill, stroke, color, stopColor } = getComputedStyle(element);
-      return [fill, stroke, color, stopColor].map((value) => value.replace(/url\("#[^"]+"\)/g, 'url(#reference)'));
+      return [fill, stroke, color, stopColor].map((value) => value.replace(/url\([^)]*#[^)]*\)/g, 'url(#reference)'));
     }));
     if (!reference) return next;
     const same = JSON.stringify(next) === JSON.stringify(reference);
@@ -114,18 +114,18 @@ async function checkDiagramThemes(browser, path, fixture = false) {
   }
   try {
     await page.goto(server.url + path, { waitUntil: 'networkidle' });
-    await page.waitForFunction(signature);
-    const light = await page.evaluate(signature);
+    await page.waitForFunction(signature, { theme: 'default' });
+    const light = await page.evaluate(signature, { theme: 'default' });
     await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
-    await page.waitForFunction(signature, { reference: light, different: true });
-    const dark = await page.evaluate(signature);
+    await page.waitForFunction(signature, { theme: 'dark', reference: light, different: true });
+    const dark = await page.evaluate(signature, { theme: 'dark' });
     await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
-    await page.waitForFunction(signature, { reference: light });
+    await page.waitForFunction(signature, { theme: 'default', reference: light });
     for (let index = 0; index < 9; index++) {
       await page.locator('[data-theme-toggle]').evaluate((button) => button.click());
       await page.waitForTimeout(10);
     }
-    await page.waitForFunction(signature, { reference: dark });
+    await page.waitForFunction(signature, { theme: 'dark', reference: dark });
     assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
     assert.deepEqual(errors, [], 'Rapid theme changes leave failed diagram renders');
   } finally {
