@@ -1,15 +1,7 @@
 ---
 import { tUi, type Lang } from '@/i18n/ui';
-import { getRelativeLocaleUrl } from '@/lib/locale-url';
 
 interface Props { lang: Lang }
-const { lang } = Astro.props;
-
-// The shortcut handler applies the current query language at navigation time.
-const homeUrl = getRelativeLocaleUrl(lang, '/');
-const postsUrl = getRelativeLocaleUrl(lang, '/posts');
-const galleryUrl = getRelativeLocaleUrl(lang, '/gallery');
-const cvUrl = `${homeUrl}#cv`;
 ---
 <dialog class="shortcuts-dialog" data-shortcuts-dialog aria-label={tUi('shortcuts.title')}>
   <div class="shortcuts-shell modal-box">
@@ -28,91 +20,9 @@ const cvUrl = `${homeUrl}#cv`;
   </div>
 </dialog>
 
-<script is:inline define:vars={{ homeUrl, postsUrl, galleryUrl, cvUrl }}>
-  // Single-key + chord shortcut driver. Bound once per page load via a
-  // window-level guard so re-execution (no ClientRouter on this site,
-  // but defensive anyway) doesn't pile up listeners.
-  //
-  // CRITICAL: wrapped in IIFE because `is:inline` injects raw code; a
-  // top-level `let` would collide on hypothetical re-exec.
-  (() => {
-    if (window.__th2chShortcutsBound) return;
-    window.__th2chShortcutsBound = true;
-
-    const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
-    let pendingG = false;
-    let pendingTimer = null;
-
-    function isTyping(target) {
-      if (!target) return false;
-      if (TYPING_TAGS.has(target.tagName)) return true;
-      if (target.isContentEditable) return true;
-      return false;
-    }
-
-    function clearG() {
-      pendingG = false;
-      if (pendingTimer) { window.clearTimeout(pendingTimer); pendingTimer = null; }
-    }
-
-    document.addEventListener('keydown', (e) => {
-      // Modifier-bearing keys are reserved for other shortcuts (Cmd+K) or
-      // browser actions; only act on plain key presses.
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isTyping(e.target)) return;
-      // Native dialogs and the image preview own their keyboard input.
-      const inDialog = document.querySelector('dialog[open], [aria-modal="true"]:not([hidden]):not([aria-hidden="true"])');
-      if (inDialog) { clearG(); return; }
-
-      // First key of a chord: `g`. Latches a 1.2s window to receive the
-      // second character. ESC or any non-mapped key clears the latch.
-      if (pendingG) {
-        const map = { h: homeUrl, b: postsUrl, p: galleryUrl, c: cvUrl };
-        const dest = map[e.key.toLowerCase()];
-        clearG();
-        if (dest) {
-          e.preventDefault();
-          const target = new URL(dest, location.origin);
-          target.searchParams.set('lang', document.documentElement.lang);
-          location.href = target.href;
-        }
-        return;
-      }
-
-      if (e.key === 'g') {
-        pendingG = true;
-        pendingTimer = window.setTimeout(clearG, 1200);
-        return;
-      }
-
-      if (e.key === '/') {
-        const trigger = document.querySelector('[data-search-open]');
-        if (trigger) {
-          e.preventDefault();
-          trigger.click();
-        }
-        return;
-      }
-
-      if (e.key === '?') {
-        const dlg = document.querySelector('[data-shortcuts-dialog]');
-        if (dlg && typeof dlg.showModal === 'function') {
-          e.preventDefault();
-          dlg.showModal();
-        }
-      }
-    });
-
-    // Close button + click-outside for the help dialog.
-    document.querySelector('[data-shortcuts-close]')?.addEventListener('click', () => {
-      const dlg = document.querySelector('[data-shortcuts-dialog]');
-      if (dlg) dlg.close();
-    });
-    const dlg = document.querySelector('[data-shortcuts-dialog]');
-    dlg?.addEventListener('click', (e) => {
-      if (e.target === dlg) dlg.close();
-    });
-  })();
+<script>
+  import { wireShortcuts } from '@/lib/shortcuts';
+  wireShortcuts();
 </script>
 
 <style>

@@ -473,11 +473,11 @@ const japaneseMetadata = {
             document.documentElement.dataset.theme = saved;
             return;
           }
-          if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-            document.documentElement.dataset.theme = 'light';
-          }
         } catch {
-          // localStorage / matchMedia unavailable — keep the markup default.
+          // Fall back to the OS preference when storage access is blocked.
+        }
+        if (window.matchMedia?.('(prefers-color-scheme: light)').matches) {
+          document.documentElement.dataset.theme = 'light';
         }
       })();
     </script>
@@ -497,10 +497,10 @@ const japaneseMetadata = {
       import { onReady } from '@/lib/dom-ready';
       import { setupLinkCardImages } from '@/lib/link-card-images';
       import { setupCodeCopy } from '@/lib/code-copy';
-      import { setupLocaleLinks } from '@/lib/locale-client';
+      import { setupLocaleLinks, updateLanguageSwitcher } from '@/lib/locale-client';
       onReady(() => {
         setupLocaleLinks();
-        window.addEventListener('hashchange', setupLocaleLinks);
+        window.addEventListener('hashchange', updateLanguageSwitcher);
         setupLinkCardImages();
         setupCodeCopy();
       });

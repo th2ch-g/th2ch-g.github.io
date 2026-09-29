@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Allow only one concurrent deployment, while preventing in-progress runs from being cancelled.
 concurrency:
@@ -29,25 +27,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
-
-      # Cache Playwright browser binaries so cold installs don't re-download
-      # them on every deploy. Keyed on package-lock so it invalidates with
-      # any Playwright version bump.
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-firefox-webkit-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Install WebKit system dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps webkit
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Type check
         run: npm run check
@@ -62,20 +42,60 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # Each check serves dist/ on its own port and launches independent
-      # browser processes. Run them together so Lighthouse does not serialize
-      # the mobile and axe-core checks. Every exit status is still enforced.
-      - name: Run browser regression checks
-        run: npm run check:browsers
-
+      # Every validation job and the deployment consume this exact build.
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
           path: ./dist
+          include-hidden-files: true
 
-  deploy:
+  browsers:
+    name: Browser checks (${{ matrix.engine }})
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    env:
+      BROWSER_ENGINE: ${{ matrix.engine }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Prepare browser checks
+        uses: ./.github/actions/prepare-browser-checks
+        with:
+          browsers: ${{ matrix.engine }}
+
+      - name: Run browser regression checks
+        run: npm run check:browser-engine
+
+  quality:
+    name: Accessibility, visual consistency, and Lighthouse
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Prepare browser checks
+        uses: ./.github/actions/prepare-browser-checks
+        with:
+          browsers: chromium firefox
+
+      - name: Run accessibility and UI checks
+        run: node scripts/run-scripts-parallel.mjs check:mobile-fixes check:consistency check:a11y
+
+      - name: Run Lighthouse without competing browser processes
+        run: npm run check:lighthouse
+
+  deploy:
+    needs: [build, browsers, quality]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

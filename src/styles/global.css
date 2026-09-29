@@ -1,8 +1,9 @@
-@import "tailwindcss";
+@import "tailwindcss" source("../");
 
 @plugin "daisyui" {
   themes: false;
   logs: false;
+  include: button, card, join, kbd, list, modal, typography, rootcolor, rootscrollgutter, rootscrolllock, scrollbar, properties, svg;
 }
 
 @plugin "daisyui/theme" {

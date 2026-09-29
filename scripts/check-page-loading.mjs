@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { chromium, firefox, webkit } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
+import { browserEngines } from './lib/browser-engines.mjs';
 
 const distDir = resolve(import.meta.dirname, '../dist');
 const pages = readdirSync(distDir, { recursive: true })
@@ -13,6 +14,7 @@ const pages = readdirSync(distDir, { recursive: true })
   }))
   .filter(({ html }) => html.includes('<main'));
 const tweets = pages.filter(({ html }) => html.includes('class="tweet-embed"'));
+const diagrams = pages.filter(({ html }) => html.includes('class="mermaid"'));
 const server = await startStaticServer(distDir);
 const widgetUrl = 'https://platform.twitter.com/widgets.js';
 
@@ -89,15 +91,60 @@ async function checkTweets(browser, path, mode) {
   }
 }
 
+async function checkDiagramThemes(browser, path, fixture = false) {
+  const { page, errors } = await newPage(browser);
+  function signature({ reference, different = false } = {}) {
+    const nodes = [...document.querySelectorAll('pre.mermaid')];
+    if (!nodes.length || !nodes.every((node) => node.querySelector('svg'))) return false;
+    const next = nodes.map((node) => [...node.querySelectorAll('svg rect, svg text, svg path, svg stop')].map((element) => {
+      const { fill, stroke, color, stopColor } = getComputedStyle(element);
+      return [fill, stroke, color, stopColor].map((value) => value.replace(/url\("#[^"]+"\)/g, 'url(#reference)'));
+    }));
+    if (!reference) return next;
+    const same = JSON.stringify(next) === JSON.stringify(reference);
+    return different ? !same : same;
+  }
+  if (fixture) {
+    await page.route(server.url + encodeURI(path), async (route) => {
+      const response = await route.fetch();
+      const markup = '<div class="prose"><pre class="mermaid">graph LR\n A[Alpha]--&gt;B[Beta]</pre>'
+        + '<pre class="mermaid">sequenceDiagram\n Alice-&gt;&gt;Bob: Hello</pre></div>';
+      await route.fulfill({ response, body: (await response.text()).replace('</main>', `${markup}</main>`) });
+    });
+  }
+  try {
+    await page.goto(server.url + path, { waitUntil: 'networkidle' });
+    await page.waitForFunction(signature);
+    const light = await page.evaluate(signature);
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+    await page.waitForFunction(signature, { reference: light, different: true });
+    const dark = await page.evaluate(signature);
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
+    await page.waitForFunction(signature, { reference: light });
+    for (let index = 0; index < 9; index++) {
+      await page.locator('[data-theme-toggle]').evaluate((button) => button.click());
+      await page.waitForTimeout(10);
+    }
+    await page.waitForFunction(signature, { reference: dark });
+    assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+    assert.deepEqual(errors, [], 'Rapid theme changes leave failed diagram renders');
+  } finally {
+    await page.close();
+  }
+}
+
 try {
   for (const { path, html } of pages) {
     assert.equal(/<link[^>]+href="[^"]*katex[^>]+>/.test(html), html.includes('class="katex"'),
       `Math stylesheet presence does not match the rendered formulae: ${path}`);
   }
-  for (const engine of [chromium, firefox, webkit]) {
+  for (const engine of browserEngines([chromium, firefox, webkit])) {
     const browser = await engine.launch();
     try {
       await checkIcons(browser);
+      for (const { path } of diagrams) await checkDiagramThemes(browser, path);
+      const post = pages.find(({ path }) => /^\/posts\/[^/]+\/$/.test(path));
+      if (post) await checkDiagramThemes(browser, post.path, true);
       for (const { path } of tweets) await checkTweets(browser, path, 'normal');
       if (tweets.length) {
         for (const mode of ['blocked', 'no-js', 'no-observer']) await checkTweets(browser, tweets[0].path, mode);

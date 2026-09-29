@@ -19,6 +19,8 @@ export function wireLightbox(): void {
   let previouslyFocused: HTMLElement | null = null;
   let releaseFocus: (() => void) | null = null;
   let swipeStart: { x: number; y: number; pointerId: number } | null = null;
+  let openFrame: number | undefined;
+  let closeTimer: number | undefined;
 
   function show(index: number) {
     if (!lb || !lbImg) return;
@@ -41,6 +43,8 @@ export function wireLightbox(): void {
   function open(nextItems: LightboxItem[], index: number) {
     if (!lb || !lbImg || nextItems.length === 0) return;
     if (lb.hidden && hasOpenModal()) return;
+    window.clearTimeout(closeTimer);
+    if (openFrame !== undefined) cancelAnimationFrame(openFrame);
     items = nextItems;
     current = 0;
     if (!releaseFocus) {
@@ -52,22 +56,29 @@ export function wireLightbox(): void {
     lb.hidden = false;
     releaseFocus ??= containModalFocus(lb);
     document.body.classList.add('lightbox-open');
-    requestAnimationFrame(() => {
+    openFrame = requestAnimationFrame(() => {
+      openFrame = undefined;
       lb.classList.add('open');
       lbClose?.focus();
     });
   }
 
   function close() {
-    if (!lb) return;
+    if (!lb || !releaseFocus) return;
+    if (openFrame !== undefined) cancelAnimationFrame(openFrame);
+    openFrame = undefined;
     releaseFocus?.();
     releaseFocus = null;
     lb.classList.remove('open');
-    setTimeout(() => {
-      if (lb && !lb.classList.contains('open')) lb.hidden = true;
+    closeTimer = window.setTimeout(() => {
+      lb.hidden = true;
+      lbImg?.removeAttribute('src');
+      items = [];
+      closeTimer = undefined;
     }, 240);
+    swipeStart = null;
     document.body.classList.remove('lightbox-open');
-    previouslyFocused?.focus();
+    if (previouslyFocused?.isConnected) previouslyFocused.focus({ preventScroll: true });
     previouslyFocused = null;
   }
 

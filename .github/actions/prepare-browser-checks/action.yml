@@ -1,0 +1,42 @@
+name: Prepare browser checks
+description: Install the requested browsers and unpack the build shared by all validation jobs.
+inputs:
+  browsers:
+    description: Space-separated Playwright browser names.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+      with:
+        node-version: 22
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci --prefer-offline --no-audit --no-fund
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ inputs.browsers }}-${{ hashFiles('node_modules/playwright-core/browsers.json') }}
+
+    - name: Install browser binaries and system dependencies
+      shell: bash
+      env:
+        PLAYWRIGHT_ENGINES: ${{ inputs.browsers }}
+      run: npx playwright install --with-deps $PLAYWRIGHT_ENGINES
+
+    - name: Download the shared Pages artifact
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      with:
+        name: github-pages
+        path: .cache/pages-artifact
+
+    - name: Unpack the shared build
+      shell: bash
+      run: |
+        mkdir -p dist
+        tar --extract --file .cache/pages-artifact/artifact.tar --directory dist

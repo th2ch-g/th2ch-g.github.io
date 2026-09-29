@@ -11,12 +11,14 @@ export interface SearchIndexItem {
 
 const normalize = (value: string) => value.normalize('NFKC').toLocaleLowerCase();
 
-function itemScore(item: SearchIndexItem, terms: string[]): number {
-  const title = normalize(item.title);
-  const description = normalize(item.description);
-  const body = normalize(item.body);
-  const searchable = `${title} ${description} ${body}`;
+interface SearchDocument {
+  item: Omit<SearchIndexItem, 'body'>;
+  title: string;
+  description: string;
+  searchable: string;
+}
 
+function itemScore({ title, description, searchable }: SearchDocument, terms: string[]): number {
   if (!terms.every((term) => searchable.includes(term))) return -1;
 
   return terms.reduce((score, term) => {
@@ -33,6 +35,11 @@ export function createFallback(
   dialog: HTMLDialogElement,
   items: SearchIndexItem[],
 ): HTMLInputElement {
+  const documents: SearchDocument[] = items.map(({ body, ...item }) => {
+    const title = normalize(item.title);
+    const description = normalize(item.description);
+    return { item, title, description, searchable: `${title} ${description} ${normalize(body)}` };
+  });
   const form = document.createElement('form');
   form.className = 'search-fallback';
   form.setAttribute('role', 'search');
@@ -64,8 +71,8 @@ export function createFallback(
       return;
     }
 
-    const matches = items
-      .map((item) => ({ item, score: itemScore(item, terms) }))
+    const matches = documents
+      .map((document) => ({ item: document.item, score: itemScore(document, terms) }))
       .filter(({ score }) => score >= 0)
       .sort((a, b) => b.score - a.score || (b.item.date ?? '').localeCompare(a.item.date ?? ''));
 
@@ -76,6 +83,7 @@ export function createFallback(
 
     const resultLabel = dialog.dataset.resultsLabel ?? '{n} results';
     status.textContent = resultLabel.replace('{n}', String(matches.length));
+    const fragment = document.createDocumentFragment();
     for (const { item } of matches.slice(0, 20)) {
       const listItem = document.createElement('li');
       listItem.className = 'search-fallback__result';
@@ -100,8 +108,9 @@ export function createFallback(
         listItem.appendChild(meta);
       }
 
-      results.appendChild(listItem);
+      fragment.appendChild(listItem);
     }
+    results.appendChild(fragment);
   };
 
   form.addEventListener('submit', (event) => event.preventDefault());

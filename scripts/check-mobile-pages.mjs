@@ -4,6 +4,7 @@ import { resolve, sep } from 'node:path';
 import { chromium, firefox, webkit } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { startStaticServer } from './lib/static-server.mjs';
+import { browserEngines } from './lib/browser-engines.mjs';
 
 const distDir = resolve(import.meta.dirname, '../dist');
 const paths = readdirSync(distDir, { recursive: true })
@@ -220,7 +221,7 @@ async function assertMouseFeedback(browser) {
 }
 
 try {
-  for (const engine of [chromium, firefox, webkit]) {
+  for (const engine of browserEngines([chromium, firefox, webkit])) {
     const browser = await engine.launch();
     try {
       for (const { name, ...profile } of profiles) {

@@ -101,72 +101,12 @@ const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
   <script>
     import { wireHeadingAnchorCopy } from '@/lib/heading-anchor';
     import { wireTweetEmbeds } from '@/lib/tweet-embeds';
+    import { wireMermaid } from '@/lib/mermaid';
+    wireMermaid();
     wireHeadingAnchorCopy();
     wireTweetEmbeds();
   </script>
 
-  <script>
-    // Lazy-load Mermaid only on posts that actually contain a diagram.
-    // The dynamic import is split into its own chunk by Vite, so posts
-    // without `pre.mermaid` never pay the ~600KB JS cost.
-    //
-    // No `data-astro-rerun`: ClientRouter is intentionally not used on
-    // this site (see CLAUDE.md "Critical gotcha #1"), and any attribute
-    // here would make Astro treat the script as `is:inline` — which
-    // would then emit the `await import('mermaid')` line verbatim
-    // (bare specifier, unresolvable by the browser) and break every
-    // post that contains a Mermaid block. Keep the script attribute-
-    // free so Vite processes it and bundles Mermaid into its own chunk.
-    //
-    // The diagrams must re-render whenever the theme changes, otherwise
-    // a dark-theme post would show light-theme SVGs and vice versa. We
-    // capture each block's original source on first load (mermaid.run
-    // replaces <pre.mermaid> with rendered SVG) and replay it on theme flips.
-    if (document.querySelector('pre.mermaid')) {
-      const sources = new Map<string, string>();
-      document.querySelectorAll<HTMLElement>('pre.mermaid').forEach((el, i) => {
-        const id = `mermaid-${Date.now()}-${i}`;
-        el.dataset.mermaidId = id;
-        sources.set(id, el.textContent ?? '');
-      });
-
-      const themeFor = () =>
-        document.documentElement.dataset.theme === 'dark' ? 'dark' : 'default';
-      const { default: mermaid } = await import('mermaid');
-
-      async function renderAll() {
-        mermaid.initialize({ startOnLoad: false, theme: themeFor() });
-        // Reset every tracked diagram back to its original mermaid source so
-        // mermaid.run can re-render. `replaceChildren()` clears the element
-        // safely without using innerHTML, then we reattach the source as a
-        // text node — never as parsed HTML, so the source is treated as
-        // literal text only. The "data-processed" attribute is what mermaid
-        // uses to skip already-rendered diagrams.
-        document.querySelectorAll<HTMLElement>('[data-mermaid-id]').forEach((el) => {
-          const id = el.dataset.mermaidId;
-          const src = id ? sources.get(id) : null;
-          if (!src) return;
-          el.removeAttribute('data-processed');
-          el.replaceChildren(document.createTextNode(src));
-          el.classList.add('mermaid');
-        });
-        await mermaid.run({ querySelector: '[data-mermaid-id]' });
-      }
-
-      await renderAll();
-
-      // Observe theme flips on <html data-theme="..."> and re-render.
-      const observer = new MutationObserver((mutations) => {
-        for (const m of mutations) {
-          if (m.type === 'attributes' && m.attributeName === 'data-theme') {
-            renderAll();
-            return;
-          }
-        }
-      });
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    }
-  </script>
 </Base>
 
 <style>

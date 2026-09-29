@@ -28,6 +28,8 @@ const WHITELIST = new Set([
   'katex-display',
   'katex-html',
   'katex-mathml',
+  // Shiki adds this class to syntax-highlighted code blocks.
+  'astro-code',
   // Twitter widget upgrade target
   'twitter-tweet',
   // Mermaid renders these dynamically

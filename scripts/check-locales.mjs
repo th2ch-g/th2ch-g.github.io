@@ -3,6 +3,7 @@ import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium, firefox, webkit } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
+import { browserEngines } from './lib/browser-engines.mjs';
 
 const server = await startStaticServer(resolve(import.meta.dirname, '../dist'));
 try {
@@ -20,7 +21,7 @@ try {
   const legalPages = items.filter((item) => item.date && !item.url.startsWith('/posts/'));
   const post = items.find((item) => item.date && item.url.startsWith('/posts/') && item.lang === 'en');
 
-  for (const engine of [chromium, firefox, webkit]) {
+  for (const engine of browserEngines([chromium, firefox, webkit])) {
     const browser = await engine.launch();
     try {
       const page = await browser.newPage();
@@ -45,6 +46,16 @@ try {
       assert.equal(await page.locator('.cv-prose').getAttribute('data-cv-lang'), 'ja');
       await page.reload({ waitUntil: 'networkidle' });
       assert.equal(await page.locator('.cv-prose').getAttribute('data-cv-lang'), 'ja');
+      await page.evaluate(() => {
+        globalThis.__linkMutations = [];
+        new MutationObserver((records) => {
+          globalThis.__linkMutations.push(...records.filter((record) => !record.target.closest('.lang-switch')));
+        }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['href'] });
+        location.hash = 'main-content';
+      });
+      await page.waitForFunction(() => document.querySelector('.lang-switch a').hash === '#main-content');
+      assert.equal(await page.evaluate(() => globalThis.__linkMutations.length), 0,
+        'Hash navigation rewrites unrelated page links');
 
       for (const lang of ['en', 'ja']) {
         await page.goto(`${server.url}/?lang=${lang}`, { waitUntil: 'networkidle' });

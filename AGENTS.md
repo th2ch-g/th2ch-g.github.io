@@ -17,6 +17,7 @@ npm run check:css    # custom CSS sanity check (scripts/check-css.mjs)
 npm run check:security # reject unsafe link-card URL targets
 npm run check:mobile # All built pages: Chromium/Firefox/WebKit touch, 320/393/430/852px, light/dark, mobile axe
 npm run check:interactions # Chromium/Firefox clipboard, search, keyboard, print, and theme checks
+npm run check:consistency # All pages: shared control styles in both themes/locales, mobile/desktop
 npm run build-assets # rebuild public/icon.png + public/fonts/ + public/qr.png
 npm run sync-bibtex    # refresh src/data/bibtex.json from CrossRef
 ```
@@ -54,6 +55,8 @@ The gallery at `/gallery` is **not** a collection — loose images under `src/co
 `getByLang('posts', lang)` returns every shared post in both development and production. There is no draft flag or publication filter; every Markdown file under `src/content/posts/` is included in page routes, search, backlinks, and OG images.
 
 Browser behavior lives in `src/lib/`: `cv/` separates section discovery, clipboard formatting, action controls, and initialization; `clipboard.ts` shares rich/text/legacy writes with code and share buttons; `search.ts` handles the dialog and loading while `search-fallback.ts` renders fallback results. `Base.astro` marks the main content with `data-pagefind-body` to keep page chrome out of search excerpts.
+
+Tailwind scans `src/` only. `src/styles/global.css` explicitly includes the daisyUI primitives used by the site; add a component there when introducing another daisyUI primitive. Keyboard shortcuts and serialized Mermaid theme rendering live in `src/lib/shortcuts.ts` and `src/lib/mermaid.ts`.
 
 ### Static paths pattern
 
@@ -117,3 +120,7 @@ All three are auto-discoverable; prefer them over hand-rolled equivalents.
 ## Deployment
 
 GitHub Pages on push to `main` (`.github/workflows/deploy.yml`). The deployment URL is derived from `profile.yaml`. The deploy job caches Playwright browsers across runs and validates the built pages before publishing.
+
+The workflow builds once, uploads the Pages artifact, and validates that same artifact in three browser jobs plus a quality job. `BROWSER_ENGINE=chromium|firefox|webkit npm run check:browser-engine` selects one engine; leaving the variable unset retains all supported engines locally. Deployment requires every validation job to succeed. Browser cache keys follow Playwright's browser revisions, independent of unrelated dependency updates. Lighthouse runs after the quality job's other browser processes exit.
+
+For image comparisons, preserve the previous `dist/` under `.cache/` before rebuilding, then run `npm run check:consistency -- --baseline .cache/baseline`. The checker waits for fonts/images, normalizes the gallery's randomized order, and includes diagram fixtures. Screenshots and reports stay under `.cache/`; do not commit them. Never rebuild a directory while browser checks are serving it; `--dist` can select a fixed build snapshot.

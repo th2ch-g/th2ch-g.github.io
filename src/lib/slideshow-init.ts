@@ -12,7 +12,10 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 const INITIAL_AUTOPLAY_DELAY = 15_000;
 
 function initSlideshow(root: SlideshowEl) {
+  if (root.__cleanup) return;
   const slides = Array.from(root.querySelectorAll<HTMLElement>('.slide'));
+  const images = slides.map((slide) => slide.querySelector<HTMLImageElement>('img'));
+  const sources = images.map((image) => image?.dataset.src || image?.getAttribute('src') || '');
   const progressFill = root.querySelector<HTMLElement>('.slideshow-progress-fill');
   const progressBar = root.querySelector<HTMLElement>('.slideshow-progress-bar');
   const progressCurrent = root.querySelector<HTMLElement>('.slideshow-progress-current');
@@ -24,6 +27,7 @@ function initSlideshow(root: SlideshowEl) {
   let navigationVersion = 0;
   let switching = false;
   let timer: number | undefined;
+  let releaseTimer: number | undefined;
   let autoplayEnabled = !reduceMotion;
   let hoverPaused = false;
   let focusPaused = false;
@@ -31,8 +35,22 @@ function initSlideshow(root: SlideshowEl) {
   let swipeStart: { x: number; y: number; pointerId: number } | null = null;
 
   const slideLoads = new Map<number, Promise<boolean>>();
+  const fadingSlides = new Set<number>();
+  const releaseUnusedSlides = () => {
+    const keep = new Set([current, requested, ...fadingSlides]);
+    if (!switching) keep.add((current + 1) % slides.length);
+    for (const index of slideLoads.keys()) {
+      if (keep.has(index)) continue;
+      slideLoads.delete(index);
+      const image = images[index];
+      if (image) {
+        image.dataset.src = sources[index];
+        image.removeAttribute('src');
+      }
+    }
+  };
   const loadSlide = (index: number, priority: 'high' | 'low') => {
-    const image = slides[index].querySelector<HTMLImageElement>('img');
+    const image = images[index];
     if (!image) return Promise.resolve(false);
     if (priority === 'high' || !slideLoads.has(index)) image.fetchPriority = priority;
     const pending = slideLoads.get(index);
@@ -44,6 +62,7 @@ function initSlideshow(root: SlideshowEl) {
       image.removeAttribute('data-src');
     }
     const ready = image.decode().then(() => true, () => {
+      if (slideLoads.get(index) !== ready) return false;
       slideLoads.delete(index);
       // Leave the visible slide in place and allow a failed image to retry.
       image.dataset.src = source || image.src;
@@ -71,6 +90,7 @@ function initSlideshow(root: SlideshowEl) {
     requested = nextIndex;
     const version = ++navigationVersion;
     switching = true;
+    releaseUnusedSlides();
     const loaded = await loadSlide(nextIndex, 'high');
     if (version !== navigationVersion) return;
     switching = false;
@@ -84,6 +104,7 @@ function initSlideshow(root: SlideshowEl) {
     }
     slides[current].classList.remove('active');
     slides[current].setAttribute('aria-hidden', 'true');
+    fadingSlides.add(current);
 
     current = nextIndex;
 
@@ -95,6 +116,12 @@ function initSlideshow(root: SlideshowEl) {
     if (progressBar) progressBar.setAttribute('aria-valuenow', String(current + 1));
     if (progressCurrent) progressCurrent.textContent = String(current + 1);
     prefetchNext();
+    window.clearTimeout(releaseTimer);
+    // Keep outgoing frames until the existing 600 ms crossfade finishes.
+    releaseTimer = window.setTimeout(() => {
+      fadingSlides.clear();
+      releaseUnusedSlides();
+    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650);
     start();
   };
 
@@ -282,6 +309,7 @@ function initSlideshow(root: SlideshowEl) {
   start(INITIAL_AUTOPLAY_DELAY);
   root.__cleanup = () => {
     stop();
+    window.clearTimeout(releaseTimer);
     navigationVersion++;
   };
 }

@@ -1,5 +1,5 @@
 import { hasOpenModal } from './modal-focus';
-import { createFallback, type SearchIndexItem } from './search-fallback';
+import type { SearchIndexItem } from './search-fallback';
 export type { SearchIndexItem } from './search-fallback';
 
 interface PagefindUIOptions {
@@ -23,8 +23,14 @@ function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`${src} failed to load`));
+    script.onload = () => {
+      script.remove();
+      resolve();
+    };
+    script.onerror = () => {
+      script.remove();
+      reject(new Error(`${src} failed to load`));
+    };
     document.head.appendChild(script);
   });
 }
@@ -47,7 +53,10 @@ export function setupSearch(): void {
     if (fallbackLoading) return fallbackLoading;
 
     fallbackLoading = (async () => {
-      const response = await fetch(dialog.dataset.searchIndexUrl ?? '/search-index.json');
+      const [response, { createFallback }] = await Promise.all([
+        fetch(dialog.dataset.searchIndexUrl ?? '/search-index.json'),
+        import('./search-fallback'),
+      ]);
       if (!response.ok) throw new Error(`Search index request failed: ${response.status}`);
       const payload = await response.json() as { items?: SearchIndexItem[] };
       if (!Array.isArray(payload.items)) throw new Error('Search index response is invalid');

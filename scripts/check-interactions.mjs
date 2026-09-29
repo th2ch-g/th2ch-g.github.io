@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { chromium, firefox } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
+import { browserEngines } from './lib/browser-engines.mjs';
 
 const distDir = resolve(import.meta.dirname, '../dist');
 const server = await startStaticServer(distDir);
@@ -149,6 +150,24 @@ async function checkCv(browser, path) {
   await page.close();
 }
 
+async function checkBlockedThemeStorage(browser) {
+  const page = await browser.newPage({ colorScheme: 'light' });
+  try {
+    await page.addInitScript(() => {
+      Storage.prototype.getItem = () => { throw new Error('blocked'); };
+      Storage.prototype.setItem = () => { throw new Error('blocked'); };
+    });
+    await page.route('**/*', (route) => new URL(route.request().url()).origin === server.url ? route.continue() : route.abort());
+    await page.goto(server.url, { waitUntil: 'networkidle' });
+    assert.equal(await page.locator('html').getAttribute('data-theme'), 'light',
+      'Blocked storage prevents the initial OS theme preference');
+    await page.locator('[data-theme-toggle]').click();
+    assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+  } finally {
+    await page.close();
+  }
+}
+
 async function checkSearch(browser, path, fallback) {
   const { page, errors } = await newPage(browser, path);
   if (fallback) await page.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
@@ -234,8 +253,78 @@ async function checkSearchRecovery(browser) {
   assert.equal(await page.locator('[data-search-dialog] input').count(), 1,
     'Reopening fallback search creates duplicate search interfaces');
   assert.equal(await page.locator('.search-fallback__input').inputValue(), query);
+  assert.equal(await page.locator('script[src$="pagefind-ui.js"]').count(), 0,
+    'Failed Pagefind loaders are retained after fallback recovery');
   assert.deepEqual(errors, []);
   await page.close();
+}
+
+async function checkFallbackIndex(browser) {
+  const { page, errors } = await newPage(browser, '/');
+  try {
+    await page.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
+    const items = [
+      { title: 'Alpha', description: 'Older exact title', body: '', date: '2025-01-01' },
+      { title: 'ＡＬＰＨＡ', description: 'Newer exact title', body: '', date: '2026-01-01' },
+      { title: 'Alpha beta', description: '', body: '' },
+      { title: 'Article', description: 'alpha beta', body: '' },
+      { title: 'Body match', description: '', body: 'alpha beta カタカナ' },
+      { title: 'Unrelated', description: '', body: 'gamma' },
+    ].map((item, index) => ({ ...item, lang: 'en', url: `/fixture-${index}/?lang=en` }));
+    await page.route('**/search-index.json', (route) => route.fulfill({ json: { items } }));
+    await page.locator('[data-search-open]').click();
+    const input = page.locator('.search-fallback__input');
+    await input.waitFor();
+    await page.evaluate(() => {
+      const original = String.prototype.normalize;
+      globalThis.__normalizations = 0;
+      String.prototype.normalize = function (...args) {
+        globalThis.__normalizations++;
+        return original.apply(this, args);
+      };
+    });
+    for (const [term, expected] of [
+      [' ＡＬＰＨＡ ', ['ＡＬＰＨＡ', 'Alpha', 'Alpha beta', 'Article', 'Body match']],
+      ['alpha beta', ['Alpha beta', 'Article', 'Body match']],
+      ['ｶﾀｶﾅ', ['Body match']],
+      ['gamma alpha', []],
+    ]) {
+      await input.fill(term);
+      assert.deepEqual(await page.locator('.search-fallback__link').allTextContents(), expected);
+    }
+    assert.equal(await page.evaluate(() => globalThis.__normalizations), 4,
+      'Typing normalizes the entire corpus again');
+    await input.fill('');
+    assert.equal(await page.locator('.search-fallback__results li').count(), 0);
+    assert.equal(await page.locator('.search-fallback__status').textContent(), '');
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+}
+
+async function checkShortcutComposition(browser) {
+  const { page, errors } = await newPage(browser, '/');
+  try {
+    await page.evaluate(() => {
+      for (const key of ['/', '?', 'g', 'b']) {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key, isComposing: true, bubbles: true }));
+      }
+    });
+    assert.equal(await page.locator('dialog[open]').count(), 0, 'IME composition triggers global shortcuts');
+    assert.equal(new URL(page.url()).pathname, '/');
+    await page.keyboard.press('g');
+    await page.locator('[data-search-open]').click();
+    await page.locator('[data-search-dialog] input').waitFor();
+    await page.keyboard.press('b');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('?');
+    assert.equal(await page.locator('[data-shortcuts-dialog]').getAttribute('open'), '',
+      'Typing inside search leaves an unfinished navigation chord');
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
 }
 
 async function checkCopyAndTheme(browser) {
@@ -357,7 +446,7 @@ async function checkNavigationAndGallery(browser) {
 }
 
 try {
-  for (const engine of [chromium, firefox]) {
+  for (const engine of browserEngines([chromium, firefox])) {
     const browser = await engine.launch();
     try {
       for (const path of ['/', '/?lang=ja']) {
@@ -367,7 +456,10 @@ try {
         console.log(`[interactions] ${engine.name()} ${path}: CV, print, search and keyboard passed`);
       }
       await checkSearchRecovery(browser);
+      await checkFallbackIndex(browser);
+      await checkShortcutComposition(browser);
       await checkCopyAndTheme(browser);
+      await checkBlockedThemeStorage(browser);
       await checkNavigationAndGallery(browser);
       console.log(`[interactions] ${engine.name()}: recovery, copy feedback, theme, navigation and fullscreen passed`);
     } finally {
