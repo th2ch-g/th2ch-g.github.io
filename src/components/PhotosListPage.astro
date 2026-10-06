@@ -117,7 +117,9 @@ const slideshowImages = photos.map((p) => p.src);
     border-radius: var(--radius);
     overflow: hidden;
     cursor: zoom-in;
-    display: block;
+    /* Atomic inline boxes keep Firefox's column breaks stable during loading. */
+    display: inline-block;
+    vertical-align: top;
     break-inside: avoid;
     transition: border-color 160ms ease;
   }

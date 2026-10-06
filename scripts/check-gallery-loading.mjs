@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import { chromium, firefox, webkit } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
 import { browserEngines } from './lib/browser-engines.mjs';
 
-const server = await startStaticServer(resolve(import.meta.dirname, '../dist'));
+const { values } = parseArgs({ options: { dist: { type: 'string' } } });
+const server = await startStaticServer(values.dist ? resolve(values.dist) : resolve(import.meta.dirname, '../dist'));
 
 async function newPage(browser, options = {}) {
   const page = await browser.newPage({
@@ -33,19 +35,46 @@ async function goToSlide(page, index) {
     root.dispatchEvent(new CustomEvent('photoslideshow:goto', { detail: { index } })), index);
 }
 
+async function readTiles(page) {
+  return page.locator('.photo-btn > img').evaluateAll((images) => images.map((image) => {
+    const rect = image.getBoundingClientRect();
+    return {
+      src: new URL(image.dataset.src || image.src, location.href).href,
+      left: rect.left + scrollX, top: rect.top + scrollY, bottom: rect.bottom + scrollY,
+      width: rect.width, height: rect.height,
+      expectedRatio: Number(image.getAttribute('width')) / Number(image.getAttribute('height')),
+    };
+  }));
+}
+
+function assertStableTiles(before, after) {
+  assert.equal(after.length, before.length);
+  assert.ok(after.every((tile, index) => ['left', 'top', 'width', 'height']
+    .every((key) => Math.abs(tile[key] - before[index][key]) < 1)),
+  'Image responses change gallery tile positions or sizes');
+}
+
 async function checkViewportLoading(browser, path, viewport) {
   const { page, requests, errors } = await newPage(browser, { viewport });
+  const imagesReady = gate();
+  await page.route('**/_astro/*', async (route) => {
+    if (route.request().resourceType() !== 'image') return route.fallback();
+    await imagesReady.ready;
+    await route.continue();
+  });
   try {
-    await page.goto(server.url + path, { waitUntil: 'networkidle' });
-    const tiles = await page.locator('.photo-btn > img').evaluateAll((images) => images.map((image) => {
-      const rect = image.getBoundingClientRect();
-      return {
-        src: new URL(image.dataset.src || image.src, location.href).href,
-        top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height,
-        expectedRatio: Number(image.getAttribute('width')) / Number(image.getAttribute('height')),
-      };
-    }));
+    await page.goto(server.url + path, { waitUntil: 'domcontentloaded' });
+    // WebKit's fonts.ready also waits for the image responses held below.
+    await page.waitForFunction(() => [...document.fonts].every((font) => font.status !== 'loading'));
+    await page.waitForFunction(() => document.querySelector('.photo-btn > img[src]'));
+    // Hold responses across rendering frames so pending-image column breaks are observable.
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const pendingTiles = await readTiles(page);
+    imagesReady.release();
+    await page.waitForLoadState('networkidle');
+    const tiles = await readTiles(page);
     assert.ok(tiles.length > 0, 'Gallery checks need at least one image');
+    assertStableTiles(pendingTiles, tiles);
     const expected = new Set(tiles.filter((tile) => tile.top <= viewport.height + 301 && tile.bottom >= -301)
       .map((tile) => tile.src));
     tiles.slice(0, 2).forEach((tile) => expected.add(tile.src));
@@ -75,13 +104,11 @@ async function checkViewportLoading(browser, path, viewport) {
       const image = document.querySelectorAll('.photo-btn > img')[index];
       return image.hasAttribute('src') && image.complete && image.naturalWidth > 0;
     }, distantIndex);
-    const heights = await page.locator('.photo-btn > img').evaluateAll((images) =>
-      images.map((image) => image.getBoundingClientRect().height));
-    assert.ok(heights.every((height, index) => Math.abs(height - tiles[index].height) < 1),
-      'Loading tiles changes the masonry layout');
+    assertStableTiles(tiles, await readTiles(page));
     assert.deepEqual(errors, []);
     return tiles.map((tile) => tile.src);
   } finally {
+    imagesReady.release();
     await page.close();
   }
 }
@@ -237,7 +264,7 @@ try {
     try {
       for (const path of ['/gallery/?lang=en', '/gallery/?lang=ja']) {
         let sources;
-        for (const viewport of [{ width: 393, height: 852 }, { width: 1280, height: 900 }]) {
+        for (const viewport of [{ width: 393, height: 852 }, { width: 768, height: 900 }, { width: 1280, height: 900 }]) {
           sources = await checkViewportLoading(browser, path, viewport);
         }
         await checkSlowNavigation(browser, path, sources);
