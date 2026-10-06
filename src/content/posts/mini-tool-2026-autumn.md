@@ -36,7 +36,7 @@ https://github.com/th2ch-g/gh-email-get
 
 # 通信対戦可能なゲーム by Astra
 
-Sergey先生のprotein_fighterに触発されて通信対戦も可能なゲームをいくつか作ってみた
+Sergey先生のprotein_fighterに触発されて通信対戦も可能なゲームをいくつか作ってみた(1プロンプトのみ)
 
 peer.jsというやつでGithubPagesのような静的サイトでも通信対戦ができる様になっているらしい
 
@@ -44,16 +44,9 @@ https://github.com/sokrypton/protein_fighter
 
 https://x.com/sokrypton/status/2099496292476989591
 
-
-色々試してみたが、ぷよぷよテトリスは結構いい感じだった。他は微妙。。。
-
-https://github.com/th2ch-g/game-life
+色々試してみたが、ぷよぷよテトリスは割といい感じだった。他は微妙。。。
 
 https://github.com/th2ch-g/game-puyopuyo-tetris
-
-https://github.com/th2ch-g/game-monster-hunter
-
-https://github.com/th2ch-g/game-mario-kart
 
 
 # topコマンドとかでメッセージを表示する by 人間
