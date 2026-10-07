@@ -3,8 +3,8 @@ Japanese🇯🇵
 
 ## Education
 - B.Sc. (Science), Department of Life Science and Technology, School of Life Science and Technology, Tokyo Institute of Technology, 2019/4/1-2023/3/31
-- M.Sc. (Science), Life Science and Technology Course, Department of Life Science and Technology, School of Life Science and Technology, Institute of Science Tokyo, 2023/4/1-2025/3/31
-- Ph.D. (Science), Department of Computational Drug Discovery and Design, Department of Biomedical Sciences (Doctoral Program), Graduate School of Medical and Dental Sciences, Institute of Science Tokyo, 2025/4/1-2028/3/31 (expected)
+- M.Sc. (Science), Life Science and Technology Course, Department of Life Science and Technology, School of Life Science and Technology, Institute of Science Tokyo (formerly Tokyo Institute of Technology), 2023/4/1-2025/3/31
+- Ph.D. (Science), Department of Computational Drug Discovery and Design, Department of Biomedical Sciences (Doctoral Program), Graduate School of Medical and Dental Sciences, Institute of Science Tokyo (formerly Tokyo Medical and Dental University), 2025/4/1-2028/3/31 (expected)
 
 ## Employment
 - [digzyme Inc.](https://www.digzyme.com/), 2023/10/1-2025/5/31, Student Intern
