@@ -17,7 +17,7 @@ Japanese🇯🇵
 ## Publications (peer-reviewed)
 <!-- cv:section peer-reviewed -->
 
-1. **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Hayate Suzuki**, **Seiya Mizuno**, **Satoru Takahashi**, **Tomohiro Doura**, **Shigeki Kiyonaka**, [ESCAPE enables receptor-specific chemogenetic dissection of GPCR signaling](https://doi.org/10.1016/j.chembiol.2026.09.008), *Cell Chemical Biology*, DOI:10.1016/j.chembiol.2026.09.008, (2026).
+1. **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Hayate Suzuki**, **Seiya Mizuno**, **Satoru Takahashi**, **Tomohiro Doura**, **Shigeki Kiyonaka**, [ESCAPE enables receptor-specific chemogenetic dissection of GPCR signaling](https://doi.org/10.1016/j.chembiol.2026.09.008), *Cell Chemical Biology*, DOI:10.1016/j.chembiol.2026.09.008, (2026). <!-- Published version of preprint DOI:10.64898/2026.05.24.727545 -->
 1. **Aiko Watanabe**, **Kai Kanematsu**, **Yohei Hizukuri**, **<u>Tatsuki Hori</u>**, **Shizuka Ogiwara**, **Tomohiko Okuno**, **Mirei Saito**, **Tomoya Ito**, **Chihiro Shibuya**, **Yoshinori Akiyama**, **Shinji Toyota**, **Yoshitaka Moriwaki**, **Koji Yamano**, **Fumika Koyano**, **Takashi Kajitani**, **Ryuichiro Ishitani**, **Masahiro Yamashina**, **Hidetaka Kosako**, **Noriyuki Matsuda**, [YhbO is a DJ-1 family glyoxalase and α-oxoaldehyde hydratase that confers resistance to reactive carbonyl stress](https://doi.org/10.1016/j.jbc.2026.113300), *Journal of Biological Chemistry*, DOI:10.1016/j.jbc.2026.113300, (2026).
 1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://doi.org/10.1021/acs.jctc.6c00199), *Journal of Chemical Theory and Computation*, DOI:10.1021/acs.jctc.6c00199, (2026).
 1. **Shinji Ikizawa\***, **<u>Tatsuki Hori\*</u>**, **Tegar Nurwahyu Wijaya\***, **Hiroshi Kono**, **Zhen Bai**, **Tatsuhiro Kimizono**, **Wenbo Lu**, **Duy Phuoc Tran**, **Akio Kitao**, [PaCS-Toolkit: Optimized Software Utilities for Parallel Cascade Selection Molecular Dynamics (PaCS-MD) Simulations and Subsequent Analyses](https://doi.org/10.1021/acs.jpcb.4c01271), *The Journal of Physical Chemistry B*, DOI:10.1021/acs.jpcb.4c01271, (2024).
@@ -29,7 +29,6 @@ Japanese🇯🇵
 <!-- cv:section preprints -->
 
 1. **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**, [RGI-Toolkit: Differentiable Restraints for Controllable Biomolecular Structure Prediction](https://doi.org/10.64898/2026.10.05.756905), DOI:10.64898/2026.10.05.756905, (2026).
-1. **Yuma Matsuoka**, **Hajime Inoue**, **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Akio Kitao**, **Tomohiro Doura**, **Shigeki Kiyonaka**, [Off-target-free chemogenetic platform that decodes physiological roles of target GPCRs](https://doi.org/10.64898/2026.05.24.727545), *bioRxiv*, DOI:10.64898/2026.05.24.727545, (2026).
 <!-- /cv:section -->
 
 ## Conference Presentations (non-peer-reviewed)

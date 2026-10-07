@@ -19,10 +19,6 @@
     "bibtex": "@article{tanaka2023haplotype,\n  title={Haplotype-resolved chromosomal-level assembly of wasabi (Eutrema japonicum) genome},\n  author={Tanaka, Hiroyuki and Hori, Tatsuki and Yamamoto, Shohei and Toyoda, Atsushi and Yano, Kentaro and Yamane, Kyoko and Itoh, Takehiko},\n  journal={Scientific Data},\n  year={2023},\n  publisher={Springer Nature},\n  doi={10.1038/s41597-023-02356-z}\n}",
     "fetchedAt": "2026-10-07T08:22:01.086Z"
   },
-  "10.64898/2026.05.24.727545": {
-    "bibtex": "@article{matsuoka2026off,\n  title={Off-target-free chemogenetic platform that decodes physiological roles of target GPCRs},\n  author={Matsuoka, Yuma and Inoue, Hajime and Hori, Tatsuki and Tran, Duy Phuoc and Kitao, Akio and Doura, Tomohiro and Kiyonaka, Shigeki},\n  year={2026},\n  publisher={bioRxiv},\n  doi={10.64898/2026.05.24.727545}\n}",
-    "fetchedAt": "2026-10-07T08:22:01.086Z"
-  },
   "10.64898/2026.10.05.756905": {
     "bibtex": "@article{hori2026rgi,\n  title={RGI-Toolkit: Differentiable Restraints for Controllable Biomolecular Structure Prediction},\n  author={Hori, Tatsuki and Moriwaki, Yoshitaka and Ishitani, Ryuichiro},\n  year={2026},\n  publisher={bioRxiv},\n  doi={10.64898/2026.10.05.756905}\n}",
     "fetchedAt": "2026-10-07T08:22:01.086Z"
