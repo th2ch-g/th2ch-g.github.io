@@ -20,6 +20,8 @@ interface Props {
   japanese?: { title?: string; description?: string };
   // Only advertise languages with available content.
   availableLocales?: Lang[];
+  canonicalPath?: string;
+  noindex?: boolean;
   // Per-page social-card image. Pass an Astro `image()` asset (preferred — its
   // bundled path is resolved against `Astro.site`) or a fully-qualified URL.
   // Falls back to `/og/default.png` (locale-aware), a 1200x630 card built at
@@ -43,9 +45,12 @@ interface Props {
   // JSON-LD. The trailing item (the current page) typically omits `url`.
   breadcrumbs?: Array<{ name: string; url?: string }>;
 }
-const { title, description, lang, image, article, breadcrumbs, availableLocales, japanese } = Astro.props;
+const {
+  title, description, lang, image, article, breadcrumbs, availableLocales, japanese,
+  canonicalPath, noindex = false,
+} = Astro.props;
 const locales = availableLocales ?? (['en', 'ja'] as Lang[]);
-const localePath = Astro.url.pathname.replace(/^\/(?:en|ja)(?=\/|$)/, '') || '/';
+const localePath = (canonicalPath ?? Astro.url.pathname).replace(/^\/(?:en|ja)(?=\/|$)/, '') || '/';
 const meta = await getProfileMeta(lang);
 const adsenseClientId = meta.integrations.adsense?.clientId;
 const googleAnalyticsId = meta.integrations.analytics?.googleAnalyticsId;
@@ -295,7 +300,7 @@ const japaneseMetadata = {
 
     <!-- AI / ML opt-out signals. Honored by well-behaved crawlers; see also
          /robots.txt, /ai.txt, /.well-known/tdmrep.json. -->
-    <meta name="robots" content="noai, noimageai" />
+    <meta name="robots" content={noindex ? 'noindex, noai, noimageai' : 'noai, noimageai'} />
     <meta name="tdm-reservation" content="1" />
     <!-- Per-bot hints (low standardization but cheap to include). -->
     <meta name="GPTBot" content="noindex, nofollow" />
