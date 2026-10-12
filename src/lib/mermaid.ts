@@ -17,7 +17,31 @@ export function wireMermaid(): void {
           // Coalesce theme changes while Mermaid's asynchronous renderer runs.
           while (renderedTheme !== themeFor()) {
             const theme = themeFor();
-            mermaid.initialize({ startOnLoad: false, theme });
+            const styles = getComputedStyle(document.documentElement);
+            const color = (name: string) => styles.getPropertyValue(`--color-${name}`).trim();
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: theme === 'dark' ? 'base' : 'default',
+              themeVariables: theme === 'dark' ? {
+                darkMode: true,
+                background: color('bg'),
+                primaryColor: color('card'),
+                primaryTextColor: color('fg'),
+                primaryBorderColor: color('border-strong'),
+                secondaryColor: color('button'),
+                secondaryTextColor: color('fg'),
+                secondaryBorderColor: color('border-strong'),
+                tertiaryColor: color('inset'),
+                tertiaryTextColor: color('fg'),
+                tertiaryBorderColor: color('border-strong'),
+                lineColor: color('muted'),
+                textColor: color('fg'),
+                edgeLabelBackground: color('bg'),
+                noteBkgColor: color('overlay'),
+                noteTextColor: color('fg'),
+                noteBorderColor: color('border-strong'),
+              } : {},
+            });
             nodes.forEach((node, index) => {
               node.removeAttribute('data-processed');
               delete node.dataset.mermaidTheme;

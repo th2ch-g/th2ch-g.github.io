@@ -18,6 +18,7 @@ import { remarkFigureCaption } from './src/plugins/remark-figure-caption.mjs';
 import { remarkProfileVars } from './src/plugins/remark-profile-vars.mjs';
 import { remarkCvSections } from './src/plugins/remark-cv-sections.mjs';
 import { rehypeScrollableTables } from './src/plugins/rehype-scrollable-tables.mjs';
+import { codeThemes } from './src/lib/code-themes.mjs';
 
 // Resolve the deployment URL from src/content/profile.yaml so a fork only
 // has to edit profile.yaml — never this file. We keep this inline (rather
@@ -95,7 +96,7 @@ export default defineConfig({
       ],
     }),
     shikiConfig: {
-      themes: { light: 'github-light-default', dark: 'github-dark-default' },
+      themes: codeThemes,
       // Keep language metadata and optional filenames on highlighted blocks.
       transformers: [
         {

@@ -31,6 +31,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHighlighter, isSpecialLang } from 'shiki';
+import { codeThemes } from '../lib/code-themes.mjs';
 import { escapeHtml as esc } from './lib/escape.mjs';
 import { extractStandaloneUrl } from './lib/extract-url.mjs';
 import { readResponseBuffer } from './lib/response-body.mjs';
@@ -182,7 +183,7 @@ async function getSnippet(p) {
 // the instance, so highlighting each snippet against it is cheap.
 let _highlighter;
 const getHighlighter = () =>
-  (_highlighter ??= createHighlighter({ themes: ['github-light-default', 'github-dark-default'], langs: [] }));
+  (_highlighter ??= createHighlighter({ themes: Object.values(codeThemes), langs: [] }));
 
 // shiki's codeToHtml throws on a language it hasn't loaded, so load on demand
 // and fall back to plaintext for unknown/unbundled langs — langFromPath can
@@ -206,7 +207,7 @@ async function renderCard(url, p, snip) {
   const lang = await resolveLang(highlighter, snip.lang);
   const inner = highlighter.codeToHtml(snip.code, {
     lang,
-    themes: { light: 'github-light-default', dark: 'github-dark-default' },
+    themes: codeThemes,
     transformers: [
       {
         pre(node) {
