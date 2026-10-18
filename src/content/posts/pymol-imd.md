@@ -18,8 +18,8 @@ https://github.com/th2ch-g/pymol_imd
 
 # Interactive Molecular Dynamics(IMD)
 人為的にマウスなどで原子に力を加えてMD計算する分野は、NAMDやVMDがその走りであると認識しています[[1](#ref1)]。
-最近のブームはVRと組み合わせるみたいな感じです[[2](#ref2)]。
-MDをせずに、線形応答を使って大規模な動きをDocking的に行うみたいな研究[[3](#ref3)]もあってそれに感化されたのと、当時はNNP(MLIP)も流行り始めたぐらいのときでNNPとIMDを組み合わせたら面白いのでは？と思ったのがきっかけでした。
+最近のブームはNarupaのようにVRと組み合わせるみたいな感じです[[2](#ref2)]。
+操作中にMDを逐次実行せず、事前のMDから得た線形応答を使って大規模な動きをDocking的に行うみたいな研究[[3](#ref3)]もあってそれに感化されたのと、当時はNNP(MLIP)も流行り始めたぐらいのときでNNPとIMDを組み合わせたら面白いのでは？と思ったのがきっかけでした。
 
 # 実装
 基本的には、Visualizer --> Visualizer側の座標の差分からマウスなどによる力を計算しBackendのOpenMM[[4](#ref4)]にカスタム外力としてマウスの力を適用 --> OpenMMによるMD計算 --> Visualizer側へ座標を送る、という感じです
@@ -33,8 +33,9 @@ AAとML/MMの基本的な機能は人間が実装していたのですが、AI c
 
 # 欠点
 - Jarzynski[[10](#ref10)]などで自由エネルギー計算ができず結局検証止まり
-  - SMD/Jarzynskiで計算をしている先行研究[[11](#ref11)]があるのでやる前はできると思っていたが、そもそも力をapply→その構造をみて力をapply[[12](#ref12)]とするとフィードバック制御によって情報熱力学的なエネルギーが発生してしまうため単純にJarzynskiなどで計算しても自由エネルギー計算は理論的にはできない(とチャッピーに言われてAGIを感じた、ただその情報熱力学分のエネルギー分をcancelするように理論を組めばいけるかも？)
-- すでにIMDツールが多く存在する[[1](#ref1)][[2](#ref2)][[13](#ref13)]
+  - SMD/Jarzynskiで計算をしている先行研究[[11](#ref11)]があるのでやる前はできると思っていたが、そもそも力をapply→その構造をみて力をapply[[12](#ref12)]とするとフィードバック制御によって情報熱力学的なエネルギーが発生してしまうため単純にJarzynskiなどで計算しても自由エネルギー計算は理論的にはできない(とチャッピーに言われてAGIを感じた、ただその情報熱力学分のエネルギー分をcancelするように組めばいけるかも？)
+  - IMDでサンプリング→USでやれば計算できるがあまり本質的ではない
+- すでにVMD/NAMD[[1](#ref1)]、Narupa[[2](#ref2)]、ISOLDE[[13](#ref13)]などのIMDツールが多く存在する
 - ML/MMの機能も大村くんがすでに開拓済み[[7](#ref7)]
 - plugin的にpythonを介して通信するためそこまでぬるぬる動くほど速くはない
   - 寄生しているVisualizer側への追加実装が不要だが、その引き換えに遅いです
@@ -70,7 +71,5 @@ AAとML/MMの基本的な機能は人間が実装していたのですが、AI c
 <a id="ref12"></a>[12] Sagawa, T.; Ueda, M. Generalized Jarzynski Equality under Nonequilibrium Feedback Control. *Phys. Rev. Lett.* **2010**, *104* (9), 090602. DOI: [10.1103/PhysRevLett.104.090602](https://doi.org/10.1103/PhysRevLett.104.090602)
 
 <a id="ref13"></a>[13] Croll, T. I. ISOLDE: A Physically Realistic Environment for Model Building into Low-Resolution Electron-Density Maps. *Acta Crystallogr. D Struct. Biol.* **2018**, *74* (6), 519–530. DOI: [10.1107/S2059798318002425](https://doi.org/10.1107/S2059798318002425)
-
-## 関連論文
 
 <a id="ref14"></a>[14] Deeks, H. M.; Zinovjev, K.; Barnoud, J.; Mulholland, A. J.; van der Kamp, M. W.; Glowacki, D. R. Free Energy along Drug-Protein Binding Pathways Interactively Sampled in Virtual Reality. *Sci. Rep.* **2023**, *13*, 16665. DOI: [10.1038/s41598-023-43523-x](https://doi.org/10.1038/s41598-023-43523-x)
