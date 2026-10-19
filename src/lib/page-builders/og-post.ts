@@ -16,7 +16,7 @@ import { buildPageMeta } from '@/lib/page-builders';
 import type { Lang } from '@/i18n/ui';
 
 // Build the per-locale OG card route for post details (`/og/<slug>.png`).
-// Both locales share post content and use their own profile metadata.
+// Only declared locales receive cards, using their own profile metadata.
 // The astro-og-canvas options and
 // chrome decoration step (gradient border + bottom-row credit) are shared.
 export async function buildPostOgRoute(lang: Lang) {

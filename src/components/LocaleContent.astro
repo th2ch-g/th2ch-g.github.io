@@ -1,11 +1,21 @@
-<div data-locale-content><slot name="en" /></div>
-<template data-locale-template="ja"><slot name="ja" /></template>
+---
+import type { Lang } from '@/i18n/ui';
+
+interface Props { defaultLang?: Lang; inline?: boolean }
+const { defaultLang = 'en', inline = false } = Astro.props;
+const Wrapper = inline ? 'span' : 'div';
+const otherLang = defaultLang === 'en' ? 'ja' : 'en';
+const fallback = await Astro.slots.render(defaultLang);
+const alternate = await Astro.slots.render(otherLang);
+---
+<Wrapper data-locale-content={defaultLang}><Fragment set:html={fallback} /></Wrapper>
+<template data-locale-template={otherLang}><Fragment set:html={alternate} /></template>
 <script is:inline>
   (() => {
     const script = document.currentScript;
     const template = script.previousElementSibling;
     const fallback = template.previousElementSibling;
-    const content = document.documentElement.lang === 'ja' ? template.content : fallback;
+    const content = document.documentElement.lang === template.dataset.localeTemplate ? template.content : fallback;
     fallback.replaceWith(...content.childNodes);
     template.remove();
     script.remove();
@@ -13,5 +23,6 @@
 </script>
 <style>
   [data-locale-content] { display: contents; }
-  :global(html[lang="ja"]) [data-locale-content] { display: none; }
+  :global(html[lang="ja"]) [data-locale-content="en"],
+  :global(html[lang="en"]) [data-locale-content="ja"] { display: none; }
 </style>

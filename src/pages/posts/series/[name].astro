@@ -3,7 +3,7 @@ import SeriesListPage from '@/components/SeriesListPage.astro';
 import { buildSeriesPaths } from '@/lib/page-builders/series-paths';
 
 export async function getStaticPaths() {
-  return buildSeriesPaths('en');
+  return buildSeriesPaths();
 }
 
 const { name, posts } = Astro.props;

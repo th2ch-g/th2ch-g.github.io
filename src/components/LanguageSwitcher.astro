@@ -4,14 +4,13 @@ import { languages, tUi, type Lang } from '@/i18n/ui';
 
 interface Props {
   lang: Lang;
-  // Locales this page actually exists in. Defaults to all (most pages are
-  // fully mirrored). Pages whose translation is absent (e.g. a ja-only post)
-  // pass a subset so we never render a switch link to a URL that 404s. The
-  // current `lang` is always expected to be present in the list.
+  // Unsupported locales use fallbackPath, or are hidden when it is absent.
   availableLocales?: Lang[];
+  fallbackPath?: string;
 }
-const { lang, availableLocales } = Astro.props;
-const visible = availableLocales ?? (Object.keys(languages) as Lang[]);
+const { lang, availableLocales, fallbackPath } = Astro.props;
+const visible = fallbackPath ? Object.keys(languages) as Lang[]
+  : availableLocales ?? (Object.keys(languages) as Lang[]);
 
 const currentPath = Astro.url.pathname.replace(/^\/(en|ja)(?=\/|$)/, '') || '/';
 ---
@@ -20,7 +19,8 @@ const currentPath = Astro.url.pathname.replace(/^\/(en|ja)(?=\/|$)/, '') || '/';
     .filter((code) => visible.includes(code))
     .map((code) => (
     <a
-      href={getRelativeLocaleUrl(code, currentPath)}
+      href={getRelativeLocaleUrl(code, fallbackPath && !availableLocales?.includes(code) ? fallbackPath : currentPath)}
+      data-locale-path={fallbackPath && !availableLocales?.includes(code) ? fallbackPath : undefined}
       class:list={['pill', { active: code === lang }]}
       aria-current={code === lang ? 'true' : undefined}
       hreflang={code}

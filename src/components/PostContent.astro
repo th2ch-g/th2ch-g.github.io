@@ -1,0 +1,103 @@
+---
+import { tUi, type Lang } from '@/i18n/ui';
+import { formatDate, getAdjacentPosts, getSeriesPosts } from '@/lib/content';
+import type { CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
+import ShareButtons from './ShareButtons.astro';
+import Giscus from './Giscus.astro';
+import PostNav from './PostNav.astro';
+import SeriesNav from './SeriesNav.astro';
+import Backlinks from './Backlinks.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import { getBacklinks } from '@/lib/backlinks';
+import { getRelativeLocaleUrl } from '@/lib/locale-url';
+
+interface Props { post: CollectionEntry<'posts'>; lang: Lang }
+const { post, lang } = Astro.props;
+const { Content } = await render(post);
+const { prev, next } = await getAdjacentPosts(post, lang);
+const seriesPosts = post.data.series ? await getSeriesPosts(post.data.series, lang) : [];
+const backlinks = await getBacklinks(post, lang);
+---
+  <Breadcrumbs
+    lang={lang}
+    items={[
+      { label: tUi('nav.home'), href: getRelativeLocaleUrl(lang, '/') },
+      { label: tUi('nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
+      { label: post.data.title },
+    ]}
+  />
+  <div class="post-layout">
+    <article lang={lang}>
+      {/* Pagefind reads the hidden year hint from static HTML so readers can
+          narrow results by publication year. Locale indexes are automatic. */}
+      <span data-pagefind-filter={`year:${post.data.pubDate.getUTCFullYear()}`} style="display:none"></span>
+      <header class="post-header">
+        <h1>{post.data.title}</h1>
+        {post.data.description && (
+          <p class="lede">{post.data.description}</p>
+        )}
+        <p class="muted">
+          {tUi('posts.published')}: {formatDate(post.data.pubDate)}
+          {post.data.updatedDate && (
+            <> · {tUi('posts.updated')}: {formatDate(post.data.updatedDate)}</>
+          )}
+        </p>
+      </header>
+      {post.data.series && seriesPosts.length > 1 && (
+        <SeriesNav
+          series={post.data.series}
+          posts={seriesPosts}
+          currentId={post.id}
+          lang={lang}
+        />
+      )}
+      <div class="prose"><Content /></div>
+      <Backlinks lang={lang} citers={backlinks} />
+      <Giscus lang={lang} />
+      <ShareButtons lang={lang} title={post.data.title} />
+      <PostNav prev={prev} next={next} lang={lang} />
+      <hr />
+      <p class="muted license">
+        {tUi('posts.license.text')}
+        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
+      </p>
+    </article>
+  </div>
+  <script>
+    import { wireHeadingAnchorCopy } from '@/lib/heading-anchor';
+    import { wireTweetEmbeds } from '@/lib/tweet-embeds';
+    import { wireMermaid } from '@/lib/mermaid';
+    wireMermaid();
+    wireHeadingAnchorCopy();
+    wireTweetEmbeds();
+  </script>
+
+<style>
+  .post-layout,
+  article {
+    min-width: 0;
+  }
+  .license { font-size: 0.85rem; }
+  .license a {
+    text-decoration: underline 1px;
+    text-underline-offset: 0.14em;
+  }
+  .post-header {
+    margin-bottom: 1.5rem;
+    padding: 0 0 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .post-header h1 {
+    margin: 0 0 0.5rem;
+    font-weight: 400;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .post-header > .muted { margin: 0.75rem 0 0; }
+  .lede {
+    font-size: 1rem;
+    color: var(--color-muted);
+    margin: 0.5rem 0 1rem;
+  }
+</style>

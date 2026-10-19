@@ -29,7 +29,7 @@ export const GET: APIRoute = async (context) => {
     '',
     `- [Home (en)](${site}/?lang=en): profile and academic / professional CV; default language.`,
     `- [Home (ja)](${site}/?lang=ja): Japanese profile and CV.`,
-    `- [Posts (en)](${site}/posts?lang=en): shared Japanese technical and personal posts.`,
+    `- [Posts (en)](${site}/posts?lang=en): technical and personal posts available in English.`,
     `- [Posts (ja)](${site}/posts?lang=ja)`,
     `- [Gallery (en)](${site}/gallery?lang=en): photographs.`,
     `- [Gallery (ja)](${site}/gallery?lang=ja)`,

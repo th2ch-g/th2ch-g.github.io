@@ -1,12 +1,12 @@
 import type { CollectionEntry } from 'astro:content';
-import { getByLang, localeSlug } from './content';
+import { getPosts, localeSlug } from './content';
 import type { Lang } from '@/i18n/ui';
 
 // Build a slug -> citers map for the shared post collection. A "citer" is
 // any post whose body contains a relative link to either route locale.
 //
 // External links (https://...) and links to non-post routes are ignored.
-// The crawl result is identical for both routes and is cached once per build.
+// Cache each locale separately so unavailable posts never become backlinks.
 
 type Citer = {
   id: string;
@@ -15,7 +15,7 @@ type Citer = {
   pubDate: Date;
 };
 
-let cache: Map<string, Citer[]> | undefined;
+const cache = new Map<Lang, Map<string, Citer[]>>();
 
 function extractPostsSlugs(body: string): string[] {
   const out: string[] = [];
@@ -37,8 +37,9 @@ function extractPostsSlugs(body: string): string[] {
 }
 
 async function getBacklinkMap(lang: Lang): Promise<Map<string, Citer[]>> {
-  if (cache) return cache;
-  const posts = await getByLang('posts', lang);
+  const cached = cache.get(lang);
+  if (!import.meta.env.DEV && cached) return cached;
+  const posts = await getPosts(lang);
   const map = new Map<string, Citer[]>();
   for (const post of posts) {
     const targets = extractPostsSlugs(post.body ?? '');
@@ -53,7 +54,7 @@ async function getBacklinkMap(lang: Lang): Promise<Map<string, Citer[]>> {
       map.set(target, list);
     }
   }
-  cache = map;
+  if (!import.meta.env.DEV) cache.set(lang, map);
   return map;
 }
 

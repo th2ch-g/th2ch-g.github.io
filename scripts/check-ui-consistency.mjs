@@ -1,20 +1,20 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { chromium } from 'playwright';
 import { Jimp, diff } from 'jimp';
 import { startStaticServer } from './lib/static-server.mjs';
+import { renderedPages } from './lib/rendered-pages.mjs';
 
 const { values } = parseArgs({ options: {
   baseline: { type: 'string' }, output: { type: 'string' }, dist: { type: 'string' },
 } });
 const dist = values.dist ? resolve(values.dist) : resolve(import.meta.dirname, '../dist');
 const output = resolve(values.output ?? '.cache/ui-consistency');
-const paths = readdirSync(dist, { recursive: true })
-  .filter((file) => file.endsWith('.html') && readFileSync(resolve(dist, file), 'utf8').includes('<main'))
-  .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
-  .sort();
+const pages = renderedPages(dist);
+const localesByPath = new Map(pages.map(({ path, locales }) => [path, locales]));
+const paths = pages.map(({ path }) => path).sort();
 assert.ok(paths.length, 'Build the site before checking UI consistency');
 const post = paths.find((path) => /^\/posts\/[^/]+\/$/.test(path));
 if (post) paths.push(`${post}?diagram-fixture=1`);
@@ -79,6 +79,8 @@ try {
   for (const width of [393, 1280]) {
     for (const colorScheme of ['light', 'dark']) {
       for (const lang of ['en', 'ja']) {
+        const localizedPaths = paths.filter((path) => path === '/404.html'
+          || localesByPath.get(path.split('?')[0]).includes(lang));
         const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme,
           reducedMotion: 'reduce', hasTouch: width < 600, isMobile: width < 600 });
         await context.route('**/*', async (route) => {
@@ -96,7 +98,7 @@ try {
         const before = baseline ? await context.newPage() : null;
         let reference;
         try {
-          for (const path of paths) {
+          for (const path of localizedPaths) {
             const url = `${path}${path.includes('?') ? '&' : '?'}lang=${lang}`;
             const label = `${width}-${colorScheme}-${lang}-${encodeURIComponent(path)}`;
             try {
@@ -136,7 +138,7 @@ try {
         } finally {
           await context.close();
         }
-        console.log(`[consistency] ${width}px ${colorScheme} ${lang}: ${paths.length} pages checked`);
+        console.log(`[consistency] ${width}px ${colorScheme} ${lang}: ${localizedPaths.length} pages checked`);
       }
     }
   }

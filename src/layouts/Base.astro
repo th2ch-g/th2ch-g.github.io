@@ -20,6 +20,7 @@ interface Props {
   japanese?: { title?: string; description?: string };
   // Only advertise languages with available content.
   availableLocales?: Lang[];
+  localeFallbackPath?: string;
   canonicalPath?: string;
   noindex?: boolean;
   // Per-page social-card image. Pass an Astro `image()` asset (preferred — its
@@ -47,7 +48,7 @@ interface Props {
 }
 const {
   title, description, lang, image, article, breadcrumbs, availableLocales, japanese,
-  canonicalPath, noindex = false,
+  canonicalPath, localeFallbackPath, noindex = false,
 } = Astro.props;
 const locales = availableLocales ?? (['en', 'ja'] as Lang[]);
 const localePath = (canonicalPath ?? Astro.url.pathname).replace(/^\/(?:en|ja)(?=\/|$)/, '') || '/';
@@ -249,6 +250,7 @@ const japaneseJsonLd = {
       alternateName: japaneseMeta.siteHandle && japaneseMeta.siteHandle !== japaneseSiteName
         ? japaneseMeta.siteHandle : undefined },
     ...(articleLd ? [{ ...articleLd, url: japaneseCanonical, image: japaneseImage,
+      inLanguage: (article?.contentLang ?? 'ja') === 'ja' ? 'ja-JP' : 'en-US',
       author: { ...articleLd.author, name: japaneseSiteName },
       publisher: { ...articleLd.publisher, name: japaneseSiteName },
       mainEntityOfPage: { '@type': 'WebPage', '@id': japaneseCanonical } }] : []),
@@ -263,11 +265,12 @@ const japaneseMetadata = {
     ? japaneseTitle : `${japaneseTitle} | ${japaneseSiteName}`,
   siteName: japaneseSiteName,
   title: japaneseTitle, description: japaneseDescription ?? '', canonical: japaneseCanonical,
+  localeAlternate: locales.length > 1 ? 'en_US' : undefined,
   image: japaneseImage, imageAlt: japaneseDescription ?? japaneseTitle, jsonLd: japaneseJsonLd,
 };
 ---
 <!doctype html>
-<html lang={lang} data-theme="dark">
+<html lang={lang} data-theme="dark" data-content-locales={locales.join(' ')}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -275,9 +278,19 @@ const japaneseMetadata = {
         browser applies it to the rest of <head>. See `csp` const above
         for directive rationale. */}
     <meta http-equiv="Content-Security-Policy" content={csp} />
-    <script is:inline define:vars={{ locales }}>
+    <script is:inline define:vars={{ locales, defaultLanguage: lang, localeFallbackPath }}>
       const requestedLanguage = new URLSearchParams(location.search).get('lang');
-      document.documentElement.lang = locales.includes(requestedLanguage) ? requestedLanguage : 'en';
+      const selectedLanguage = requestedLanguage === 'ja' || requestedLanguage === 'en'
+        ? requestedLanguage : defaultLanguage;
+      document.documentElement.lang = locales.includes(selectedLanguage) || localeFallbackPath
+        ? selectedLanguage : defaultLanguage;
+      if (!locales.includes(selectedLanguage) && localeFallbackPath) {
+        const fallback = new URL(location.href);
+        fallback.pathname = localeFallbackPath;
+        fallback.searchParams.set('lang', selectedLanguage);
+        fallback.hash = '';
+        location.replace(fallback.href);
+      }
     </script>
     <link rel="preload" href={monaSansLatin} as="font" type="font/woff2" crossorigin="anonymous" />
     {hasMath && <link rel="stylesheet" href={katexStyles} />}
@@ -326,7 +339,7 @@ const japaneseMetadata = {
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content={siteName} />
     <meta property="og:locale" content={ogLocale} />
-    <meta property="og:locale:alternate" content={ogLocaleAlternate} />
+    {locales.length > 1 && <meta property="og:locale:alternate" content={ogLocaleAlternate} />}
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content={String(ogImageWidth)} />
     <meta property="og:image:height" content={String(ogImageHeight)} />
@@ -382,7 +395,7 @@ const japaneseMetadata = {
           'og:description': japaneseMetadata.description,
           'og:url': japaneseMetadata.canonical,
           'og:locale': 'ja_JP',
-          'og:locale:alternate': 'en_US',
+          'og:locale:alternate': japaneseMetadata.localeAlternate,
           'og:image': japaneseMetadata.image,
           'og:image:alt': japaneseMetadata.imageAlt,
           'twitter:title': japaneseMetadata.title,
@@ -490,7 +503,7 @@ const japaneseMetadata = {
   </head>
   <body>
     <a class="skip-link" href="#main-content">{tUi('a11y.skipToMain')}</a>
-    <Header lang={lang} availableLocales={locales} />
+    <Header lang={lang} availableLocales={locales} localeFallbackPath={localeFallbackPath} />
     <main id="main-content" tabindex="-1" data-pagefind-body data-copy-label={tUi('code.copy')} data-copied-label={tUi('code.copied')} data-copy-failed-label={tUi('code.copy.failed')}>
       <Fragment set:html={content} />
     </main>

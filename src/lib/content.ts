@@ -2,8 +2,6 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import type { Lang } from '@/i18n/ui';
 import { summarizeMarkdown } from './markdown-summary.mjs';
 
-type LangAware = 'posts';
-
 // Dev-only HMR-resilience cache. Astro 6's content layer rebuilds its
 // data store on every content-file save, and during that brief window
 // `getCollection(...)` returns an empty array for *every* collection —
@@ -34,22 +32,13 @@ export function localeSlug(id: string): string {
   return id.replace(LOCALE_PREFIX, '');
 }
 
-export async function getByLang<C extends LangAware>(
-  collection: C,
-  _lang: Lang,
-): Promise<CollectionEntry<C>[]> {
-  // Posts are shared content. The route locale controls interface chrome and
-  // language query parameter, never which post entries are returned.
-  const entries = await getCollection(collection);
-  if (import.meta.env.DEV && collection === 'posts') {
-    const posts = entries as unknown as CollectionEntry<'posts'>[];
-    if (posts.length === 0) {
-      if (devPosts) return devPosts as unknown as CollectionEntry<C>[];
-    } else {
-      devPosts = posts;
-    }
+export async function getPosts(lang?: Lang): Promise<CollectionEntry<'posts'>[]> {
+  const entries = await getCollection('posts');
+  if (import.meta.env.DEV && entries.length > 0) {
+    devPosts = entries;
   }
-  return entries as CollectionEntry<C>[];
+  const posts = import.meta.env.DEV && entries.length === 0 ? devPosts ?? entries : entries;
+  return lang ? posts.filter((post) => post.data.lang.includes(lang)) : posts;
 }
 
 export async function getCv(lang: Lang) {
@@ -241,7 +230,7 @@ export async function getSeriesPosts(
   series: string,
   lang: Lang,
 ): Promise<CollectionEntry<'posts'>[]> {
-  const all = await getByLang('posts', lang);
+  const all = await getPosts(lang);
   return all
     .filter((p) => p.data.series === series)
     .sort((a, b) => a.data.pubDate.getTime() - b.data.pubDate.getTime());
@@ -256,7 +245,7 @@ export async function getAdjacentPosts(
   lang: Lang,
 ): Promise<{ prev: CollectionEntry<'posts'> | null; next: CollectionEntry<'posts'> | null }> {
   const all = sortByDateDesc(
-    await getByLang('posts', lang),
+    await getPosts(lang),
     'pubDate',
   );
   const idx = all.findIndex((p) => p.id === current.id);

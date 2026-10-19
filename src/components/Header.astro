@@ -9,11 +9,11 @@ import Octicon from './Octicon.astro';
 
 interface Props {
   lang: Lang;
-  // Forwarded to LanguageSwitcher: which locales this page exists in, so a
-  // page without a translated twin doesn't render a switch link that 404s.
+  // Detail pages can route unavailable languages to an archive fallback.
   availableLocales?: Lang[];
+  localeFallbackPath?: string;
 }
-const { lang, availableLocales } = Astro.props;
+const { lang, availableLocales, localeFallbackPath } = Astro.props;
 
 const meta = await getProfileMeta(lang);
 // build-icon generates this avatar from the configured profile image.
@@ -97,7 +97,7 @@ const atHome = current === '/';
     </nav>
     <Search lang={lang} />
     <ThemeToggle lang={lang} />
-    <LanguageSwitcher lang={lang} availableLocales={availableLocales} />
+    <LanguageSwitcher lang={lang} availableLocales={availableLocales} fallbackPath={localeFallbackPath} />
     <button
       type="button"
       class="nav-toggle btn btn-ghost btn-sm"

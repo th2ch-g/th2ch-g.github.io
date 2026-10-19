@@ -30,7 +30,7 @@ Docker: `docker compose up dev` (HMR on 4321) or `up prod` (nginx on 8080).
 
 ### Bilingual routing with query parameters
 
-Pages use `?lang=en` and `?lang=ja` on the same path; English is the default when the parameter is missing or invalid. GitHub Pages serves static HTML, so Base selects the document language before painting and LocaleContent installs the matching CV, contact, or legal content before browser modules initialize. JavaScript-disabled browsers and crawlers receive the English content and metadata.
+Pages use `?lang=en` and `?lang=ja` on the same path; English is the default when the parameter is missing or invalid, except Japanese-only post details. GitHub Pages serves static HTML, so Base selects the document language before painting and LocaleContent installs the matching content before browser modules initialize. JavaScript-disabled browsers and crawlers receive the static fallback: English when supported, otherwise Japanese for post details.
 
 - Create only `src/pages/foo.astro`; shared rendering lives in `src/components/FooPage.astro`.
 - Use `getRelativeLocaleUrl` from `src/lib/locale-url.ts` for page links. Language switching preserves other query parameters and fragments; navigation, search, shortcuts, and sharing retain the selected language.
@@ -48,11 +48,11 @@ Defined in `src/content.config.ts`. Five collections:
 - `legal` — `src/content/legal/{ja,en}/<slug>.md` with `title` / `description` / `updatedDate` frontmatter. The slug after the locale becomes the URL (`/<slug>?lang=en` and `/<slug>?lang=ja`), so keep it short and stable.
 - `contact` — `src/content/contact/{ja,en}.md`, with no frontmatter. Links use `[label](url)` syntax. A single Google Forms link renders only the embedded form; other Markdown renders as contact prose. `en.md` may be a relative symlink when the content is shared. Contact links and optional `mailto:` addresses are read from these files, not `profile.yaml`.
 - `profileMeta` — single file `src/content/profile.yaml` for shared settings (site handle, repository, deployment URL, icon, and active integrations). `getProfileMeta(lang)` combines these settings with the CV's first H1 as `name` and its following paragraph as `bio`, preserving Markdown formatting in the page while deriving plain text for metadata, OG cards, search, and JSON Resume. Missing CV or profile content fails the build. `giscus`, `analytics`, `adsense`, and `searchConsole` each accept `enabled` (default `true`); `false` suppresses the integration while preserving its configuration. Required IDs or endpoints must still be present to activate an integration.
-- `posts` — shared Japanese content under `src/content/posts/<slug>.md`, with optional co-located images. The same entries render at `/posts/?lang=en` and `/posts/?lang=ja`; route locale changes interface chrome and query parameters only. `entry.id` is the slug directly.
+- `posts` — Markdown under `src/content/posts/<slug>.md`, with optional co-located images. Required frontmatter `lang: [ja]`, `lang: [en]`, or `lang: [ja, en]` declares the locales in which an entry appears. Archive, search, sitemap, series, adjacent posts, and backlinks honor this list. `entry.id` is the slug directly. This field controls availability; it does not translate the shared body.
 
 The gallery at `/gallery` is **not** a collection — loose images under `src/content/gallery/` are loaded via `import.meta.glob` from `PhotosListPage.astro`.
 
-`getByLang('posts', lang)` returns every shared post in both development and production. There is no draft flag or publication filter; every Markdown file under `src/content/posts/` is included in page routes, search, backlinks, and OG images.
+`getPosts(lang)` filters by declared languages in both development and production; `getPosts()` returns all entries for shared static paths. There is no draft flag or publication-date filter. Every Markdown file under `src/content/posts/` gets a detail route; search, backlinks, and OG images include only supported locales. A detail URL without a valid language uses English when supported, otherwise Japanese. Explicitly requesting an unsupported language redirects to `/posts/?lang=<requested>`; its language-switch link goes there directly.
 
 Browser behavior lives in `src/lib/`: `cv/` separates section discovery, clipboard formatting, action controls, and initialization; `clipboard.ts` shares rich/text/legacy writes with code and share buttons; `search.ts` handles the dialog and loading while `search-fallback.ts` renders fallback results. `Base.astro` marks the main content with `data-pagefind-body` to keep page chrome out of search excerpts.
 
@@ -60,7 +60,7 @@ Tailwind scans `src/` only. `src/styles/global.css` explicitly includes the dais
 
 ### Static paths pattern
 
-Each page's `getStaticPaths` is evaluated independently by Astro and **must be a top-level `export async function getStaticPaths()`** — arrow functions assigned to `const` are not picked up by Astro's static analyzer and yield `Astro.props === undefined` at render time. Shared bodies live in `src/lib/static-paths.ts` (e.g. `buildPostsDetailPaths(lang)`).
+Each page's `getStaticPaths` is evaluated independently by Astro and **must be a top-level `export async function getStaticPaths()`** — arrow functions assigned to `const` are not picked up by Astro's static analyzer and yield `Astro.props === undefined` at render time. Shared bodies live in `src/lib/static-paths.ts` (e.g. `buildPostsDetailPaths()`).
 
 ### Build pipeline
 

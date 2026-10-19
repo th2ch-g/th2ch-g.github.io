@@ -6,6 +6,9 @@ import { startStaticServer } from './lib/static-server.mjs';
 const distDir = resolve(import.meta.dirname, '../dist');
 const { url, close } = await startStaticServer(distDir);
 const browser = await chromium.launch({ headless: true });
+const { items: searchItems } = await (await fetch(`${url}/search-index.json`)).json();
+const indexedPosts = searchItems.filter((item) => item.date && /^\/posts\/[^/]+\//.test(item.url));
+const archiveLang = indexedPosts[0]?.lang ?? 'en';
 
 async function newLocalPage(viewport) {
   const page = await browser.newPage({ viewport });
@@ -46,10 +49,13 @@ async function assertHomeLocales() {
     await page.waitForURL(`${url}${other}`);
   }
 
+  const legacyPostPath = new URL(indexedPosts[0].url, url).pathname;
+  const hasEnglishPost = indexedPosts.some((post) => post.lang === 'en'
+    && new URL(post.url, url).pathname === legacyPostPath);
   for (const [from, to] of [
     ['/en/', '/?lang=en'], ['/cv/', '/?lang=ja#cv'], ['/en/cv/', '/?lang=en#cv'], ['/ja/', '/?lang=ja'],
     ['/en/posts/', '/posts?lang=en'], ['/en/contact/', '/contact?lang=en'],
-    ['/en/posts/dotfiles-2026-summer/', '/posts/dotfiles-2026-summer?lang=en'],
+    [`/en${legacyPostPath}`, `${hasEnglishPost ? legacyPostPath : '/posts/'}?lang=en`],
   ]) {
     const target = new URL(to, url);
     await page.goto(`${url}${from}`, { waitUntil: 'domcontentloaded' });
@@ -360,7 +366,7 @@ try {
   await mobilePage.close();
 
   const listPage = await newLocalPage({ width: 393, height: 852 });
-  await listPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
+  await listPage.goto(`${url}/posts/?lang=${archiveLang}`, { waitUntil: 'networkidle' });
   assert.equal(
     (await listPage.locator('h1').first().textContent())?.trim().replace(/\d+$/, '').trim(),
     'Posts',
@@ -420,9 +426,11 @@ try {
   await listPage.close();
 
   const desktopPage = await newLocalPage({ width: 1280, height: 900 });
-  await desktopPage.goto(`${url}/posts/`, { waitUntil: 'networkidle' });
+  await desktopPage.goto(`${url}/posts/?lang=${archiveLang}`, { waitUntil: 'networkidle' });
   const rootPostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
     .map((title) => title.trim());
+  assert.deepEqual([...rootPostTitles].sort(), indexedPosts.filter((post) => post.lang === archiveLang)
+    .map((post) => post.title).sort(), 'The archive includes posts from an unavailable language');
   const desktopNavLabels = await desktopPage.locator('.nav-list a').allTextContents();
   assert.deepEqual(
     desktopNavLabels.map((label) => label.trim()),
@@ -452,7 +460,8 @@ try {
   await desktopPage.goto(`${url}/posts/?lang=ja`, { waitUntil: 'domcontentloaded' });
   const japanesePostTitles = (await desktopPage.locator('[data-post-row] a').allTextContents())
     .map((title) => title.trim());
-  assert.deepEqual(japanesePostTitles, rootPostTitles, 'JA and EN routes do not show the same posts');
+  assert.deepEqual([...japanesePostTitles].sort(), indexedPosts.filter((post) => post.lang === 'ja')
+    .map((post) => post.title).sort(), 'The Japanese archive does not match its available posts');
   const japaneseFooterPolicies = (await desktopPage.locator('.site-footer a').allTextContents())
     .map((label) => label.trim())
     .filter((label) => label.endsWith('Policy'));

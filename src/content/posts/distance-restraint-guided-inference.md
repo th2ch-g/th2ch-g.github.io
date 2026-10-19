@@ -1,4 +1,5 @@
 ---
+lang: [ja]
 title: 距離拘束誘導推論法
 description: ｳｫｯﾌｫﾌｫ🎅‼️
 pubDate: 2026-05-11

@@ -1,6 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import PostArchiveList from './PostArchiveList.astro';
+import LocaleContent from './LocaleContent.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
 import { tUi, type Lang } from '@/i18n/ui';
 import type { CollectionEntry } from 'astro:content';
@@ -27,13 +28,15 @@ const displayPosts = sortByDateDesc(posts, 'pubDate');
   />
   <h1 class="count-heading">
     <span class="muted">{tUi('series.heading')}:</span> {name}
-    {posts.length > 0 && <span class="count-badge">{posts.length}</span>}
+    <LocaleContent inline>
+      <span slot="en" class="count-badge">{posts.filter((post) => post.data.lang.includes('en')).length}</span>
+      <span slot="ja" class="count-badge">{posts.filter((post) => post.data.lang.includes('ja')).length}</span>
+    </LocaleContent>
   </h1>
-  {posts.length === 0 ? (
-    <p class="muted">{tUi('list.empty')}</p>
-  ) : (
-    <PostArchiveList posts={displayPosts} lang={lang} />
-  )}
+  <LocaleContent>
+    <PostArchiveList slot="en" posts={displayPosts.filter((post) => post.data.lang.includes('en'))} lang="en" />
+    <PostArchiveList slot="ja" posts={displayPosts.filter((post) => post.data.lang.includes('ja'))} lang="ja" />
+  </LocaleContent>
 </Base>
 
 <style>

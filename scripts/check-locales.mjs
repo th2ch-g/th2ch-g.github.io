@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { parseFrontmatter } from '@astrojs/markdown-remark';
 import { chromium, firefox, webkit } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
 import { browserEngines } from './lib/browser-engines.mjs';
@@ -12,14 +13,22 @@ try {
   }
   assert.doesNotMatch(await (await fetch(`${server.url}/robots.txt`)).text(), /^Sitemap:/m);
   const { items } = await (await fetch(`${server.url}/search-index.json`)).json();
-  const sourcePosts = readdirSync(resolve(import.meta.dirname, '../src/content/posts'), { recursive: true })
-    .filter((file) => file.endsWith('.md'));
+  const postsDir = resolve(import.meta.dirname, '../src/content/posts');
+  const sourcePosts = readdirSync(postsDir, { recursive: true })
+    .filter((file) => file.endsWith('.md'))
+    .map((file) => ({
+      path: `/posts/${file.replace(/\.md$/, '')}/`,
+      ...parseFrontmatter(readFileSync(resolve(postsDir, file), 'utf8')).frontmatter,
+    }));
   for (const lang of ['en', 'ja']) {
-    assert.equal(items.filter((item) => item.lang === lang && item.date && item.url.startsWith('/posts/')).length,
-      sourcePosts.length, 'Every post must be included in the production index');
+    const actual = items.filter((item) => item.lang === lang && item.date && item.url.startsWith('/posts/'))
+      .map((item) => decodeURI(new URL(item.url, server.url).pathname)).sort();
+    const expected = sourcePosts.filter((post) => post.lang.includes(lang)).map((post) => post.path).sort();
+    assert.deepEqual(actual, expected, `Search index does not match declared post languages (${lang})`);
   }
   const legalPages = items.filter((item) => item.date && !item.url.startsWith('/posts/'));
-  const post = items.find((item) => item.date && item.url.startsWith('/posts/') && item.lang === 'en');
+  const post = items.find((item) => item.date && item.url.startsWith('/posts/') && item.lang === 'ja')
+    ?? items.find((item) => item.date && item.url.startsWith('/posts/'));
 
   for (const engine of browserEngines([chromium, firefox, webkit])) {
     const browser = await engine.launch();
@@ -91,6 +100,41 @@ try {
         const form = new URL(await page.locator('.contact-form').getAttribute('src'));
         assert.equal(form.searchParams.get('embedded'), 'true');
         assert.equal(await page.locator('main a[href*="/forms/"]').count(), 0, 'Contact still shows a redundant form link');
+
+        const expectedPosts = sourcePosts.filter((post) => post.lang.includes(lang));
+        await page.goto(`${server.url}/posts/?lang=${lang}`, { waitUntil: 'networkidle' });
+        const archivePaths = await page.locator('[data-post-row] a').evaluateAll((links) =>
+          links.map((link) => decodeURI(new URL(link.href).pathname).replace(/\/$/, '')).sort());
+        assert.deepEqual(archivePaths, expectedPosts.map((post) => post.path.replace(/\/$/, '')).sort(),
+          `Post archive ignores declared languages (${lang})`);
+        if (!expectedPosts.length) {
+          assert.equal(await page.getByText('Nothing here yet.', { exact: true }).isVisible(), true);
+        }
+        await page.goto(`${server.url}/sitemap/?lang=${lang}`, { waitUntil: 'networkidle' });
+        const sitemapPaths = await page.locator('main a[href]').evaluateAll((links) =>
+          links.map((link) => new URL(link.href)).filter((url) => /^\/posts\/[^/]+\/$/.test(url.pathname))
+            .map((url) => decodeURI(url.pathname)).sort());
+        assert.deepEqual(sitemapPaths, expectedPosts.map((post) => post.path).sort(),
+          `Sitemap ignores declared languages (${lang})`);
+
+        for (const sourcePost of sourcePosts) {
+          await page.goto(`${server.url}${sourcePost.path}?lang=${lang}`, { waitUntil: 'networkidle' });
+          if (!sourcePost.lang.includes(lang)) {
+            await page.waitForURL((url) => url.pathname === '/posts/' && url.searchParams.get('lang') === lang);
+            assert.equal(await page.locator('article').count(), 0, 'Unavailable post content remains visible');
+            continue;
+          }
+          assert.equal(await page.locator('article').getAttribute('lang'), lang);
+          assert.equal(await page.locator('.post-header h1').innerText(), sourcePost.title);
+          const alternates = await page.locator('link[rel="alternate"][hreflang]:not([hreflang="x-default"])')
+            .evaluateAll((links) => links.map((link) => link.hreflang).sort());
+          assert.deepEqual(alternates, [...sourcePost.lang].sort(), 'Post advertises an unavailable locale');
+          for (const target of ['en', 'ja']) {
+            const switchLink = page.locator(`.lang-switch a[hreflang="${target}"]`);
+            const switchUrl = new URL(await switchLink.getAttribute('href'), server.url);
+            assert.equal(decodeURI(switchUrl.pathname), sourcePost.lang.includes(target) ? sourcePost.path : '/posts/');
+          }
+        }
       }
 
       for (const item of legalPages) {
@@ -102,10 +146,10 @@ try {
         assert.equal(await page.locator('link[rel="sitemap"]').count(), 0);
       }
       const legacy = new URL(post.url, server.url).pathname;
-      await page.goto(`${server.url}/ja${legacy}?tag=beta#main-content`, { waitUntil: 'networkidle' });
+      await page.goto(`${server.url}/${post.lang}${legacy}?tag=beta#main-content`, { waitUntil: 'networkidle' });
       const redirected = new URL(page.url());
       assert.equal(redirected.pathname.replace(/\/$/, ''), legacy.replace(/\/$/, ''));
-      assert.equal(redirected.searchParams.get('lang'), 'ja');
+      assert.equal(redirected.searchParams.get('lang'), post.lang);
       assert.equal(redirected.searchParams.get('tag'), 'beta');
       assert.equal(redirected.hash, '#main-content');
       assert.equal(await page.locator('.nav-list a[aria-current="page"]').innerText(), 'Posts');
@@ -114,10 +158,10 @@ try {
         .evaluateAll((anchors) => anchors.filter((anchor) => !anchor.closest('.lang-switch')).map((anchor) => anchor.href));
       for (const href of links) {
         const url = new URL(href);
-        if (url.origin === server.url) assert.equal(url.searchParams.get('lang'), 'ja');
+        if (url.origin === server.url) assert.equal(url.searchParams.get('lang'), post.lang);
       }
       const shared = new URL(await page.locator('[data-share-url]').getAttribute('data-share-url'));
-      assert.equal(shared.searchParams.get('lang'), 'ja');
+      assert.equal(shared.searchParams.get('lang'), post.lang);
       assert.equal(shared.searchParams.has('tag'), false);
       assert.equal(new URL(await page.locator('.share-btn--x').getAttribute('href')).searchParams.get('url'), shared.href);
       assert.deepEqual(errors, []);

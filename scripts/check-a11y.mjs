@@ -1,10 +1,10 @@
 // Runs axe-core against every rendered page of the built site. Fails the
 // process with a non-zero exit code if any violation is found, so the GH
 // Actions a11y job goes red on regressions.
-import { readFileSync, readdirSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startStaticServer } from './lib/static-server.mjs';
+import { localizedPagePaths } from './lib/rendered-pages.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const distDir = resolve(ROOT, 'dist');
@@ -22,11 +22,7 @@ try {
 
 // Discover every rendered page in both locales, including legal and series
 // pages. Redirect documents have no main content and are checked separately.
-const pages = readdirSync(distDir, { recursive: true })
-  .filter((file) => file.endsWith('.html') && readFileSync(resolve(distDir, file), 'utf8').includes('<main'))
-  .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
-  .flatMap((path) => path === '/404.html' ? [path] : ['en', 'ja'].map((lang) => `${path}?lang=${lang}`))
-  .sort();
+const pages = localizedPagePaths(distDir);
 
 const { url: base, close } = await startStaticServer(distDir);
 

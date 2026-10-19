@@ -1,51 +1,31 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { tUi, type Lang } from '@/i18n/ui';
-import { formatDate, getWordCount } from '@/lib/content';
+import LocaleContent from './LocaleContent.astro';
+import PostContent from './PostContent.astro';
+import { tUi } from '@/i18n/ui';
+import { getWordCount, localeSlug } from '@/lib/content';
 import type { CollectionEntry } from 'astro:content';
-import { render } from 'astro:content';
-import ShareButtons from '@/components/ShareButtons.astro';
-import Giscus from '@/components/Giscus.astro';
-import PostNav from '@/components/PostNav.astro';
-import SeriesNav from '@/components/SeriesNav.astro';
-import Backlinks from '@/components/Backlinks.astro';
-import Breadcrumbs from '@/components/Breadcrumbs.astro';
-import { getAdjacentPosts, getSeriesPosts } from '@/lib/content';
-import { getBacklinks } from '@/lib/backlinks';
-import { getRelativeLocaleUrl } from '@/lib/locale-url';
-import { getLocaleFileUrl } from '@/lib/locale-url';
-import { localeSlug } from '@/lib/content';
+import { getRelativeLocaleUrl, getLocaleFileUrl } from '@/lib/locale-url';
 
-interface Props {
-  post: CollectionEntry<'posts'>;
-  lang: Lang;
-}
-const { post, lang } = Astro.props;
-const { Content } = await render(post);
-// Post bodies are authored once in Japanese and shared by both route locales.
-// Interface chrome follows `lang`; prose metrics and language metadata do not.
-const contentLang: Lang = 'ja';
-const wordCount = getWordCount(post.body ?? '', contentLang);
-const { prev, next } = await getAdjacentPosts(post, lang);
-const seriesPosts = post.data.series ? await getSeriesPosts(post.data.series, lang) : [];
-const backlinks = await getBacklinks(post, lang);
-// Always use the build-time-generated OG card so social previews keep a
-// consistent 1200x630 frame, accent border, and avatar.
+interface Props { post: CollectionEntry<'posts'> }
+const { post } = Astro.props;
+const locales = post.data.lang;
+const lang = locales.includes('en') ? 'en' : 'ja';
 const slug = localeSlug(post.id);
-const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
 ---
 <Base
   lang={lang}
+  availableLocales={locales}
+  localeFallbackPath="/posts/"
   title={post.data.title}
   description={post.data.description}
-  image={ogImageUrl}
+  image={getLocaleFileUrl(lang, `/og/${slug}.png`)}
   article={{
     title: post.data.title,
     description: post.data.description,
     pubDate: post.data.pubDate,
     updatedDate: post.data.updatedDate,
-    wordCount,
-    contentLang,
+    wordCount: getWordCount(post.body ?? '', lang),
   }}
   breadcrumbs={[
     { name: tUi('nav.home'), url: getRelativeLocaleUrl(lang, '/') },
@@ -53,87 +33,8 @@ const ogImageUrl = getLocaleFileUrl(lang, `/og/${slug}.png`);
     { name: post.data.title },
   ]}
 >
-  <Breadcrumbs
-    lang={lang}
-    items={[
-      { label: tUi('nav.home'), href: getRelativeLocaleUrl(lang, '/') },
-      { label: tUi('nav.posts'), href: getRelativeLocaleUrl(lang, '/posts') },
-      { label: post.data.title },
-    ]}
-  />
-  <div class="post-layout">
-    <article lang={contentLang}>
-      {/* Pagefind reads the hidden year hint from static HTML so readers can
-          narrow results by publication year. Locale indexes are automatic. */}
-      <span data-pagefind-filter={`year:${post.data.pubDate.getUTCFullYear()}`} style="display:none"></span>
-      <header class="post-header">
-        <h1>{post.data.title}</h1>
-        {post.data.description && (
-          <p class="lede">{post.data.description}</p>
-        )}
-        <p class="muted">
-          {tUi('posts.published')}: {formatDate(post.data.pubDate)}
-          {post.data.updatedDate && (
-            <> · {tUi('posts.updated')}: {formatDate(post.data.updatedDate)}</>
-          )}
-        </p>
-      </header>
-      {post.data.series && seriesPosts.length > 1 && (
-        <SeriesNav
-          series={post.data.series}
-          posts={seriesPosts}
-          currentId={post.id}
-          lang={lang}
-        />
-      )}
-      <div class="prose"><Content /></div>
-      <Backlinks lang={lang} citers={backlinks} />
-      <Giscus lang={lang} />
-      <ShareButtons lang={lang} title={post.data.title} />
-      <PostNav prev={prev} next={next} lang={lang} />
-      <hr />
-      <p class="muted license">
-        {tUi('posts.license.text')}
-        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
-      </p>
-    </article>
-  </div>
-  <script>
-    import { wireHeadingAnchorCopy } from '@/lib/heading-anchor';
-    import { wireTweetEmbeds } from '@/lib/tweet-embeds';
-    import { wireMermaid } from '@/lib/mermaid';
-    wireMermaid();
-    wireHeadingAnchorCopy();
-    wireTweetEmbeds();
-  </script>
-
+  <LocaleContent defaultLang={lang}>
+    {locales.includes('en') && <PostContent slot="en" post={post} lang="en" />}
+    {locales.includes('ja') && <PostContent slot="ja" post={post} lang="ja" />}
+  </LocaleContent>
 </Base>
-
-<style>
-  .post-layout,
-  article {
-    min-width: 0;
-  }
-  .license { font-size: 0.85rem; }
-  .license a {
-    text-decoration: underline 1px;
-    text-underline-offset: 0.14em;
-  }
-  .post-header {
-    margin-bottom: 1.5rem;
-    padding: 0 0 1.5rem;
-    border-bottom: 1px solid var(--color-border);
-  }
-  .post-header h1 {
-    margin: 0 0 0.5rem;
-    font-weight: 400;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-  }
-  .post-header > .muted { margin: 0.75rem 0 0; }
-  .lede {
-    font-size: 1rem;
-    color: var(--color-muted);
-    margin: 0.5rem 0 1rem;
-  }
-</style>

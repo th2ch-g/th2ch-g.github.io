@@ -1,4 +1,5 @@
 ---
+lang: [ja]
 title: ミニツール 2026年秋
 description: トークンの残飯処理
 pubDate: 2026-09-26

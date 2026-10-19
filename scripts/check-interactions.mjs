@@ -1,26 +1,21 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import { chromium, firefox } from 'playwright';
 import { startStaticServer } from './lib/static-server.mjs';
 import { browserEngines } from './lib/browser-engines.mjs';
+import { localizedPagePaths } from './lib/rendered-pages.mjs';
 
 const distDir = resolve(import.meta.dirname, '../dist');
 const server = await startStaticServer(distDir);
 const index = await (await fetch(`${server.url}/search-index.json`)).json();
-const postItems = index.items.filter((item) => item.lang === 'en' && /^\/posts\/[^/]+\/$/.test(new URL(item.url, server.url).pathname));
+const postItems = index.items.filter((item) => /^\/posts\/[^/]+\/$/.test(new URL(item.url, server.url).pathname));
 const article = postItems.find((item) => /[a-z]{4}/i.test(item.title)) ?? postItems[0];
 assert.ok(article, 'Search checks require a published article');
 const query = article.title.match(/[a-z]{4,}/i)?.[0] ?? article.title;
 const postPath = article.url;
 
 // Compare against rendered pages so newly added routes cannot silently escape fallback search.
-const renderedPaths = readdirSync(distDir, { recursive: true })
-  .filter((file) => file.endsWith('.html') && file !== '404.html'
-    && readFileSync(resolve(distDir, file), 'utf8').includes('<main'))
-  .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
-  .flatMap((path) => ['en', 'ja'].map((lang) => `${path}?lang=${lang}`))
-  .sort();
+const renderedPaths = localizedPagePaths(distDir).filter((path) => path !== '/404.html');
 assert.deepEqual(index.items.map((item) => decodeURI(item.url)).sort(), renderedPaths,
   'Fallback search does not cover every public content page exactly once');
 
@@ -169,24 +164,28 @@ async function checkBlockedThemeStorage(browser) {
 }
 
 async function checkSearch(browser, path, fallback) {
+  const lang = new URL(path, server.url).searchParams.get('lang') === 'ja' ? 'ja' : 'en';
+  const localizedPosts = postItems.filter((item) => item.lang === lang);
+  const target = localizedPosts.find((item) => /[a-z]{4}/i.test(item.title)) ?? localizedPosts[0]
+    ?? index.items.find((item) => item.lang === lang && item.url.startsWith('/gallery/'));
+  const searchQuery = target.title.match(/[a-z]{4,}/i)?.[0] ?? target.title;
   const { page, errors } = await newPage(browser, path);
   if (fallback) await page.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
   const trigger = page.locator('[data-search-open]');
   await trigger.click();
   const input = page.locator(fallback ? '.search-fallback__input' : '.pagefind-ui__search-input');
-  await input.fill(query);
-  const result = page.locator(fallback ? '.search-fallback__link' : '.pagefind-ui__result-link').filter({ hasText: article.title }).first();
+  await input.fill(searchQuery);
+  const result = page.locator(fallback ? '.search-fallback__link' : '.pagefind-ui__result-link').filter({ hasText: target.title }).first();
   await result.waitFor();
   if (!fallback) {
     assert.doesNotMatch(await page.locator('.pagefind-ui__results').innerText(), /Search is unavailable/,
       'Search excerpts include hidden page chrome');
   }
   const destination = new URL(await result.getAttribute('href'), server.url);
-  assert.ok(destination.pathname.startsWith('/posts/') && destination.searchParams.get('lang') === (path === '/?lang=ja' ? 'ja' : 'en'));
+  assert.equal(destination.pathname + destination.search, target.url);
   assert.equal(await input.getAttribute('placeholder'), 'Search this site...');
   const paperTitle = await page.locator('li.cv-has-bibtex a[href*="doi.org"]').first().textContent();
   const cvQuery = paperTitle.match(/[a-z]{4,}/i)?.[0] ?? paperTitle;
-  const lang = path === '/?lang=ja' ? 'ja' : 'en';
   const resultSelector = fallback ? '.search-fallback__link' : '.pagefind-ui__result-link';
   for (const [term, expectedPath] of [
     [cvQuery, `/?lang=${lang}`],
@@ -229,7 +228,7 @@ async function checkSearch(browser, path, fallback) {
 }
 
 async function checkSearchRecovery(browser) {
-  const { page, errors } = await newPage(browser, '/');
+  const { page, errors } = await newPage(browser, `/?lang=${article.lang}`);
   await page.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
   await page.route('**/search-index.json', (route) => route.fulfill({ status: 503, body: 'Unavailable' }));
   await page.locator('[data-search-open]').click();

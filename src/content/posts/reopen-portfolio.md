@@ -1,4 +1,5 @@
 ---
+lang: [ja]
 title: "Re: Portfolio"
 description: 全部ClaudeCodeくんに書かせました😤(Web系の言語苦手なので)
 pubDate: 2026-05-07

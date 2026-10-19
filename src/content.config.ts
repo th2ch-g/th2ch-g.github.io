@@ -131,12 +131,11 @@ const profileMeta = defineCollection({
   }),
 });
 
-// Posts are shared Japanese content. Files live directly under
-// `src/content/posts/`; both JA and EN routes render the same entries while
-// selecting their language through query parameters.
+// Posts declare the locales in which their shared Markdown is available.
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
+    lang: z.array(z.enum(['ja', 'en'])).min(1),
     // Title remains required — list pages, OG cards, and
     // breadcrumbs all key off it. An empty <h1> would cascade visually.
     title: z.string(),

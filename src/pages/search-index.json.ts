@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import { languages, tUi, type Lang } from '@/i18n/ui';
-import { formatDate, getCv, getContact, getProfileMeta, getByLang, localeSlug, sortByDateDesc } from '@/lib/content';
+import { formatDate, getCv, getContact, getProfileMeta, getPosts, localeSlug, sortByDateDesc } from '@/lib/content';
 import type { SearchIndexItem } from '@/lib/search';
 
 async function localeItems(lang: Lang): Promise<SearchIndexItem[]> {
@@ -11,7 +11,7 @@ async function localeItems(lang: Lang): Promise<SearchIndexItem[]> {
     getCv(lang),
     getContact(lang),
     getCollection('legal', (doc) => doc.id.startsWith(`${lang}/`)),
-    getByLang('posts', lang),
+    getPosts(lang),
   ]);
   const posts = sortByDateDesc(published, 'pubDate');
   const page = (path: string, title: string, description = '', body = ''): SearchIndexItem => ({

@@ -1,4 +1,5 @@
 ---
+lang: [ja]
 title: dotfiles 2026年夏
 description: 最近導入した設定
 pubDate: 2026-06-13

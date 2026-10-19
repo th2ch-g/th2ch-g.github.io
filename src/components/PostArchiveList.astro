@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { getRelativeLocaleUrl } from '@/lib/locale-url';
-import type { Lang } from '@/i18n/ui';
+import { tUi, type Lang } from '@/i18n/ui';
 import { formatMonthDay, localeSlug } from '@/lib/content';
 
 interface Props {
@@ -30,7 +30,7 @@ posts.forEach((post) => {
   byYear.set(year, items);
 });
 ---
-<div
+{posts.length === 0 ? <p class="muted">{tUi('list.empty')}</p> : <div
   class:list={[
     'post-archive-list',
     {
@@ -69,7 +69,7 @@ posts.forEach((post) => {
       </ul>
     </section>
   ))}
-</div>
+</div>}
 
 <style>
   .year { margin-top: 1.5rem; }

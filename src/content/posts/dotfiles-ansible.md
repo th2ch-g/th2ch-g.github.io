@@ -1,4 +1,5 @@
 ---
+lang: [ja]
 title: 計算環境の自動整備
 description: 脳汁溢れるタンパク質の方が反響が大きくて泣き
 pubDate: 2026-04-20

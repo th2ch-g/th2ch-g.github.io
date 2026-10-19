@@ -1,11 +1,11 @@
 ---
 import LegacyRedirect from '@/components/LegacyRedirect.astro';
-import { getLegalByLang, getByLang, localeSlug } from '@/lib/content';
+import { getLegalByLang, getPosts, localeSlug } from '@/lib/content';
 import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import type { Lang } from '@/i18n/ui';
 
 export async function getStaticPaths() {
-  const posts = await getByLang('posts', 'en');
+  const posts = await getPosts();
   const legal = await getLegalByLang('en');
   const paths = [
     '', 'cv', 'posts', 'gallery', 'contact', 'sitemap',

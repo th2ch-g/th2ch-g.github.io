@@ -1,17 +1,15 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { chromium, firefox, webkit } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { startStaticServer } from './lib/static-server.mjs';
 import { browserEngines } from './lib/browser-engines.mjs';
+import { localizedPagePaths } from './lib/rendered-pages.mjs';
 
 const distDir = resolve(import.meta.dirname, '../dist');
-const paths = readdirSync(distDir, { recursive: true })
-  .filter((file) => file.endsWith('.html') && readFileSync(resolve(distDir, file), 'utf8').includes('<main'))
-  .map((file) => '/' + file.split(sep).join('/').replace(/index\.html$/, ''))
-  .flatMap((path) => path === '/404.html' ? [path] : ['en', 'ja'].map((lang) => `${path}?lang=${lang}`))
-  .sort();
+const paths = localizedPagePaths(distDir);
+const index = JSON.parse(readFileSync(resolve(distDir, 'search-index.json'), 'utf8'));
 assert.ok(paths.length, 'Build the site before checking mobile pages');
 
 const profiles = [
@@ -109,10 +107,17 @@ async function assertTouchFlows(context, lang) {
     await page.locator('.nav-list a').first().tap();
     await page.waitForURL((url) => url.pathname.replace(/\/$/, '') === '/posts' && url.searchParams.get('lang') === lang);
     const firstPost = page.locator('[data-post-row] a').first();
-    const postUrl = new URL(await firstPost.getAttribute('href'), server.url);
-    await firstPost.tap();
-    await page.waitForURL(postUrl.href);
-    await page.locator('article').waitFor();
+    const postItems = index.items.filter((item) => item.lang === lang
+      && item.url.startsWith('/posts/') && !item.url.includes('/series/') && item.date);
+    assert.equal(await page.locator('[data-post-row]').count(), postItems.length);
+    if (postItems.length) {
+      const postUrl = new URL(await firstPost.getAttribute('href'), server.url);
+      await firstPost.tap();
+      await page.waitForURL(postUrl.href);
+      await page.locator('article').waitFor();
+    } else {
+      assert.equal(await page.getByText('Nothing here yet.', { exact: true }).isVisible(), true);
+    }
 
     await visit(page, `/?lang=${lang}`);
     const previousTheme = await page.locator('html').getAttribute('data-theme');
@@ -150,10 +155,8 @@ async function assertTouchFlows(context, lang) {
     await page.waitForFunction(() => globalThis.__copiedText.length > 100 && !globalThis.__copiedText.startsWith('@'));
     assert.equal(await toolbar.getAttribute('open'), null, 'Copy-all menu stays open after a touch selection');
 
-    const index = await (await context.request.get(server.url + '/search-index.json')).json();
-    const postItems = index.items.filter((item) => item.lang === lang
-      && item.url.startsWith('/posts/') && !item.url.includes('/series/') && item.date);
-    const article = postItems.find((item) => /[a-z]{4}/i.test(item.title)) ?? postItems[0];
+    const article = postItems.find((item) => /[a-z]{4}/i.test(item.title)) ?? postItems[0]
+      ?? index.items.find((item) => item.lang === lang && item.url.startsWith('/gallery/'));
     const query = article.title.match(/[a-z]{4,}/i)?.[0] ?? article.title;
     for (const fallback of [false, true]) {
       if (fallback) await page.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
@@ -173,7 +176,7 @@ async function assertTouchFlows(context, lang) {
       const href = new URL(await result.getAttribute('href'), server.url);
       await result.tap();
       await page.waitForURL(href.href);
-      await page.locator('article').waitFor();
+      await page.locator(postItems.length ? 'article' : 'main').waitFor();
     }
 
     await visit(page, `/gallery/?lang=${lang}`);
@@ -200,11 +203,13 @@ async function assertTouchFlows(context, lang) {
 }
 
 async function assertMouseFeedback(browser) {
+  const article = index.items.find((item) => item.date && item.url.startsWith('/posts/'));
+  if (!article) return;
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   try {
     await page.route('**/*', (route) =>
       new URL(route.request().url()).origin === server.url ? route.continue() : route.abort());
-    await visit(page, '/posts/');
+    await visit(page, `/posts/?lang=${article.lang}`);
     const link = page.locator('[data-post-row] a').first();
     await link.hover();
     assert.deepEqual(await link.evaluate((element) => ({
