@@ -33,6 +33,7 @@
     "check:mobile-fixes": "node scripts/verify-mobile-fixes.mjs",
     "check:mobile-pages": "node scripts/check-mobile-pages.mjs",
     "check:security": "node scripts/check-public-http.mjs",
+    "check:github-og": "node scripts/check-github-og.mjs",
     "check:og": "node scripts/check-og-layout.mjs",
     "sync-bibtex": "node scripts/sync-bibtex.mjs"
   },

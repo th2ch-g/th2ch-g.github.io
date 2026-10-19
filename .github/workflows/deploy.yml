@@ -16,6 +16,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -29,6 +32,16 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
 
+      - name: Cache GitHub card images and metadata
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: |
+            public/github-og
+            node_modules/.cache/github-card
+          key: ${{ runner.os }}-github-cards-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ runner.os }}-github-cards-v1-
+
       - name: Type check
         run: npm run check
         env:
@@ -36,6 +49,9 @@ jobs:
 
       - name: Security regression checks
         run: npm run check:security
+
+      - name: GitHub card recovery checks
+        run: npm run check:github-og
 
       - name: Build
         run: npm run build

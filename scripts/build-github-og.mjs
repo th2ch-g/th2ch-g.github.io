@@ -14,8 +14,11 @@
 // Wired into npm `build-assets` (predev / prebuild / prestart) alongside
 // build-icon / build-fonts. The output dir is gitignored.
 import {
+  copyFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
@@ -23,8 +26,11 @@ import {
   utimesSync,
   writeFileSync,
 } from 'node:fs';
+import { execFile } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { REPO_URL, ogFilename, ogRemoteUrl } from '../src/plugins/lib/github-og.mjs';
 import { readResponseBuffer } from '../src/plugins/lib/response-body.mjs';
 
@@ -32,13 +38,12 @@ const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const OUT_DIR = resolve(ROOT, 'public/github-og');
 const CONTENT_DIR = resolve(ROOT, 'src/content');
 // Refresh weekly so the baked card's star count / description doesn't
-// drift too far. CI starts from an empty (gitignored) dir, so deploys
-// always fetch fresh.
+// drift too far. CI preserves this directory between deployments.
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const RETRY_BACKOFF_MS = 60 * 60 * 1000;
 const MAX_BYTES = 5 * 1024 * 1024;
-const FETCH_CONCURRENCY = 4;
 const UA = 'Mozilla/5.0 (compatible; astro-build/1.0)';
+const run = promisify(execFile);
 
 // Recursively collect .md files under src/content.
 function walkMd(dir) {
@@ -81,6 +86,64 @@ function collectRepos() {
   return repos;
 }
 
+async function restorePublishedImages(repos) {
+  const repository = process.env.GITHUB_REPOSITORY;
+  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+  if (process.env.GITHUB_ACTIONS !== 'true' || !repository || !token) return;
+  if ([...repos.keys()].some((file) => existsSync(join(OUT_DIR, file)))) return;
+
+  // Recover a cold or evicted cache from successful deployments. Extract only
+  // the requested images, and keep the newest available copy of each file.
+  const workDir = mkdtempSync(join(tmpdir(), 'github-card-restore-'));
+  const options = { env: { ...process.env, GH_TOKEN: token }, timeout: 120_000 };
+  try {
+    const { stdout } = await run('gh', [
+      'run', 'list', '--repo', repository, '--workflow', 'deploy.yml',
+      '--branch', process.env.GITHUB_REF_NAME || 'main', '--status', 'success',
+      '--limit', '3', '--json', 'databaseId',
+    ], options);
+    for (const { databaseId } of JSON.parse(stdout)) {
+      if (!Number.isSafeInteger(databaseId)) continue;
+      const artifactDir = join(workDir, String(databaseId));
+      try {
+        await run('gh', [
+          'run', 'download', String(databaseId), '--repo', repository,
+          '--name', 'github-pages', '--dir', artifactDir,
+        ], options);
+        const archive = join(artifactDir, 'artifact.tar');
+        const { stdout: listing } = await run('tar', ['-tf', archive]);
+        const available = new Set(listing.split('\n'));
+        const files = [...repos.keys()].filter((file) => !existsSync(join(OUT_DIR, file)));
+        const members = files.map((file) => [`./github-og/${file}`, `github-og/${file}`]
+          .find((member) => available.has(member))).filter(Boolean);
+        if (!members.length) continue;
+        const extracted = join(artifactDir, 'images');
+        mkdirSync(extracted, { recursive: true });
+        await run('tar', ['-xf', archive, '-C', extracted, '--', ...members]);
+        let restored = 0;
+        for (const file of files) {
+          const source = join(extracted, 'github-og', file);
+          if (!existsSync(source)) continue;
+          const stat = lstatSync(source);
+          if (!stat.isFile() || stat.size === 0 || stat.size > MAX_BYTES) continue;
+          const destination = join(OUT_DIR, file);
+          copyFileSync(source, destination);
+          utimesSync(destination, stat.atime, stat.mtime);
+          restored++;
+        }
+        console.log(`[build-github-og] restored ${restored} images from successful Pages build ${databaseId}`);
+        if ([...repos.keys()].every((file) => existsSync(join(OUT_DIR, file)))) break;
+      } catch (err) {
+        console.warn(`[build-github-og] could not restore Pages build ${databaseId}: ${err.message}`);
+      }
+    }
+  } catch (err) {
+    console.warn(`[build-github-og] published image recovery unavailable: ${err.message}`);
+  } finally {
+    rmSync(workDir, { recursive: true, force: true });
+  }
+}
+
 async function download(url) {
   // Retry transient network / cold-generation errors with a short backoff,
   // matching og-image.ts:downloadRemoteHero.
@@ -92,7 +155,10 @@ async function download(url) {
         signal: AbortSignal.timeout(30_000),
         headers: { 'user-agent': UA, accept: 'image/*,*/*;q=0.5' },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        await res.body?.cancel();
+        throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
+      }
       const type = res.headers.get('content-type') ?? '';
       if (!type.startsWith('image/')) throw new Error(`unexpected content-type ${type || '(none)'}`);
       const buf = await readResponseBuffer(res, MAX_BYTES);
@@ -100,23 +166,11 @@ async function download(url) {
       return buf;
     } catch (err) {
       lastErr = err;
+      if (err.status === 429) throw err;
       if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
     }
   }
   throw lastErr;
-}
-
-// Bound parallel downloads so cold builds overlap network latency without
-// overwhelming GitHub's image endpoint.
-async function mapLimit(items, limit, fn) {
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (cursor < items.length) {
-      const index = cursor++;
-      await fn(items[index]);
-    }
-  });
-  await Promise.all(workers);
 }
 
 const repos = collectRepos();
@@ -126,20 +180,24 @@ if (repos.size === 0) {
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
+await restorePublishedImages(repos);
 let fetched = 0;
 let skipped = 0;
-await mapLimit([...repos], FETCH_CONCURRENCY, async ([file, { owner, repo }]) => {
+let rateLimited = false;
+for (const [file, { owner, repo }] of repos) {
   const out = join(OUT_DIR, file);
   if (existsSync(out) && Date.now() - statSync(out).mtimeMs < TTL_MS) {
     skipped++;
-    return;
+    continue;
   }
   try {
+    if (rateLimited) throw new Error('GitHub preview requests paused after HTTP 429');
     const buf = await download(ogRemoteUrl(owner, repo));
     writeFileSync(out, buf);
     fetched++;
     console.log(`[build-github-og] wrote ${file} (${(buf.length / 1024).toFixed(0)} KB)`);
   } catch (err) {
+    if (err.status === 429) rateLimited = true;
     // Keep a text-only card when no local image could be downloaded.
     if (existsSync(out)) {
       // Keep a stale-but-valid local image and avoid retrying a failing
@@ -150,7 +208,7 @@ await mapLimit([...repos], FETCH_CONCURRENCY, async ([file, { owner, repo }]) =>
     }
     console.warn(`[build-github-og] skipped ${owner}/${repo}: ${err.message}`);
   }
-});
+}
 // `astro check` can render and cache Markdown before prebuild downloads
 // these images. Re-render it after asset preparation so image paths reflect
 // the files that will actually be deployed, including warm local builds.
