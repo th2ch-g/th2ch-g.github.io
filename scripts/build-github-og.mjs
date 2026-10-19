@@ -33,6 +33,8 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { REPO_URL, ogFilename, ogRemoteUrl } from '../src/plugins/lib/github-og.mjs';
 import { readResponseBuffer } from '../src/plugins/lib/response-body.mjs';
+import { fetchPublicHttp } from '../src/plugins/lib/public-http.mjs';
+import { siteUrl } from '../src/lib/profile-yaml.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const OUT_DIR = resolve(ROOT, 'public/github-og');
@@ -86,7 +88,7 @@ function collectRepos() {
   return repos;
 }
 
-async function restorePublishedImages(repos) {
+async function restoreBuildImages(repos) {
   const repository = process.env.GITHUB_REPOSITORY;
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (process.env.GITHUB_ACTIONS !== 'true' || !repository || !token) return;
@@ -144,6 +146,42 @@ async function restorePublishedImages(repos) {
   }
 }
 
+async function restoreDeployedImages(repos) {
+  if (process.env.GITHUB_ACTIONS !== 'true') return;
+  const files = [...repos.keys()].filter((file) => !existsSync(join(OUT_DIR, file)));
+  if (!files.length) return;
+  let restored = 0;
+  try {
+    const site = await siteUrl();
+    for (const file of files) {
+      try {
+        const response = await fetchPublicHttp(new URL(`/github-og/${file}`, site).href, {
+          signal: AbortSignal.timeout(15_000),
+          headers: { 'user-agent': UA, accept: 'image/*' },
+        });
+        if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) {
+          await response.body?.cancel();
+          if (response.status === 429) break;
+          continue;
+        }
+        const image = await readResponseBuffer(response, MAX_BYTES);
+        if (!image.length) continue;
+        const destination = join(OUT_DIR, file);
+        writeFileSync(destination, image);
+        const modified = Date.parse(response.headers.get('last-modified') ?? '');
+        const time = new Date(Number.isFinite(modified) ? Math.min(modified, Date.now()) : 0);
+        utimesSync(destination, time, time);
+        restored++;
+      } catch (err) {
+        console.warn(`[build-github-og] could not recover deployed ${file}: ${err.message}`);
+      }
+    }
+  } catch (err) {
+    console.warn(`[build-github-og] deployed image recovery unavailable: ${err.message}`);
+  }
+  console.log(`[build-github-og] recovered ${restored} images from the deployed site`);
+}
+
 async function download(url) {
   // Retry transient network / cold-generation errors with a short backoff,
   // matching og-image.ts:downloadRemoteHero.
@@ -180,7 +218,8 @@ if (repos.size === 0) {
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
-await restorePublishedImages(repos);
+await restoreBuildImages(repos);
+await restoreDeployedImages(repos);
 let fetched = 0;
 let skipped = 0;
 let rateLimited = false;

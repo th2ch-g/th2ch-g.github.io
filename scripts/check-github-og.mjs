@@ -14,14 +14,17 @@ let sequence = 0;
 
 function fixture(repos, statuses = [200]) {
   const dir = join(workDir, String(++sequence));
-  for (const path of ['scripts', 'src/plugins/lib', 'src/content', 'public/github-og', 'bin', 'archives']) {
+  for (const path of ['scripts', 'src/plugins/lib', 'src/lib', 'src/content', 'public/github-og', 'bin', 'archives']) {
     mkdirSync(join(dir, path), { recursive: true });
   }
   for (const path of [
     'scripts/build-github-og.mjs',
     'src/plugins/lib/github-og.mjs',
     'src/plugins/lib/response-body.mjs',
+    'src/lib/profile-yaml.mjs',
   ]) copyFileSync(join(root, path), join(dir, path));
+  writeFileSync(join(dir, 'src/plugins/lib/public-http.mjs'), 'export const fetchPublicHttp = (...args) => fetch(...args);\n');
+  writeFileSync(join(dir, 'src/content/profile.yaml'), 'site: https://portfolio.example\n');
   writeFileSync(join(dir, 'src/content/post.md'), repos.map((repo) => `https://github.com/fixture/${repo}`).join('\n\n'));
   const requests = join(dir, 'requests.log');
   const commands = join(dir, 'commands.log');
@@ -33,6 +36,17 @@ const statuses = ${JSON.stringify(statuses)};
 let count = 0;
 globalThis.fetch = async (url) => {
   appendFileSync(${JSON.stringify(requests)}, url + '\\n');
+  if (new URL(url).hostname === 'portfolio.example') {
+    const published = JSON.parse(process.env.CHECK_OG_PUBLISHED || '{}');
+    const image = published[new URL(url).pathname.split('/').at(-1)];
+    return new Response(image || 'not found', {
+      status: image ? 200 : 404,
+      headers: {
+        'content-type': image ? 'image/png' : 'text/plain',
+        'last-modified': ${JSON.stringify(new Date(now - 3600000).toUTCString())},
+      },
+    });
+  }
   const status = statuses[Math.min(count++, statuses.length - 1)];
   return new Response(status === 200 ? 'downloaded-image' : 'unavailable', {
     status, headers: { 'content-type': status === 200 ? 'image/png' : 'text/plain' },
@@ -47,6 +61,7 @@ appendFileSync(${JSON.stringify(commands)}, JSON.stringify(args) + '\\n');
 if (process.env.CHECK_OG_GH_FAIL === 'true') process.exit(1);
 if (args[1] === 'list') console.log(JSON.stringify([{ databaseId: 2 }, { databaseId: 1 }]));
 else if (args[1] === 'download') {
+  if (process.env.CHECK_OG_GH_EXPIRED === 'true') process.exit(1);
   const destination = args[args.indexOf('--dir') + 1];
   mkdirSync(destination, { recursive: true });
   copyFileSync(join(${JSON.stringify(join(dir, 'archives'))}, args[2] + '.tar'), join(destination, 'artifact.tar'));
@@ -129,6 +144,25 @@ try {
   unavailable.run(true, { CHECK_OG_GH_FAIL: 'true' });
   assert.equal(readFileSync(unavailable.image('alpha'), 'utf8'), 'downloaded-image',
     'Unavailable deployment artifacts prevented a fresh preview download');
+
+  const expired = fixture(['alpha', 'beta'], [429]);
+  expired.run(true, {
+    CHECK_OG_GH_EXPIRED: 'true',
+    CHECK_OG_PUBLISHED: JSON.stringify({ 'fixture__alpha.png': 'published-alpha', 'fixture__beta.png': 'published-beta' }),
+  });
+  assert.equal(readFileSync(expired.image('alpha'), 'utf8'), 'published-alpha');
+  assert.equal(readFileSync(expired.image('beta'), 'utf8'), 'published-beta');
+  assert.equal(expired.requests().length, 2);
+  assert.ok(expired.requests().every((url) => new URL(url).hostname === 'portfolio.example'),
+    'Expired CI artifacts triggered upstream requests despite available deployed previews');
+
+  const partial = fixture(['alpha', 'beta'], [429]);
+  partial.write('alpha', 'cached-alpha');
+  partial.run(true, { CHECK_OG_PUBLISHED: JSON.stringify({ 'fixture__beta.png': 'published-beta' }) });
+  assert.equal(readFileSync(partial.image('alpha'), 'utf8'), 'cached-alpha');
+  assert.equal(readFileSync(partial.image('beta'), 'utf8'), 'published-beta');
+  assert.deepEqual(partial.commands(), [], 'A partial image cache unnecessarily downloaded build artifacts');
+  assert.equal(partial.requests().length, 1);
 
   const transient = fixture(['alpha'], [503, 200]);
   transient.run();
