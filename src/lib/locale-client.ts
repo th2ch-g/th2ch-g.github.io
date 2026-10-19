@@ -29,17 +29,8 @@ export function setupLocaleLinks(): void {
   });
   const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href;
   if (canonical) {
-    document.querySelectorAll<HTMLElement>('[data-share-base]').forEach((share) => {
-      const original = share.dataset.shareBase!;
-      share.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((link) => {
-        const url = new URL(link.href);
-        for (const [key, value] of url.searchParams) {
-          if (value.includes(original)) url.searchParams.set(key, value.replace(original, canonical));
-        }
-        link.href = url.href;
-      });
-      const copy = share.querySelector<HTMLElement>('[data-share-url]');
-      if (copy) copy.dataset.shareUrl = canonical;
+    document.querySelectorAll<HTMLElement>('[data-share-url]').forEach((copy) => {
+      copy.dataset.shareUrl = canonical;
     });
   }
 }

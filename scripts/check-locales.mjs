@@ -176,7 +176,7 @@ try {
       const shared = new URL(await page.locator('[data-share-url]').getAttribute('data-share-url'));
       assert.equal(shared.searchParams.get('lang'), post.lang);
       assert.equal(shared.searchParams.has('tag'), false);
-      assert.equal(new URL(await page.locator('.share-btn--x').getAttribute('href')).searchParams.get('url'), shared.href);
+      assert.equal(shared.href, await page.locator('link[rel="canonical"]').getAttribute('href'));
       assert.deepEqual(errors, []);
       await page.close();
 

@@ -55,7 +55,7 @@ const backlinks = await getBacklinks(post, lang);
       <div class="prose"><Content /></div>
       <Backlinks lang={lang} citers={backlinks} />
       <Giscus lang={lang} />
-      <ShareButtons lang={lang} title={post.data.title} />
+      <ShareButtons lang={lang} />
       <PostNav prev={prev} next={next} lang={lang} />
       <hr />
       <p class="muted license">
