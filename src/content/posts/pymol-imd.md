@@ -26,10 +26,39 @@ https://github.com/th2ch-g/pymol_imd
 
 スケールが、AAの場合は普通にff14SB[[6](#ref6)], GAFF2[[7](#ref7)], TIP3P[[8](#ref8)]またはGBn2[[9](#ref9)]でMDをし、CGの場合はMartini3[[10](#ref10)]をかませてからMDをします、ML/MMの場合は大村くんのML/MM-Toolkit[[11](#ref11)]を参考にしてUMA[[12](#ref12)]などのMLIPを使ってOniom[[13](#ref13)]方式で計算してMDをします。
 
+```bash
+# install
+git clone https://github.com/th2ch-g/pymol_imd.git
+cd pymol_imd
+pixi install
+
+# All-atom MM
+pixi run pymol_imd local input.pdb --level aa --minimize
+
+# Coarse-grained
+pixi run pymol_imd local input.pdb --level cg --minimize
+
+# ML/MM
+pixi run pymol_imd local input.pdb --level mlmm --minimize \
+    --ml-selection "resi 1" --ml-charge 0 --ml-mult 1
+```
+
 AAとML/MMの基本的な機能は人間が実装していたのですが、AI codingの登場からはClaudeCodeやCodexに実装してもらい、ついでにCGやcuemol対応、バグ取りや高速化もしてもらいました。
 また最近はcomputer-useによってマウス操作も行えるため「computer-useでデバッグしといて」とだけ伝えて検証もしてもらいました。
 
 個人用ノートPC上で動かす想定でしたがML/MMがかなり遅いため、もし強強なGPUサーバーがあればMD計算はサーバー側で、VisualizeはノートPCで、ということも可能になっています。
+
+```bash
+# Server
+pixi run pymol_imd serve input.pdb --level aa --minimize \
+    --host 0.0.0.0 --port 8888
+
+# Client: copy the server-prepared structure
+scp xxx@yyy:path/to/prepared.pdb ./prepared.pdb
+
+# Client: launch PyMOL and connect
+pixi run pymol_imd connect prepared.pdb --host yyy --port 8888
+```
 
 # 欠点
 - 観測に応じて力を変えるIMDでは、通常のJarzynski等式[[14](#ref14)]をそのまま使えず、結局検証止まり
