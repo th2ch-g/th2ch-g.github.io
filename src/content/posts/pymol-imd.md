@@ -1,6 +1,6 @@
 ---
 lang: [ja]
-title: "PyMOL-IMD: PyMOL上でグリグリ触ってMDするInteractive Molecular Dynamicsプラグイン"
+title: "PyMOL-IMD: PyMOL上でグリグリ触ってMDするプラグイン"
 description: 没研究アイデアその２
 pubDate: 2026-10-18
 ---

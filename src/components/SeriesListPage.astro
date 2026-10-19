@@ -16,6 +16,8 @@ interface Props {
 const { lang, name, posts } = Astro.props;
 const heading = `${tUi('series.heading')}: ${name}`;
 const displayPosts = sortByDateDesc(posts, 'pubDate');
+const enPosts = displayPosts.filter((post) => post.data.lang.includes('en'));
+const jaPosts = displayPosts.filter((post) => post.data.lang.includes('ja'));
 ---
 <Base lang={lang} title={heading}>
   <Breadcrumbs
@@ -29,13 +31,13 @@ const displayPosts = sortByDateDesc(posts, 'pubDate');
   <h1 class="count-heading">
     <span class="muted">{tUi('series.heading')}:</span> {name}
     <LocaleContent inline>
-      <span slot="en" class="count-badge">{posts.filter((post) => post.data.lang.includes('en')).length}</span>
-      <span slot="ja" class="count-badge">{posts.filter((post) => post.data.lang.includes('ja')).length}</span>
+      <span slot="en" class="count-badge">{enPosts.length}</span>
+      <span slot="ja" class="count-badge">{jaPosts.length}</span>
     </LocaleContent>
   </h1>
   <LocaleContent>
-    <PostArchiveList slot="en" posts={displayPosts.filter((post) => post.data.lang.includes('en'))} lang="en" />
-    <PostArchiveList slot="ja" posts={displayPosts.filter((post) => post.data.lang.includes('ja'))} lang="ja" />
+    <PostArchiveList slot="en" posts={enPosts} lang="en" alternateLang={jaPosts.length ? 'ja' : undefined} />
+    <PostArchiveList slot="ja" posts={jaPosts} lang="ja" alternateLang={enPosts.length ? 'en' : undefined} />
   </LocaleContent>
 </Base>
 

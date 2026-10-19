@@ -1,5 +1,6 @@
 import type { APIContext, APIRoute } from 'astro';
 import { addOgChrome, renderFallbackOgCard, type OgChromeOptions } from '@/lib/og-image';
+import { OgLayoutError } from '@/lib/og-layout.mjs';
 
 // astro-og-canvas's default `pathToSlug` strips everything after the last
 // dot as a file extension, collapsing a slug like `v2.0` or `node.js`
@@ -18,7 +19,8 @@ export const ogPngSlug = (key: string): string => `${key}.png`;
 //   Tier 2 — base render (canvaskit) throws: ship `renderFallbackOgCard()`,
 //     a gradient card built without canvaskit or Jimp.read.
 //
-// Never throws, never returns empty bytes. `og` is typed structurally so we
+// Layout errors abort the build; rendering failures retain the fallback.
+// `og` is typed structurally so we
 // don't depend on astro-og-canvas's exported route shape.
 export function makeChromedOgGet(og: { GET: APIRoute }, chrome: OgChromeOptions): APIRoute {
   return async (ctx: APIContext) => {
@@ -27,12 +29,16 @@ export function makeChromedOgGet(og: { GET: APIRoute }, chrome: OgChromeOptions)
       const res = await og.GET(ctx);
       base = Buffer.from(await res.arrayBuffer());
     } catch (err) {
+      if (err instanceof OgLayoutError) throw err;
       console.warn('[og] base render failed; using fallback card:', err);
       return new Response(new Blob([await renderFallbackOgCard()], { type: 'image/png' }));
     }
     try {
       return new Response(new Blob([await addOgChrome(base, chrome)], { type: 'image/png' }));
     } catch (err) {
+      if (err instanceof OgLayoutError) {
+        throw new Error(`${ctx.url.pathname}: ${err.message}`, { cause: err });
+      }
       console.warn('[og] chrome decoration failed; serving undecorated card:', err);
       // `new Uint8Array(base)` copies into a concrete ArrayBuffer so the raw
       // canvaskit Buffer is accepted as a BlobPart on Node 22+ (the decorated

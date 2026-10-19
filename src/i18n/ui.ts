@@ -34,6 +34,8 @@ export const ui = {
     '404.home.en': 'English home',
     'comments.title': 'Comments',
     'list.empty': 'Nothing here yet.',
+    'posts.seeJapanese': 'See Japanese pages',
+    'posts.seeEnglish': 'See English pages',
     'posts.published': 'Published',
     'posts.updated': 'Updated',
     'posts.license.text': 'This article, excluding AI-generated images, is published under the CC BY 4.0 license.',

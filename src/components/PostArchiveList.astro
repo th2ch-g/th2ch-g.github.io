@@ -7,6 +7,7 @@ import { formatMonthDay, localeSlug } from '@/lib/content';
 interface Props {
   posts: CollectionEntry<'posts'>[];
   lang: Lang;
+  alternateLang?: Lang;
   yearHeadingLevel?: 'h2' | 'h3';
   size?: 'default' | 'large';
   largeTitles?: boolean;
@@ -15,6 +16,7 @@ interface Props {
 const {
   posts,
   lang,
+  alternateLang,
   yearHeadingLevel = 'h2',
   size = 'default',
   largeTitles = false,
@@ -30,7 +32,14 @@ posts.forEach((post) => {
   byYear.set(year, items);
 });
 ---
-{posts.length === 0 ? <p class="muted">{tUi('list.empty')}</p> : <div
+{posts.length === 0 ? <>
+  <p class="muted">{tUi('list.empty')}</p>
+  {alternateLang && <p>
+    <a href={getRelativeLocaleUrl(alternateLang, Astro.url.pathname)} hreflang={alternateLang} data-post-alternative>
+      {tUi(alternateLang === 'ja' ? 'posts.seeJapanese' : 'posts.seeEnglish')}
+    </a>
+  </p>}
+</> : <div
   class:list={[
     'post-archive-list',
     {

@@ -10,11 +10,13 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 
 const posts = sortByDateDesc(await getPosts(), 'pubDate');
+const enPosts = posts.filter((post) => post.data.lang.includes('en'));
+const jaPosts = posts.filter((post) => post.data.lang.includes('ja'));
 ---
 <Base lang={lang} title={tUi('nav.posts')} image={getLocaleFileUrl(lang, '/og/posts.png')}>
   <h1 class="sr-only">{tUi('nav.posts')}</h1>
   <LocaleContent>
-    <PostArchiveList slot="en" posts={posts.filter((post) => post.data.lang.includes('en'))} lang="en" largeTitles />
-    <PostArchiveList slot="ja" posts={posts.filter((post) => post.data.lang.includes('ja'))} lang="ja" largeTitles />
+    <PostArchiveList slot="en" posts={enPosts} lang="en" alternateLang={jaPosts.length ? 'ja' : undefined} largeTitles />
+    <PostArchiveList slot="ja" posts={jaPosts} lang="ja" alternateLang={enPosts.length ? 'en' : undefined} largeTitles />
   </LocaleContent>
 </Base>

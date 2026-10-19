@@ -1,6 +1,7 @@
 import { generateOpenGraphImage } from 'astro-og-canvas';
 import { getProfileMeta } from '@/lib/content';
 import { addOgChrome, renderFallbackOgCard } from './og-image';
+import { OgLayoutError } from './og-layout.mjs';
 import type { Lang } from '@/i18n/ui';
 
 // Shared visual config for OG card generation. Section and post cards in
@@ -95,7 +96,7 @@ export function stripForOg(s: string): string {
 
 // One-shot helper for the "section" OG cards (Home / Works / Gallery /
 // CV / Posts ...). They all share the same composition — title only,
-// section label bottom-left, profile credit bottom-right, gradient
+// section label and profile credit bottom-left, gradient
 // border — so the actual route file is a one-liner that just picks the
 // label and locale.
 export interface SectionOgInput {
@@ -124,6 +125,7 @@ export async function renderSectionOg(input: SectionOgInput): Promise<Response> 
       fonts: OG_FONTS,
     })) as Buffer;
   } catch (err) {
+    if (err instanceof OgLayoutError) throw err;
     // Base render (canvaskit: font load / surface / encode) failed. Degrade
     // to the engine-independent fallback card instead of aborting the build.
     console.warn('[og] section base render failed; using fallback card:', err);
@@ -141,6 +143,7 @@ export async function renderSectionOg(input: SectionOgInput): Promise<Response> 
     });
     return new Response(new Blob([decorated], { type: 'image/png' }));
   } catch (err) {
+    if (err instanceof OgLayoutError) throw err;
     // Base card already rendered; only the chrome pass (jimp composites /
     // credit text) failed. Ship the undecorated-but-valid card.
     console.warn('[og] section chrome failed; serving undecorated card:', err);

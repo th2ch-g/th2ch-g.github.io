@@ -1,6 +1,7 @@
 import { promises as fsp } from 'node:fs';
 import { Jimp } from 'jimp';
 import CanvasKitInit from 'canvaskit-wasm';
+import { assertOgLayout, OgLayoutError, paintedBounds } from './og-layout.mjs';
 import {
   OG_BG_GRADIENT,
   OG_FONTS,
@@ -20,7 +21,7 @@ import {
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 
-// Post-process step: paint the bottom-right credit (profile icon + name,
+// Post-process step: paint the bottom-left credit (profile icon + name,
 // Zenn-style) and then stroke a gradient outline around the perimeter.
 // astro-og-canvas exposes only a single-side `border` option and no way
 // to inject extra elements at custom positions, so both pieces of chrome
@@ -104,20 +105,33 @@ export async function addOgChrome(
   const vCenter = (h: number) =>
     rowTop + Math.round((rowHeight - h) / 2) - CREDIT_TEXT_OPTICAL_NUDGE;
 
+  const layers: { name: string; image: typeof img; x: number; y: number }[] = [];
   let xCursor = rowLeft;
   if (icon) {
-    img.composite(icon, xCursor, rowTop);
+    layers.push({ name: 'credit icon', image: icon, x: xCursor, y: rowTop });
     xCursor += CREDIT_ICON_SIZE + CREDIT_GAP;
   }
   if (labelImg) {
-    img.composite(labelImg, xCursor, vCenter(labelImg.bitmap.height));
+    layers.push({ name: 'section label', image: labelImg, x: xCursor, y: vCenter(labelImg.bitmap.height) });
     xCursor += labelImg.bitmap.width + PIPE_GAP;
   }
   if (pipeImg) {
-    img.composite(pipeImg, xCursor, vCenter(pipeImg.bitmap.height));
+    layers.push({ name: 'credit separator', image: pipeImg, x: xCursor, y: vCenter(pipeImg.bitmap.height) });
     xCursor += pipeImg.bitmap.width + PIPE_GAP;
   }
-  img.composite(nameImg, xCursor, vCenter(nameImg.bitmap.height));
+  layers.push({ name: 'profile name', image: nameImg, x: xCursor, y: vCenter(nameImg.bitmap.height) });
+
+  assertOgLayout([
+    { name: 'title/description', bounds: paintedBounds(img.bitmap, 'gradient') },
+    ...layers.map(({ name, image, x, y }) => {
+      const bounds = paintedBounds(image.bitmap);
+      return { name, bounds: bounds && {
+        left: bounds.left + x, top: bounds.top + y,
+        right: bounds.right + x, bottom: bounds.bottom + y,
+      } };
+    }),
+  ], { width, height, inset: OG_BORDER_WIDTH + 16 });
+  for (const layer of layers) img.composite(layer.image, layer.x, layer.y);
 
   // --- 2) Gradient border: rectangular outer, rounded inner ---
   // Fills every pixel that's outside the inner rounded rect (inset by
@@ -264,11 +278,14 @@ async function renderText(
   );
   measureBuilder.addText(text);
   const measurePara = measureBuilder.build();
-  measurePara.layout(4096);
+  const layoutWidth = 4096;
+  measurePara.layout(layoutWidth);
   const textWidth = Math.max(1, Math.ceil(measurePara.getLongestLine()));
   const textHeight = Math.max(1, Math.ceil(measurePara.getHeight()));
+  const lines = measurePara.getLineMetrics().length;
   measurePara.delete();
   measureBuilder.delete();
+  if (lines > 1) throw new OgLayoutError('Credit text must fit on a single line.');
 
   // Second pass: render into a tight canvas. A few pixels of padding
   // protects against descenders / Italic-style overhang.
@@ -284,7 +301,7 @@ async function renderText(
   );
   renderBuilder.addText(text);
   const para = renderBuilder.build();
-  para.layout(textWidth);
+  para.layout(layoutWidth);
   canvas.drawParagraph(para, PAD, PAD);
 
   const image = surface.makeImageSnapshot();
@@ -301,8 +318,8 @@ async function renderText(
 // `Jimp.read`, so it survives every failure mode that breaks the real
 // cards (FontMgr.FromData / MakeSurface / encodeToBytes in renderText, and
 // the icon/name `Jimp.read` decode steps in addOgChrome). The OG
-// route handlers fall back to this instead of aborting `astro build` —
-// extending the CV-PDF "fail soft" guarantee to image endpoints. It is
+// route handlers use this for render failures; layout errors still abort
+// the build. It is
 // identity-free (no name / icon / text) so it stays forkable and needs no
 // profile.yaml read. Computed once and cached for the whole build.
 let _fallbackCard: Uint8Array<ArrayBuffer> | undefined;

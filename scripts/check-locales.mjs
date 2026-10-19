@@ -109,6 +109,19 @@ try {
           `Post archive ignores declared languages (${lang})`);
         if (!expectedPosts.length) {
           assert.equal(await page.getByText('Nothing here yet.', { exact: true }).isVisible(), true);
+          const otherLang = lang === 'en' ? 'ja' : 'en';
+          const otherPosts = sourcePosts.filter((post) => post.lang.includes(otherLang));
+          const alternative = page.locator('[data-post-alternative]');
+          assert.equal(await alternative.count(), otherPosts.length ? 1 : 0);
+          if (otherPosts.length) {
+            assert.equal(await alternative.innerText(), otherLang === 'ja' ? 'See Japanese pages' : 'See English pages');
+            assert.equal(await alternative.getAttribute('hreflang'), otherLang);
+            await alternative.click();
+            await page.waitForURL((url) => url.pathname.replace(/\/$/, '') === '/posts' && url.searchParams.get('lang') === otherLang);
+            assert.equal(await page.locator('[data-post-row]').count(), otherPosts.length);
+          }
+        } else {
+          assert.equal(await page.locator('[data-post-alternative]').count(), 0);
         }
         await page.goto(`${server.url}/sitemap/?lang=${lang}`, { waitUntil: 'networkidle' });
         const sitemapPaths = await page.locator('main a[href]').evaluateAll((links) =>

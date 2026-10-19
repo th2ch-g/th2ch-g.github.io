@@ -15,6 +15,7 @@ npm run preview      # serve dist/
 npm run check        # astro check (TypeScript on .astro/.ts/.mts)
 npm run check:css    # custom CSS sanity check (scripts/check-css.mjs)
 npm run check:security # reject unsafe link-card URL targets
+npm run check:og     # OG painted bounds, overlap, spacing, and clipping checks
 npm run check:mobile # All built pages: Chromium/Firefox/WebKit touch, 320/393/430/852px, light/dark, mobile axe
 npm run check:interactions # Chromium/Firefox clipboard, search, keyboard, print, and theme checks
 npm run check:consistency # All pages: shared control styles in both themes/locales, mobile/desktop
@@ -73,7 +74,7 @@ Each page's `getStaticPaths` is evaluated independently by Astro and **must be a
 
 `npm run build` then runs `astro build` and `scripts/build-search.mjs` (bilingual Pagefind index with query URLs). Home's CV supports browser printing and copy/BibTeX actions; there is no separate PDF generation step.
 
-OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm. `og-config.ts` uses Mona Sans with 600-weight headings and 400-weight descriptions, matching site typography, with Noto Sans JP and emoji fallbacks. `og-version.ts` gives preview URLs a renderer/font-source hash so social crawlers can fetch updated images.
+OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm. Before compositing, `og-layout.mjs` measures painted pixels and rejects overlap or less than 12px spacing between the title/description and credit layers, as well as content outside the frame's safe area. Layout errors fail the build and are never converted into fallback images. `prebuild` also runs `check:og`. `og-config.ts` uses Mona Sans with 600-weight headings and 400-weight descriptions, matching site typography, with Noto Sans JP and emoji fallbacks. `og-version.ts` gives preview URLs a renderer/font-source hash so social crawlers can fetch updated images.
 
 ### Markdown plumbing
 

@@ -117,6 +117,13 @@ async function assertTouchFlows(context, lang) {
       await page.locator('article').waitFor();
     } else {
       assert.equal(await page.getByText('Nothing here yet.', { exact: true }).isVisible(), true);
+      const otherLang = lang === 'en' ? 'ja' : 'en';
+      const otherPosts = index.items.filter((item) => item.lang === otherLang && item.date && item.url.startsWith('/posts/'));
+      if (otherPosts.length) {
+        await page.locator('[data-post-alternative]').tap();
+        await page.waitForURL((url) => url.pathname.replace(/\/$/, '') === '/posts' && url.searchParams.get('lang') === otherLang);
+        assert.equal(await page.locator('[data-post-row]').count(), otherPosts.length);
+      }
     }
 
     await visit(page, `/?lang=${lang}`);
