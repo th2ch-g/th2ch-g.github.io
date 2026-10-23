@@ -21,18 +21,16 @@ const iconBase = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/icon-`;
 
 // Navigation and all other interface labels are intentionally English in
 // both content locales.
-// Entries use prefix matching so that detail routes like /posts/foo keep the
-// parent section highlighted. `match: 'exact'` stays available for any future
-// entry whose href would otherwise prefix-match unrelated paths (notably `/`,
-// which is why Home is not listed here — the brand link covers it).
+// Prefix matching highlights parent sections on detail routes; Home matches exactly.
 // `external: true` items live off-site (none currently); these open in a new
 // tab and never receive an active state since their href is on a different
 // origin.
 type NavItem =
-  | { href: string; label: string; icon: 'book' | 'image' | 'mail'; match: 'exact' | 'prefix'; external?: false }
-  | { href: string; label: string; icon: 'book' | 'image' | 'mail'; external: true };
+  | { href: string; label: string; icon: 'home' | 'book' | 'image' | 'mail'; match: 'exact' | 'prefix'; external?: false }
+  | { href: string; label: string; icon: 'home' | 'book' | 'image' | 'mail'; external: true };
 
 const items: NavItem[] = [
+  { href: getRelativeLocaleUrl(lang, '/'), label: tUi('nav.home'), icon: 'home', match: 'exact' },
   { href: getRelativeLocaleUrl(lang, '/posts'), label: tUi('nav.posts'), icon: 'book', match: 'prefix' },
   { href: getRelativeLocaleUrl(lang, '/gallery'), label: tUi('nav.photos'), icon: 'image', match: 'prefix' },
   { href: getRelativeLocaleUrl(lang, '/contact'), label: tUi('nav.contact'), icon: 'mail', match: 'prefix' },
@@ -46,9 +44,6 @@ function isActive(href: string, match: 'exact' | 'prefix'): boolean {
   return match === 'exact' ? current === target : current === target || current.startsWith(target);
 }
 
-// The brand is the only Home affordance in the header (there is no "Home" nav
-// item), so it carries the accessible name and the `aria-current` marker that
-// the nav list would otherwise provide for `/`.
 const homeHref = getRelativeLocaleUrl(lang, '/');
 const atHome = current === '/';
 ---

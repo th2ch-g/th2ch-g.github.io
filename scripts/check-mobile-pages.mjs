@@ -104,7 +104,7 @@ async function assertTouchFlows(context, lang) {
   try {
     await visit(page, `/?lang=${lang}`);
     await page.locator('[data-nav-toggle]').tap();
-    await page.locator('.nav-list a').first().tap();
+    await page.locator('.nav-list').getByRole('link', { name: 'Posts', exact: true }).tap();
     await page.waitForURL((url) => url.pathname.replace(/\/$/, '') === '/posts' && url.searchParams.get('lang') === lang);
     const firstPost = page.locator('[data-post-row] a').first();
     const postItems = index.items.filter((item) => item.lang === lang

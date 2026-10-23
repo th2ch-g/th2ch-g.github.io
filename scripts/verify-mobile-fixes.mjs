@@ -356,7 +356,7 @@ try {
   const mobileNavLabels = await mobilePage.locator('.nav-list a').allTextContents();
   assert.deepEqual(
     mobileNavLabels.map((label) => label.trim()),
-    ['Posts', 'Gallery', 'Contact'],
+    ['Home', 'Posts', 'Gallery', 'Contact'],
     'Mobile navigation order does not match the primary site sections',
   );
   assert.equal(await mobilePage.locator('[data-post-row]').count(), 0,
@@ -434,7 +434,7 @@ try {
   const desktopNavLabels = await desktopPage.locator('.nav-list a').allTextContents();
   assert.deepEqual(
     desktopNavLabels.map((label) => label.trim()),
-    ['Posts', 'Gallery', 'Contact'],
+    ['Home', 'Posts', 'Gallery', 'Contact'],
     'Desktop navigation order does not match the primary site sections',
   );
   const desktopLayout = await desktopPage.locator('[data-post-row]').first().evaluate((row) => {
