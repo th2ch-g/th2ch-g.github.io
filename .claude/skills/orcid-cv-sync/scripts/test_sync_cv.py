@@ -273,6 +273,22 @@ process.stdout.write((await processor.render(source)).code);
         self.assertEqual(len(removed), 1)
         self.assertEqual(sync_cv.section_body(updated, "preprints"), "")
 
+    def test_escaped_author_brackets_do_not_become_the_publication_title(self) -> None:
+        title = "Actual publication title for matching"
+        preprint = sync_cv.format_entry(
+            title, None, "10.1234/preprint", "2026",
+            authors=[{"given": "A [label]", "family": "Author"}],
+        ) + "\n"
+        peer = sync_cv.format_entry(
+            title, None, "10.1234/journal", "2026",
+            authors=[{"given": "B [another label]", "family": "Author"}],
+        ) + "\n"
+        document = cv_document(peer, preprint)
+        self.assertEqual(sync_cv.parse_section_entries(document, "peer-reviewed")[0].title, title)
+        updated, removed = sync_cv.prune_published_preprints(document, False)
+        self.assertEqual(len(removed), 1)
+        self.assertEqual(sync_cv.section_body(updated, "preprints"), "")
+
     def test_duplicate_nested_and_reversed_markers_are_rejected(self) -> None:
         for text in (
             "<!-- /cv:section -->\n<!-- cv:section funding -->\n",

@@ -140,7 +140,7 @@ SECTION_END_RE = re.compile(r"^[ \t]*<!--\s*/cv:section\s*-->[ \t]*$", re.MULTIL
 ITEM_START_RE = re.compile(r"^ {0,2}(?:\d+[.)]|[-*+])\s")
 # The paper title is the only Markdown link in an entry — `[authors — TODO]`
 # has no `(` after it, so requiring `](` skips the placeholder.
-LINK_TITLE_RE = re.compile(r"\[((?:\\.|[^\]\\])+)\]\(")
+LINK_TITLE_RE = re.compile(r"(?<!\\)\[((?:\\.|[^\]\\])+)\]\(")
 
 
 def inline_text(value: object) -> str:
