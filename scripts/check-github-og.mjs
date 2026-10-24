@@ -14,7 +14,7 @@ let sequence = 0;
 
 function fixture(repos, statuses = [200]) {
   const dir = join(workDir, String(++sequence));
-  for (const path of ['scripts', 'src/plugins/lib', 'src/lib', 'src/content', 'public/github-og', 'bin', 'archives']) {
+  for (const path of ['scripts', 'src/plugins/lib', 'src/lib', 'src/content', 'public/github-og', 'bin']) {
     mkdirSync(join(dir, path), { recursive: true });
   }
   for (const path of [
@@ -53,19 +53,9 @@ globalThis.fetch = async (url) => {
   });
 };
 `);
-  writeFileSync(join(dir, 'bin/gh'), `#!/usr/bin/env node
-const { appendFileSync, copyFileSync, mkdirSync } = require('node:fs');
-const { join } = require('node:path');
-const args = process.argv.slice(2);
-appendFileSync(${JSON.stringify(commands)}, JSON.stringify(args) + '\\n');
-if (process.env.CHECK_OG_GH_FAIL === 'true') process.exit(1);
-if (args[1] === 'list') console.log(JSON.stringify([{ databaseId: 2 }, { databaseId: 1 }]));
-else if (args[1] === 'download') {
-  if (process.env.CHECK_OG_GH_EXPIRED === 'true') process.exit(1);
-  const destination = args[args.indexOf('--dir') + 1];
-  mkdirSync(destination, { recursive: true });
-  copyFileSync(join(${JSON.stringify(join(dir, 'archives'))}, args[2] + '.tar'), join(destination, 'artifact.tar'));
-} else process.exit(2);
+  for (const name of ['gh', 'tar']) writeFileSync(join(dir, 'bin', name), `#!/usr/bin/env node
+require('node:fs').appendFileSync(${JSON.stringify(commands)}, JSON.stringify(process.argv) + '\\n');
+process.exit(1);
 `, { mode: 0o755 });
   return {
     dir,
@@ -76,19 +66,8 @@ else if (args[1] === 'download') {
       const time = new Date(now - ageMs);
       utimesSync(file, time, time);
     },
-    archive(id, images, ageMs) {
-      const source = join(dir, 'archives', String(id));
-      mkdirSync(join(source, 'github-og'), { recursive: true });
-      for (const [repo, content] of Object.entries(images)) {
-        const file = join(source, 'github-og', `fixture__${repo}.png`);
-        writeFileSync(file, content);
-        const time = new Date(now - ageMs);
-        utimesSync(file, time, time);
-      }
-      execFileSync('tar', ['-cf', join(dir, 'archives', `${id}.tar`), '-C', source, './github-og']);
-    },
     run(ci = false, extraEnv = {}) {
-      return execFileSync(process.execPath, ['--import', join(dir, 'fetch.mjs'), join(dir, 'scripts/build-github-og.mjs')], {
+      const output = execFileSync(process.execPath, ['--import', join(dir, 'fetch.mjs'), join(dir, 'scripts/build-github-og.mjs')], {
         cwd: dir,
         encoding: 'utf8',
         env: {
@@ -101,7 +80,10 @@ else if (args[1] === 'download') {
           ...extraEnv,
         },
         stdio: 'pipe',
+        timeout: 15_000,
       });
+      assert.deepEqual(this.commands(), [], 'Image recovery invoked gh or tar');
+      return output;
     },
     requests() { return readFileSync(requests, 'utf8').trim().split('\n').filter(Boolean); },
     commands() { return readFileSync(commands, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse); },
@@ -129,32 +111,28 @@ try {
     'A stale image was not retained for the retry backoff');
 
   const cold = fixture(['alpha', 'beta']);
-  cold.archive(2, { alpha: 'latest-alpha', unrelated: 'unused' }, 3600000);
-  cold.archive(1, { alpha: 'older-alpha', beta: 'previous-beta' }, 7200000);
-  cold.run(true);
-  assert.equal(readFileSync(cold.image('alpha'), 'utf8'), 'latest-alpha', 'Older artifacts replaced a newer preview');
-  assert.equal(readFileSync(cold.image('beta'), 'utf8'), 'previous-beta', 'A missing preview was not recovered');
-  assert.equal(existsSync(cold.image('unrelated')), false, 'Unused artifact images were restored');
-  assert.deepEqual(cold.requests(), [], 'Recovered fresh images were downloaded again');
-  assert.equal(cold.commands().filter((args) => args[1] === 'download').length, 2);
-  assert.ok(Math.abs(statSync(cold.image('beta')).mtimeMs - (now - 7200000)) < 1000,
+  cold.run(true, {
+    CHECK_OG_PUBLISHED: JSON.stringify({ 'fixture__alpha.png': 'published-alpha', 'fixture__beta.png': 'published-beta' }),
+  });
+  assert.equal(readFileSync(cold.image('alpha'), 'utf8'), 'published-alpha');
+  assert.equal(readFileSync(cold.image('beta'), 'utf8'), 'published-beta');
+  assert.equal(cold.requests().length, 2);
+  assert.ok(cold.requests().every((url) => new URL(url).hostname === 'portfolio.example'));
+  assert.ok(Math.abs(statSync(cold.image('beta')).mtimeMs - (now - 3600000)) < 1000,
     'Restoring an image reset its refresh age');
 
   const unavailable = fixture(['alpha']);
-  unavailable.run(true, { CHECK_OG_GH_FAIL: 'true' });
+  unavailable.run(true);
   assert.equal(readFileSync(unavailable.image('alpha'), 'utf8'), 'downloaded-image',
-    'Unavailable deployment artifacts prevented a fresh preview download');
+    'A missing published image prevented a fresh preview download');
 
-  const expired = fixture(['alpha', 'beta'], [429]);
-  expired.run(true, {
-    CHECK_OG_GH_EXPIRED: 'true',
-    CHECK_OG_PUBLISHED: JSON.stringify({ 'fixture__alpha.png': 'published-alpha', 'fixture__beta.png': 'published-beta' }),
+  const missing = fixture(['alpha', 'beta'], [429]);
+  missing.run(true, {
+    CHECK_OG_PUBLISHED: JSON.stringify({ 'fixture__alpha.png': 'published-alpha' }),
   });
-  assert.equal(readFileSync(expired.image('alpha'), 'utf8'), 'published-alpha');
-  assert.equal(readFileSync(expired.image('beta'), 'utf8'), 'published-beta');
-  assert.equal(expired.requests().length, 2);
-  assert.ok(expired.requests().every((url) => new URL(url).hostname === 'portfolio.example'),
-    'Expired CI artifacts triggered upstream requests despite available deployed previews');
+  assert.equal(readFileSync(missing.image('alpha'), 'utf8'), 'published-alpha');
+  assert.equal(existsSync(missing.image('beta')), false);
+  assert.equal(missing.requests().length, 3);
 
   const partial = fixture(['alpha', 'beta'], [429]);
   partial.write('alpha', 'cached-alpha');

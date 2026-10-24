@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -52,6 +51,15 @@ jobs:
 
       - name: GitHub card recovery checks
         run: npm run check:github-og
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e  # v10.3.2
+        with:
+          version: latest-known
+          enable-cache: false
+
+      - name: Build input regression checks
+        run: npm run check:build-inputs
 
       - name: Build
         run: npm run build

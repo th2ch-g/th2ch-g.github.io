@@ -29,11 +29,12 @@ The user may not say "ORCID" explicitly. A request to refresh publications or fu
    uv run .claude/skills/orcid-cv-sync/scripts/sync_cv.py --orcid "$orcid_id"
    ```
    Run with `uv`; the script uses only the Python 3.9+ standard library.
-4. The script prints a unified diff for both `ja.md` and `en.md`. Show this to the user verbatim. Do not summarize — they need to see the exact lines being added, and the exact preprint lines being removed.
-5. Ask the user to confirm. If they approve, re-run with `--apply` and the same resolved iD:
+4. The script prints a unified diff for both `ja.md` and `en.md`, saves `.cache/orcid-cv-sync/plan.json`, and prints that plan's SHA-256. Show the diff and hash to the user verbatim. Keep the hash from this dry-run with its approval; do not recompute it later from a potentially changed plan. An explicit `--plan` path can be used for separate concurrent proposals.
+5. Ask the user to confirm. If they approve, apply the saved plan with the exact approved hash (`approved_sha256` below):
    ```bash
-   uv run .claude/skills/orcid-cv-sync/scripts/sync_cv.py --orcid "$orcid_id" --apply
+   uv run .claude/skills/orcid-cv-sync/scripts/sync_cv.py --apply --expected-sha256 "$approved_sha256"
    ```
+   Use the same `--plan` path if one was specified. Apply performs no remote requests and uses the saved output bytes. It aborts before writing if the plan or either CV changed. In that case, prepare a new dry-run and have its new diff and hash approved. Data-selection options such as `--orcid` belong only to the dry-run.
 6. After applying, run `npm run check` to confirm the CV content still loads.
 
 ## What the script does
@@ -54,6 +55,7 @@ The user may not say "ORCID" explicitly. A request to refresh publications or fu
 8. Sorts new works by their ORCID publication date in descending order, formats each entry as a numbered list item (using the `1.` marker — CommonMark auto-numbers them, mirroring the conference-presentations sections), and inserts them directly after the matching `<!-- cv:section … -->` marker in both `ja.md` and `en.md` (blank lines right after the marker are skipped so a tight list stays tight). **A missing marker is a hard error** — the script never invents a heading or guesses a location.
 9. Extracts one entry per ORCID funding group, preferring a trimmed `grant_number` external ID as its stable identity and falling back to the ORCID put-code. Each locale keeps an independent known-key set. Existing entries are never rewritten; a visible grant number without a script marker also counts as known so hand-written entries are not duplicated.
 10. Sorts new funding by start date descending and inserts localized Markdown lines into the `funding` marker. A matching ORCID translated title is used when present; unavailable organization, URL, ID, and date components are omitted rather than inferred. Amount and funding type are not emitted because they are absent from the summary response or unsuitable as CV labels.
+   External display fields are serialized as single-line literal Markdown; links accept validated HTTP(S) destinations, and identifiers in internal comments are validated. The script validates section ownership before import and after generating the saved plan.
 11. **Prunes superseded preprints.** Walks the `preprints` section of each file and removes any entry whose peer-reviewed version is listed in *that same file's* `peer-reviewed` section. Two signals, in order of trust:
    - CrossRef `relation["is-preprint-of"]` on the preprint's own DOI. The link is asserted on the preprint side only (a journal article's record carries an empty `relation`), so the lookup always goes through the preprint DOI. The record is shared with the step-7 author fetch, so this costs no extra request for freshly-added entries.
    - Normalized-title equality against the peer-reviewed section, for preprint servers that assert no relation (arXiv often doesn't). Titles shorter than 20 normalized characters are ignored.

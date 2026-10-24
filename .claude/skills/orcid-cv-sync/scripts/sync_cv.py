@@ -31,12 +31,12 @@ the prune runs on the post-insertion content, it also covers the case where
 ORCID hands us the preprint and the journal article in the same batch — the
 preprint is inserted and immediately pruned, so it never reaches the diff.
 
-The script emits a unified diff in dry-run mode (default); pass ``--apply``
-to write.
+The default dry-run saves a plan and prints its SHA-256 with the diff.
+Apply that exact plan with ``--apply --expected-sha256 <approved-hash>``.
 
 Usage:
     uv run scripts/sync_cv.py            # dry-run
-    uv run scripts/sync_cv.py --apply    # write changes
+    uv run scripts/sync_cv.py --apply --expected-sha256 <approved-hash>
     uv run scripts/sync_cv.py --orcid 0000-0000-0000-0000   # override ORCID iD
     uv run scripts/sync_cv.py --no-crossref   # skip CrossRef, use [authors — TODO]
     uv run scripts/sync_cv.py --keep-published-preprints    # disable the prune
@@ -47,10 +47,16 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import hashlib
+import html
 import json
+import os
 import re
+import string
 import sys
+import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import NamedTuple
@@ -73,6 +79,11 @@ FUNDING_MARKER_RE = re.compile(
     re.IGNORECASE,
 )
 FUNDING_KEY_TOKEN_RE = re.compile(r"[^a-z0-9]+")
+CV_PATHS = ("src/content/cv/ja.md", "src/content/cv/en.md")
+DEFAULT_PLAN = ".cache/orcid-cv-sync/plan.json"
+MAX_PLAN_BYTES = 8 * 1024 * 1024
+MARKDOWN_ESCAPE_RE = re.compile(r"([" + re.escape(string.punctuation) + r"])")
+MARKDOWN_UNESCAPE_RE = re.compile(r"\\([" + re.escape(string.punctuation) + r"])")
 
 MONTH_NAMES = (
     "",
@@ -114,7 +125,7 @@ CROSSREF_UA = "orcid-cv-sync/1.0"
 # the plugin refuses to recognise, silently dropping the BibTeX buttons.
 SECTION_START_TMPL = r"^[ \t]*<!--\s*cv:section\s+{kind}\s*-->[ \t]*$"
 ANY_SECTION_START_RE = re.compile(
-    SECTION_START_TMPL.format(kind=r"[a-z][a-z0-9-]*"),
+    SECTION_START_TMPL.format(kind=r"(?P<kind>[a-z][a-z0-9-]*)"),
     re.MULTILINE,
 )
 SECTION_END_RE = re.compile(r"^[ \t]*<!--\s*/cv:section\s*-->[ \t]*$", re.MULTILINE)
@@ -129,14 +140,37 @@ SECTION_END_RE = re.compile(r"^[ \t]*<!--\s*/cv:section\s*-->[ \t]*$", re.MULTIL
 ITEM_START_RE = re.compile(r"^ {0,2}(?:\d+[.)]|[-*+])\s")
 # The paper title is the only Markdown link in an entry — `[authors — TODO]`
 # has no `(` after it, so requiring `](` skips the placeholder.
-LINK_TITLE_RE = re.compile(r"\[([^\]]+)\]\(")
+LINK_TITLE_RE = re.compile(r"\[((?:\\.|[^\]\\])+)\]\(")
+
+
+def inline_text(value: object) -> str:
+    """Serialize external display text as one literal Markdown line."""
+    text = " ".join(str(value).split())
+    text = "".join(c for c in text if ord(c) >= 32 and not 127 <= ord(c) <= 159)
+    return MARKDOWN_ESCAPE_RE.sub(lambda match: "\\" + match[0], text)
+
+
+def safe_link_url(value: str) -> str:
+    """Validate and serialize an HTTP(S) Markdown link destination."""
+    if any(ord(c) < 32 or 127 <= ord(c) <= 159 for c in value):
+        return ""
+    try:
+        parsed = urllib.parse.urlsplit(value.strip())
+        if (parsed.scheme.lower() not in {"http", "https"} or not parsed.hostname
+                or parsed.username is not None or parsed.password is not None):
+            return ""
+        parsed.port
+        return urllib.parse.quote(parsed.geturl(), safe="/:?#@!$&'*+,;=%-._~")
+    except ValueError:
+        return ""
 
 
 def normalize(s: str) -> str:
     """Strip everything but a-z 0-9 and lowercase. Used for fuzzy title
     matching against the existing CV body — diacritics, punctuation, and
     whitespace would otherwise prevent obvious duplicates from matching."""
-    return NORMALIZE_RE.sub("", s.lower())
+    text = html.unescape(MARKDOWN_UNESCAPE_RE.sub(r"\1", s))
+    return NORMALIZE_RE.sub("", text.lower())
 
 
 def title_already_present(title: str | None, *texts: str) -> bool:
@@ -313,6 +347,7 @@ def existing_dois(text: str) -> set[str]:
     """Pull every DOI-shaped substring out of `text`. Tolerant: trailing
     punctuation that's not part of a DOI is stripped."""
     out: set[str] = set()
+    text = urllib.parse.unquote(MARKDOWN_UNESCAPE_RE.sub(r"\1", text))
     for m in DOI_RE.finditer(text):
         doi = m.group(0)
         # Strip trailing punctuation that the regex's char class greedily ate.
@@ -355,7 +390,8 @@ def render_authors(
                 first_tok = given.split()[0] if given.split() else ""
                 if first_tok and self_given.split():
                     is_self = first_tok.lower() == self_given.split()[0].lower()
-        rendered.append(f"**<u>{full}</u>**" if is_self else f"**{full}**")
+        escaped = inline_text(full)
+        rendered.append(f"**<u>{escaped}</u>**" if is_self else f"**{escaped}**")
     return ", ".join(rendered)
 
 
@@ -389,11 +425,14 @@ def format_entry(
            *Journal*, DOI:..., (year).
     """
     author_part = render_authors(authors, self_name)
-    journal_part = f", *{journal}*" if journal else ""
-    when_part = f", ({year})" if year else ""
+    if not DOI_RE.fullmatch(doi):
+        raise ValueError("Invalid DOI in publication entry")
+    journal_part = f", *{inline_text(journal)}*" if journal else ""
+    when_part = f", ({inline_text(year)})" if year else ""
+    doi_url = "https://doi.org/" + urllib.parse.quote(doi, safe="/-._;:")
     body = (
-        f"1. {author_part}, [{title}](https://doi.org/{doi})"
-        f"{journal_part}, DOI:{doi}{when_part}."
+        f"1. {author_part}, [{inline_text(title)}]({doi_url})"
+        f"{journal_part}, DOI:{inline_text(doi)}{when_part}."
     )
     if possible_duplicate:
         body += (
@@ -423,9 +462,9 @@ def extract_works(orcid_data: dict) -> list[dict]:
             if ext.get("external-id-type") == "doi":
                 value = ext.get("external-id-value", "")
                 if value:
-                    doi = value.lower()
+                    doi = value.strip().lower()
                     break
-        if not doi or doi in seen:
+        if not doi or not DOI_RE.fullmatch(doi) or doi in seen:
             continue
         seen.add(doi)
         title_obj = ws.get("title") or {}
@@ -472,6 +511,8 @@ def funding_marker_key(
         value = FUNDING_KEY_TOKEN_RE.sub("-", external_id_value.lower()).strip("-")
         if kind and value:
             return f"{kind}:{value}"
+    if not re.fullmatch(r"[0-9]+", str(put_code)):
+        raise ValueError("Funding record has no valid stable identifier")
     return f"put-code:{put_code}"
 
 
@@ -514,9 +555,7 @@ def extract_fundings(orcid_data: dict) -> list[dict]:
         seen.add(key)
 
         organization = summary.get("organization") or {}
-        url = ((summary.get("url") or {}).get("value") or "").strip()
-        if not re.match(r"^https?://", url, re.IGNORECASE):
-            url = ""
+        url = safe_link_url((summary.get("url") or {}).get("value") or "")
         out.append(
             {
                 "key": key,
@@ -568,7 +607,7 @@ def format_orcid_date(date: dict, lang: str) -> str:
     year = str((date.get("year") or {}).get("value") or "").strip()
     month_raw = str((date.get("month") or {}).get("value") or "").strip()
     day_raw = str((date.get("day") or {}).get("value") or "").strip()
-    if not year:
+    if not re.fullmatch(r"[0-9]{4}", year):
         return ""
     try:
         month = int(month_raw) if month_raw else 0
@@ -592,12 +631,12 @@ def format_funding_entry(
     possible_duplicate: bool = False,
 ) -> str:
     """Render one funding summary as an unordered Markdown list item."""
-    title = funding_title(funding, lang)
-    url = funding.get("url", "")
+    title = inline_text(funding_title(funding, lang))
+    url = safe_link_url(funding.get("url", ""))
     parts = [f"[{title}]({url})" if url else title]
     if funding.get("organization"):
-        parts.append(funding["organization"])
-    external_id = funding.get("external_id_value", "")
+        parts.append(inline_text(funding["organization"]))
+    external_id = inline_text(funding.get("external_id_value", ""))
     if external_id:
         if funding.get("external_id_type") == "grant_number":
             label = "課題番号" if lang == "ja" else "Grant No."
@@ -614,23 +653,30 @@ def format_funding_entry(
     body = f"- {', '.join(parts)}."
     if possible_duplicate:
         body += " <!-- POSSIBLE DUPLICATE: funding title matches this CV -->"
-    return f"{body} <!-- orcid-funding:{funding['key']} -->"
+    key = funding["key"]
+    if not re.fullmatch(r"[a-z0-9][a-z0-9._:-]*", key):
+        raise ValueError("Invalid funding marker identity")
+    return f"{body} <!-- orcid-funding:{key} -->"
 
 
 def validate_markers(label: str, content: str) -> None:
-    """Fail loudly on unbalanced ``cv:section`` markers.
-
-    A missing ``<!-- /cv:section -->`` doesn't raise anywhere else — the
-    remark plugin would just keep stamping the following lists with the
-    previous section's kind — so catch it here, where a human is watching.
-    """
-    starts = len(ANY_SECTION_START_RE.findall(content))
-    ends = len(SECTION_END_RE.findall(content))
-    if starts != ends:
-        raise SystemExit(
-            f"{label}: unbalanced section markers "
-            f"({starts} `cv:section`, {ends} `/cv:section`).",
-        )
+    """Require uniquely owned, ordered, non-nested section markers."""
+    active = None
+    seen: set[str] = set()
+    for line in content.splitlines():
+        start = ANY_SECTION_START_RE.fullmatch(line)
+        if start:
+            kind = start["kind"]
+            if active is not None or kind in seen:
+                raise SystemExit(f"{label}: nested or duplicate section marker: {kind}")
+            active = kind
+            seen.add(kind)
+        elif SECTION_END_RE.fullmatch(line):
+            if active is None:
+                raise SystemExit(f"{label}: unbalanced section markers")
+            active = None
+    if active is not None:
+        raise SystemExit(f"{label}: unbalanced section markers")
 
 
 def section_span(content: str, kind: str) -> tuple[int, int] | None:
@@ -836,8 +882,11 @@ def prune_published_preprints(
         return content, []
     journal_body = section_body(content, "peer-reviewed")
     journal_dois = existing_dois(journal_body)
-    journal_norm = normalize(journal_body)
-    if not journal_dois and not journal_norm:
+    journal_titles = {
+        normalize(entry.title) for entry in parse_section_entries(content, "peer-reviewed")
+        if entry.title
+    }
+    if not journal_dois and not journal_titles:
         return content, []
 
     removals: list[tuple[Entry, str | None, str | None, str]] = []
@@ -856,7 +905,7 @@ def prune_published_preprints(
                     break
         if via is None and entry.title:
             norm_title = normalize(entry.title)
-            if len(norm_title) >= MIN_TITLE_MATCH_LEN and norm_title in journal_norm:
+            if len(norm_title) >= MIN_TITLE_MATCH_LEN and norm_title in journal_titles:
                 via = "title match"
         if via:
             removals.append((entry, source, published, via))
@@ -878,6 +927,109 @@ def show_diff(label: str, old: str, new: str) -> bool:
     return True
 
 
+def content_hash(content: bytes | None) -> str | None:
+    return hashlib.sha256(content).hexdigest() if content is not None else None
+
+
+def read_cv_files(repo: Path) -> dict[str, bytes | None]:
+    files = {}
+    for name in CV_PATHS:
+        path = repo / name
+        if path.is_symlink():
+            raise SystemExit(f"{name}: expected a regular CV file, not a symlink")
+        files[name] = path.read_bytes() if path.exists() else None
+    return files
+
+
+def save_plan(
+    plan_path: Path,
+    orcid_id: str,
+    originals: dict[str, bytes | None],
+    outputs: dict[str, str],
+) -> str:
+    for name in CV_PATHS:
+        validate_markers(name, outputs[name])
+    plan = {
+        "version": 1,
+        "orcid": orcid_id,
+        "files": {
+            name: {"before_sha256": content_hash(originals[name]), "after": outputs[name]}
+            for name in CV_PATHS
+        },
+    }
+    data = (json.dumps(plan, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    if len(data) > MAX_PLAN_BYTES:
+        raise SystemExit("Sync plan exceeds the size limit")
+    plan_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=plan_path.parent, delete=False) as staged:
+        temporary = Path(staged.name)
+        try:
+            staged.write(data)
+            staged.close()
+            os.replace(temporary, plan_path)
+        finally:
+            temporary.unlink(missing_ok=True)
+    return hashlib.sha256(data).hexdigest()
+
+
+def apply_plan(repo: Path, plan_path: Path, expected_sha256: str) -> int:
+    """Apply approved bytes without fetching or recomputing external data."""
+    if not re.fullmatch(r"[a-fA-F0-9]{64}", expected_sha256):
+        raise SystemExit("Expected a complete approved SHA-256")
+    try:
+        with plan_path.open("rb") as handle:
+            data = handle.read(MAX_PLAN_BYTES + 1)
+    except OSError as error:
+        raise SystemExit("Cannot read sync plan; run a dry-run first") from error
+    if len(data) > MAX_PLAN_BYTES:
+        raise SystemExit("Sync plan exceeds the size limit")
+    if hashlib.sha256(data).hexdigest() != expected_sha256.lower():
+        raise SystemExit("Sync plan changed since approval; review a new dry-run")
+    try:
+        plan = json.loads(data)
+        if (not isinstance(plan, dict) or set(plan) != {"version", "orcid", "files"}
+                or plan["version"] != 1 or not isinstance(plan["orcid"], str)
+                or not isinstance(plan["files"], dict) or set(plan["files"]) != set(CV_PATHS)):
+            raise ValueError("Invalid plan structure")
+        for name, entry in plan["files"].items():
+            if (not isinstance(entry, dict) or set(entry) != {"before_sha256", "after"}
+                    or not isinstance(entry["after"], str)
+                    or (entry["before_sha256"] is not None and
+                        not re.fullmatch(r"[a-f0-9]{64}", str(entry["before_sha256"])))):
+                raise ValueError("Invalid plan file entry")
+            validate_markers(name, entry["after"])
+    except (ValueError, TypeError, UnicodeError) as error:
+        raise SystemExit("Invalid sync plan; review a new dry-run") from error
+
+    originals = read_cv_files(repo)
+    for name in CV_PATHS:
+        if content_hash(originals[name]) != plan["files"][name]["before_sha256"]:
+            raise SystemExit(f"{name}: CV changed since dry-run; review a new plan")
+
+    staged_files: list[tuple[Path, Path]] = []
+    try:
+        for name in CV_PATHS:
+            output = plan["files"][name]["after"].encode("utf-8")
+            if output == (originals[name] or b""):
+                continue
+            destination = repo / name
+            with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as staged:
+                temporary = Path(staged.name)
+                staged_files.append((temporary, destination))
+                staged.write(output)
+            mode = destination.stat().st_mode & 0o777 if destination.exists() else 0o644
+            temporary.chmod(mode)
+        if read_cv_files(repo) != originals:
+            raise SystemExit("CV changed while staging; review a new dry-run")
+        for temporary, destination in staged_files:
+            os.replace(temporary, destination)
+    finally:
+        for temporary, _ in staged_files:
+            temporary.unlink(missing_ok=True)
+    print("[orcid-cv-sync] approved plan applied.", file=sys.stderr)
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Sync new ORCID publications and funding into the CV",
@@ -885,8 +1037,10 @@ def main() -> int:
     ap.add_argument(
         "--apply",
         action="store_true",
-        help="Write changes (default: dry-run, prints diff only)",
+        help="Apply a saved plan with --expected-sha256; never fetches remote data",
     )
+    ap.add_argument("--plan", default=DEFAULT_PLAN, help="Dry-run output / approved plan path")
+    ap.add_argument("--expected-sha256", help="SHA-256 of the plan approved with its diff")
     ap.add_argument(
         "--orcid",
         help="Override ORCID iD (otherwise read from an ORCID link in the CV body)",
@@ -904,11 +1058,23 @@ def main() -> int:
     args = ap.parse_args()
 
     repo = find_repo_root()
-    ja_md = repo / "src/content/cv/ja.md"
-    en_md = repo / "src/content/cv/en.md"
+    plan_path = Path(args.plan)
+    if not plan_path.is_absolute():
+        plan_path = repo / plan_path
+    if plan_path.resolve() in {(repo / name).resolve() for name in CV_PATHS}:
+        ap.error("--plan must not overwrite a CV file")
+    if args.apply:
+        if not args.expected_sha256:
+            ap.error("--apply requires --expected-sha256 from an approved dry-run")
+        if args.orcid or args.no_crossref or args.keep_published_preprints:
+            ap.error("--apply uses the saved plan; omit data-selection options")
+        return apply_plan(repo, plan_path, args.expected_sha256)
+    if args.expected_sha256:
+        ap.error("--expected-sha256 requires --apply")
 
-    ja_text = ja_md.read_text(encoding="utf-8")
-    en_text = en_md.read_text(encoding="utf-8") if en_md.exists() else ""
+    originals = read_cv_files(repo)
+    ja_text = (originals[CV_PATHS[0]] or b"").decode("utf-8")
+    en_text = (originals[CV_PATHS[1]] or b"").decode("utf-8")
     validate_markers("ja.md", ja_text)
     validate_markers("en.md", en_text)
 
@@ -1066,22 +1232,21 @@ def main() -> int:
 
     changed_ja = show_diff("src/content/cv/ja.md", ja_text, new_ja)
     changed_en = show_diff("src/content/cv/en.md", en_text, new_en)
+    digest = save_plan(
+        plan_path, orcid_id, originals,
+        {CV_PATHS[0]: new_ja, CV_PATHS[1]: new_en},
+    )
+    print(f"[orcid-cv-sync] plan SHA-256: {digest}", file=sys.stderr)
 
     if not (changed_ja or changed_en):
         print("[orcid-cv-sync] no changes — CV is up to date.")
         return 0
 
-    if args.apply:
-        if changed_ja:
-            ja_md.write_text(new_ja, encoding="utf-8")
-        if changed_en:
-            en_md.write_text(new_en, encoding="utf-8")
-        print("[orcid-cv-sync] applied.", file=sys.stderr)
-    else:
-        print(
-            "\n[orcid-cv-sync] dry-run. Re-run with --apply to write changes.",
-            file=sys.stderr,
-        )
+    print(
+        "\n[orcid-cv-sync] dry-run. After approval, use the same --plan with "
+        f"--apply --expected-sha256 {digest}",
+        file=sys.stderr,
+    )
     return 0
 
 

@@ -12,6 +12,7 @@ import { createHash } from 'node:crypto';
 import { escapeHtml as esc } from './lib/escape.mjs';
 import { fetchPublicHttp, parsePublicHttpUrl } from './lib/public-http.mjs';
 import { readResponseBuffer } from './lib/response-body.mjs';
+import { MAX_META_BYTES, decodeEntities, parseMeta } from './lib/link-meta.mjs';
 import { replaceWithHtml } from './lib/replace.mjs';
 import { siteHost } from '../lib/profile-yaml.mjs';
 import { contactEmail } from '../lib/contact-email.mjs';
@@ -45,10 +46,6 @@ function isImageUrl(url) {
   }
 }
 
-// Cap response body to avoid pulling a multi-MB SPA bundle for one card.
-// 256 KB is enough to hold a typical <head> several times over.
-const MAX_BYTES = 256 * 1024;
-
 function cachePath(url) {
   const h = createHash('sha1').update(url).digest('hex').slice(0, 20);
   return join(CACHE_DIR, `${h}.json`);
@@ -74,76 +71,6 @@ async function writeCache(url, data) {
   }
 }
 
-// Decode the handful of HTML entities that legitimately appear inside
-// meta `content="..."` attribute values. We intentionally stay narrow —
-// running a full HTML parser here would be overkill and pulls in deps.
-const ENTITIES = {
-  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
-};
-function decodeEntities(s) {
-  return s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, n) => String.fromCharCode(parseInt(n, 16)))
-    .replace(/&([a-zA-Z]+);/g, (m, name) => ENTITIES[name.toLowerCase()] ?? m);
-}
-
-function parseMeta(html, pageUrl) {
-  // Slice the <head> region when present to bound regex work. Sites that
-  // emit OG tags below </head> are rare enough that the fallback to
-  // first-64KB scan is fine.
-  const headMatch = html.match(/<head[\s>][\s\S]*?<\/head>/i);
-  const region = headMatch ? headMatch[0] : html.slice(0, 64 * 1024);
-
-  const map = new Map();
-  // Tolerates attribute order, single/double quotes, and self-closing
-  // slashes. `content` may also precede `property|name`.
-  const metaRe = /<meta\s+([^>]+?)\s*\/?>(?![^<]*<\/meta>)/gi;
-  for (const [, attrs] of region.matchAll(metaRe)) {
-    const key = attrs.match(/\b(?:property|name)\s*=\s*["']([^"']+)["']/i)?.[1];
-    const val = attrs.match(/\bcontent\s*=\s*["']([^"']*)["']/i)?.[1];
-    if (!key || val == null) continue;
-    const k = key.toLowerCase();
-    // First write wins — OG and twitter cards tend to appear before the
-    // generic meta description, so we get the higher-quality value.
-    if (!map.has(k)) map.set(k, decodeEntities(val).trim());
-  }
-
-  const titleTag = region.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
-  const title =
-    map.get('og:title') ??
-    map.get('twitter:title') ??
-    (titleTag ? decodeEntities(titleTag).trim() : '');
-
-  const description =
-    map.get('og:description') ??
-    map.get('twitter:description') ??
-    map.get('description') ??
-    '';
-
-  const imageRaw =
-    map.get('og:image') ??
-    map.get('og:image:url') ??
-    map.get('og:image:secure_url') ??
-    map.get('twitter:image') ??
-    map.get('twitter:image:src') ??
-    '';
-
-  // Normalise relative og:image to absolute. URL accepts protocol-
-  // relative and root-relative forms; an invalid value throws and we
-  // simply drop the image rather than crashing.
-  let image = '';
-  if (imageRaw) {
-    try {
-      image = parsePublicHttpUrl(new URL(imageRaw, pageUrl).toString()).toString();
-    } catch {
-      image = '';
-    }
-  }
-
-  const siteName = map.get('og:site_name') ?? '';
-  return { title, description, image, siteName };
-}
-
 async function fetchMeta(url) {
   const res = await fetchPublicHttp(url, {
     headers: {
@@ -163,7 +90,7 @@ async function fetchMeta(url) {
 
   // Stream-cap the body so a giant page can't blow up memory.
   const html = new TextDecoder('utf-8', { fatal: false }).decode(
-    await readResponseBuffer(res, MAX_BYTES, { allowTruncated: true }),
+    await readResponseBuffer(res, MAX_META_BYTES, { allowTruncated: true }),
   );
 
   const meta = parseMeta(html, res.url || url);
