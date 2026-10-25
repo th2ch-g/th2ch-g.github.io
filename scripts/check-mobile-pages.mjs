@@ -135,7 +135,7 @@ async function assertTouchFlows(context, lang) {
     assert.equal(await page.locator('html').getAttribute('data-theme'), nextTheme);
     await page.locator('[data-theme-toggle]').tap();
 
-    const otherLocale = page.locator('.lang-switch a').filter({ hasText: lang === 'ja' ? 'EN' : 'JA' });
+    const otherLocale = page.locator(`.lang-switch a[hreflang="${lang === 'ja' ? 'en' : 'ja'}"]`);
     await otherLocale.tap();
     await page.waitForURL((url) => url.pathname === '/' && url.searchParams.get('lang') === (lang === 'ja' ? 'en' : 'ja'));
     await visit(page, `/?lang=${lang}`);

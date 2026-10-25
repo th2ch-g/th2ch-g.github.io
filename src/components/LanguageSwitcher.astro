@@ -14,49 +14,115 @@ const visible = fallbackPath ? Object.keys(languages) as Lang[]
 
 const currentPath = Astro.url.pathname.replace(/^\/(en|ja)(?=\/|$)/, '') || '/';
 ---
-{visible.length > 1 && <div class="lang-switch join" aria-label={tUi('lang.switch')}>
+{visible.length > 1 && <div class="lang-switch" aria-label={tUi('lang.switch')}>
   {(Object.keys(languages) as Lang[])
     .filter((code) => visible.includes(code))
     .map((code) => (
     <a
       href={getRelativeLocaleUrl(code, fallbackPath && !availableLocales?.includes(code) ? fallbackPath : currentPath)}
       data-locale-path={fallbackPath && !availableLocales?.includes(code) ? fallbackPath : undefined}
-      class:list={['pill', { active: code === lang }]}
+      class="lang-link"
+      aria-label={tUi(`lang.switch.${code}`)}
       aria-current={code === lang ? 'true' : undefined}
       hreflang={code}
       lang="en"
-    >{languages[code]}</a>
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M3 5h12M9 3v2M12 5c-1 6-4 9-8 12M5 8c1 3 4 6 7 8M13 21l4-11 4 11M14.5 17h5" />
+      </svg>
+      <span class="lang-tooltip" lang={code} aria-hidden="true">{languages[code]}</span>
+    </a>
   ))}
 </div>}
 
+<script>
+  import { onReady } from '@/lib/dom-ready';
+
+  onReady(() => {
+    const switcher = document.querySelector<HTMLElement>('.lang-switch');
+    if (!switcher) return;
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') switcher.dataset.tooltipDismissed = '';
+    });
+    for (const event of ['pointerenter', 'focusin']) {
+      switcher.addEventListener(event, () => { delete switcher.dataset.tooltipDismissed; });
+    }
+  });
+</script>
+
 <style>
   .lang-switch {
+    position: relative;
     display: inline-flex;
     flex-shrink: 0;
-    gap: 0;
+    width: 2rem;
     height: 2rem;
-    padding: 0;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-field);
-    background: var(--color-button);
   }
-  .pill {
+  .lang-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
-    min-width: 2.25rem;
-    padding: 0.25rem 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
     line-height: 1;
-    border: 0;
-    border-radius: calc(var(--radius-field) - 1px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-field);
+    background: transparent;
     color: var(--color-muted);
   }
-  .pill.active {
-    color: var(--color-fg);
-    background: var(--color-bg);
-    box-shadow: 0 0 0 1px var(--color-border-strong), var(--shadow-soft);
-    font-weight: 600;
+  :global(html[lang="en"]) .lang-link[hreflang="en"],
+  :global(html[lang="ja"]) .lang-link[hreflang="ja"] {
+    display: none;
   }
-  .pill:hover { background: var(--color-hover); text-decoration: none; }
+  .lang-link:hover,
+  .lang-link:focus-visible {
+    color: var(--color-fg);
+    border-color: var(--color-border-strong);
+    background: var(--color-hover);
+    text-decoration: none;
+  }
+  .lang-link:active { background: var(--color-button-active); }
+  .lang-tooltip {
+    position: absolute;
+    z-index: 1;
+    top: calc(100% + 0.5rem);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--radius-field);
+    background: var(--color-neutral);
+    color: var(--color-neutral-content);
+    box-shadow: var(--shadow-float);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    visibility: hidden;
+  }
+  .lang-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -0.5rem;
+    right: 0;
+    left: 0;
+    height: 0.5rem;
+  }
+  .lang-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 0.3rem solid transparent;
+    border-top: 0;
+    border-bottom-color: var(--color-neutral);
+  }
+  .lang-switch:not([data-tooltip-dismissed]) .lang-link:focus-visible .lang-tooltip {
+    visibility: visible;
+  }
+  @media (hover: hover) {
+    .lang-switch:not([data-tooltip-dismissed]) .lang-link:hover .lang-tooltip {
+      visibility: visible;
+    }
+  }
 </style>

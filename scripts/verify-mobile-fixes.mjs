@@ -335,9 +335,9 @@ try {
     'Mobile navigation controls overflow the viewport',
   );
   assert.deepEqual(
-    (await mobilePage.locator('.lang-switch a').allTextContents()).map((label) => label.trim()),
-    ['EN', 'JA'],
-    'Language switcher labels are not EN/JA',
+    await mobilePage.locator('.lang-switch a:visible').evaluateAll((links) => links.map((link) => link.hreflang)),
+    ['ja'],
+    'Language switcher must show only the other locale',
   );
 
   const cvTopBefore = await mobilePage.locator('#cv').evaluate(

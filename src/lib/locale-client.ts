@@ -8,7 +8,6 @@ export function updateLanguageSwitcher(): void {
     const path = link.dataset.localePath;
     link.href = getRelativeLocaleUrl(target, path
       ? `${path}${location.search}` : `${location.pathname}${location.search}${location.hash}`);
-    link.classList.toggle('active', target === lang);
     if (target === lang) link.setAttribute('aria-current', 'true');
     else link.removeAttribute('aria-current');
   });

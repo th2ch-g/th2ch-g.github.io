@@ -2,8 +2,8 @@
 // Keep locale-specific prose in content collections or profile metadata.
 
 export const languages = {
-  en: 'EN',
-  ja: 'JA',
+  en: 'English',
+  ja: '日本語',
 } as const;
 
 export type Lang = keyof typeof languages;
@@ -61,6 +61,8 @@ export const ui = {
     'share.copied': 'Copied!',
     'share.copy.failed': 'Copy failed',
     'lang.switch': 'Switch language',
+    'lang.switch.en': 'Switch to English',
+    'lang.switch.ja': 'Switch to Japanese',
     'breadcrumb.label': 'Breadcrumb',
     'series.heading': 'Series',
     'shortcuts.title': 'Keyboard shortcuts',
