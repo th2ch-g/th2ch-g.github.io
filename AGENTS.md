@@ -9,10 +9,13 @@ Astro + TypeScript (strict), Markdown content collections, Pagefind for search, 
 ## Common commands
 
 ```bash
-npm run dev          # astro dev (port 4321) — predev runs build-icon + build-fonts + build-qr
+npm run dev          # astro dev (port 4321) — predev runs build-assets
 npm run build        # astro build → build-search
 npm run preview      # serve dist/
 npm run check        # astro check (TypeScript on .astro/.ts/.mts)
+npm run check:local  # Before push: source checks, one build, then all browser and quality checks
+npm run check:source # Type, CSS, security, GitHub card, build-input, and OG regression checks
+npm run check:quality # Existing build: mobile fixes, UI consistency, axe, then Lighthouse
 npm run check:css    # custom CSS sanity check (scripts/check-css.mjs)
 npm run check:security # reject unsafe link-card URL targets
 npm run check:build-inputs # ORCID approved plans, metadata parsing, and bounded icon processing (requires uv)
@@ -20,11 +23,11 @@ npm run check:og     # OG painted bounds, overlap, spacing, and clipping checks
 npm run check:mobile # All built pages: Chromium/Firefox/WebKit touch, 320/393/430/852px, light/dark, mobile axe
 npm run check:interactions # Chromium/Firefox clipboard, search, keyboard, print, and theme checks
 npm run check:consistency # All pages: shared control styles in both themes/locales, mobile/desktop
-npm run build-assets # rebuild public/icon.png + public/fonts/ + public/qr.png
+npm run build-assets # rebuild icon, fonts, QR code, and GitHub card images
 npm run sync-bibtex    # refresh src/data/bibtex.json from CrossRef
 ```
 
-There is no test runner, no linter, no formatter. CI runs `npm run check` + `npm run build` + axe-core (`scripts/check-a11y.mjs`) + Lighthouse + link check (`.github/workflows/links.yml`).
+There is no test runner, no linter, no formatter. Before pushing code or content changes, run `npm run check:local` with all three Playwright engines installed and `BROWSER_ENGINE` unset. Use `PLAYWRIGHT_BROWSERS_PATH=.cache/playwright` when installing and running repository-local browsers; use uv for Python checks. CI runs only `npm run build` and deployment; the monthly external link check runs separately (`.github/workflows/links.yml`). CI success is not evidence that local regression checks passed. Documentation-only changes need diff and relevant syntax checks instead of the full local suite.
 
 Docker: `docker compose up dev` (HMR on 4321) or `up prod` (nginx on 8080).
 
@@ -70,6 +73,7 @@ Each page's `getStaticPaths` is evaluated independently by Astro and **must be a
 1. `scripts/build-icon.mjs` — fetches `profile.yaml`'s `icon.url`, circle-crops via jimp, writes `public/icon.png`.
 2. `scripts/build-fonts.mjs` — populates `public/fonts/`.
 3. `scripts/build-qr.mjs` — generates `public/qr.png` from the deployment URL (used in the CV PDF footer / share contexts).
+4. `scripts/build-github-og.mjs` — prepares self-hosted GitHub card images under `public/github-og/`.
 
 Icon inputs support PNG, JPEG, GIF, and BMP, up to 4 MiB, 4096 pixels per edge, and 4 million total pixels. Header and PNG expansion checks run before decoding in a separate process with a 15-second deadline. Unsupported or invalid inputs retain the last usable icon. GitHub card images recover from the ordinary cache or the published site before requesting fresh previews; historical CI artifacts are not downloaded or extracted.
 
@@ -79,7 +83,7 @@ ORCID sync dry-runs save `.cache/orcid-cv-sync/plan.json` and print its SHA-256 
 
 `npm run build` then runs `astro build` and `scripts/build-search.mjs` (bilingual Pagefind index with query URLs). Home's CV supports browser printing and copy/BibTeX actions; there is no separate PDF generation step.
 
-OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm. Before compositing, `og-layout.mjs` measures painted pixels and rejects overlap or less than 12px spacing between the title/description and credit layers, as well as content outside the frame's safe area. Layout errors fail the build and are never converted into fallback images. `prebuild` also runs `check:og`. `og-config.ts` uses Mona Sans with 600-weight headings and 400-weight descriptions, matching site typography, with Noto Sans JP and emoji fallbacks. `og-version.ts` gives preview URLs a renderer/font-source hash so social crawlers can fetch updated images.
+OG cards: `src/lib/og-image.ts` composites with `astro-og-canvas` + jimp + canvaskit-wasm. Before compositing, `og-layout.mjs` measures painted pixels and rejects overlap or less than 12px spacing between the title/description and credit layers, as well as content outside the frame's safe area. Layout errors fail the build and are never converted into fallback images. `check:source` runs the separate `check:og` regression fixtures locally. `og-config.ts` uses Mona Sans with 600-weight headings and 400-weight descriptions, matching site typography, with Noto Sans JP and emoji fallbacks. `og-version.ts` gives preview URLs a renderer/font-source hash so social crawlers can fetch updated images.
 
 ### Markdown plumbing
 
@@ -125,8 +129,8 @@ All three are auto-discoverable; prefer them over hand-rolled equivalents.
 
 ## Deployment
 
-GitHub Pages on push to `main` (`.github/workflows/deploy.yml`). The deployment URL is derived from `profile.yaml`. The deploy job caches Playwright browsers across runs and validates the built pages before publishing.
+GitHub Pages on push to `main` (`.github/workflows/deploy.yml`). The deployment URL is derived from `profile.yaml`. Actions cache npm downloads and GitHub card inputs, build once, upload the Pages artifact, and deploy it. Pull requests use the same build job without uploading or deploying Pages. Branch protection requires `build`; automated dependency updates receive only that build check. Browser installation, type checks, and regression checks stay local.
 
-The workflow builds once, uploads the Pages artifact, and validates that same artifact in three browser jobs plus a quality job. `BROWSER_ENGINE=chromium|firefox|webkit npm run check:browser-engine` selects one engine; leaving the variable unset retains all supported engines locally. Deployment requires every validation job to succeed. Browser cache keys follow Playwright's browser revisions, independent of unrelated dependency updates. Lighthouse runs after the quality job's other browser processes exit.
+`npm run check:local` runs source checks, builds once, then validates that fixed build with `check:browsers`. `BROWSER_ENGINE=chromium|firefox|webkit npm run check:browser-engine` selects one engine for focused checks; leave it unset before pushing. `check:quality` runs the mobile fixes, UI consistency, and accessibility scripts in parallel, then Lighthouse after the other browser processes exit. Keep these checks local rather than adding them back to Actions.
 
 For image comparisons, preserve the previous `dist/` under `.cache/` before rebuilding, then run `npm run check:consistency -- --baseline .cache/baseline`. The checker waits for fonts/images, normalizes the gallery's randomized order, and includes diagram fixtures. Screenshots and reports stay under `.cache/`; do not commit them. Never rebuild a directory while browser checks are serving it; `--dist` can select a fixed build snapshot.

@@ -1,6 +1,4 @@
-// Runs axe-core against every rendered page of the built site. Fails the
-// process with a non-zero exit code if any violation is found, so the GH
-// Actions a11y job goes red on regressions.
+// Run axe-core against every rendered page and fail on accessibility violations.
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startStaticServer } from './lib/static-server.mjs';

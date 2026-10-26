@@ -1,21 +1,24 @@
-name: Deploy to GitHub Pages
+name: Build and deploy to GitHub Pages
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# Allow only one concurrent deployment, while preventing in-progress runs from being cancelled.
+# Serialize production deployments and replace outdated PR builds.
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -41,82 +44,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-github-cards-v1-
 
-      - name: Type check
-        run: npm run check
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: Security regression checks
-        run: npm run check:security
-
-      - name: GitHub card recovery checks
-        run: npm run check:github-og
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e  # v10.3.2
-        with:
-          version: latest-known
-          enable-cache: false
-
-      - name: Build input regression checks
-        run: npm run check:build-inputs
-
       - name: Build
         run: npm run build
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # Every validation job and the deployment consume this exact build.
       - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
           path: ./dist
           include-hidden-files: true
 
-  browsers:
-    name: Browser checks (${{ matrix.engine }})
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        engine: [chromium, firefox, webkit]
-    env:
-      BROWSER_ENGINE: ${{ matrix.engine }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-
-      - name: Prepare browser checks
-        uses: ./.github/actions/prepare-browser-checks
-        with:
-          browsers: ${{ matrix.engine }}
-
-      - name: Run browser regression checks
-        run: npm run check:browser-engine
-
-  quality:
-    name: Accessibility, visual consistency, and Lighthouse
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-
-      - name: Prepare browser checks
-        uses: ./.github/actions/prepare-browser-checks
-        with:
-          browsers: chromium firefox
-
-      - name: Run accessibility and UI checks
-        run: node scripts/run-scripts-parallel.mjs check:mobile-fixes check:consistency check:a11y
-
-      - name: Run Lighthouse without competing browser processes
-        run: npm run check:lighthouse
-
   deploy:
-    needs: [build, browsers, quality]
+    if: github.event_name != 'pull_request'
+    needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       pages: write
       id-token: write

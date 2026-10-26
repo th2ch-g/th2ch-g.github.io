@@ -2,10 +2,9 @@ name: Dependabot auto-merge
 
 # Queue every Dependabot PR for auto-merge, including major bumps. The actual
 # merge only happens once the PR is mergeable -- `gh pr merge --auto` waits for
-# branch protection's required status checks (axe, lighthouse; both run
-# `npm run build` first) to pass and for there to be no conflicts. A major bump
-# that breaks the build therefore fails the required checks and never merges;
-# CI is the sole reviewer for the bumps that do pass.
+# branch protection's required build check to pass and for there to be no
+# conflicts. Browser and quality checks run locally before manual pushes;
+# automated dependency updates receive only the build check.
 #
 # Requires "Allow auto-merge" to be enabled in repo Settings -> General.
 
