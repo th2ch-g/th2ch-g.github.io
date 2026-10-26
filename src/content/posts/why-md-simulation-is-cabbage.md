@@ -25,7 +25,7 @@ Natureクラスに載ったとしてもWet実験メイン+Wetな実験をサポ�
 
 https://x.com/bio4eta_/status/2112195569666138313
 
-<p class="md-figcaption" style="text-align: center;">バズってしまった先輩のツイート</p>
+<p class="md-figcaption" style="text-align: center; margin-bottom: 1.5rem;">バズってしまった先輩のツイート</p>
 
 結局キャッシュフローが回りやすいからであり、MDだからダメ受託開発だからダメなのではなく技術や資金を貯めてから新しい研究や事業への挑戦に繋がりやすくなるのだと考えられる。
 
@@ -37,7 +37,7 @@ https://x.com/bio4eta_/status/2112195569666138313
 が、結局シミュレーションにはシミュレーションの問題があり、結局Wetな実験が結果の是非を決めるため修士以降はシミュレーションだけで博士号はおもしろくないと思ってしまった(もちろん修士の研究は興味深い結果が得られて面白かった)。
 ただ、AI系をやるにしてもモデルの学習はコスト的にもまだまだキツいし毎日モデルがXで発表されるようにレッドオーシャンなので、学習不要な推論時制御とかいう方向で研究を進めていた(といってもこちらもかなりレッドオーシャン)。
 
-https://pubs.acs.org/jctcce/article/22/10/5259/5072828/Distance-Restraint-Guided-Diffusion-Models-for
+https://pubs.acs.org/doi/10.1021/acs.jctc.6c00199
 
 https://www.biorxiv.org/content/10.64898/2026.10.05.756905
 

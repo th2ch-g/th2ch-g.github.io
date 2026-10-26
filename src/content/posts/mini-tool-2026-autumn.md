@@ -8,9 +8,9 @@ pubDate: 2026-09-26
 サブスク形式でcoding agentを使うとweekly limitのreset時にtokenが余っていたりして勿体無いので色々実験がてらに作ってみた
 
 # ブラウザで触れるCueMol3 by Astra
-https://th2ch-g.github.io/cuemol-wasm/
+~~https://th2ch-g.github.io/cuemol-wasm/~~
 
-Cuemol3を使ってみたいが、絶賛開発中のため毎回installするのは少々アレだったので、ブラウザで触れる様にしてみた
+~~Cuemol3を使ってみたいが、絶賛開発中のため毎回installするのは少々アレだったので、ブラウザで触れる様にしてみた~~
 
 # PyMOL上でChimeraX、Mol-*、CueMolのrepresentationを可視化するプラグイン by Astra
 

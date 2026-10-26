@@ -11,9 +11,8 @@
 // Output uses the same `.link-card-*` CSS classes as remark-link-card so
 // every pasted URL — GitHub or otherwise — renders with the same
 // summary_large_image layout (full-width image on top, title / site at
-// the bottom). The split between the two plugins is kept because GitHub
-// metadata is much cheaper to fetch via the REST API than by scraping the
-// repo page's <head>, and the social preview image URL is deterministic.
+// the bottom). GitHub repository metadata comes from the REST API, while
+// prebuild resolves and caches the repository page's published preview image.
 import { visit } from 'unist-util-visit';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -98,10 +97,7 @@ async function fetchRepo(owner, repo) {
     title: description ? `GitHub - ${fullName}: ${description}` : `GitHub - ${fullName}`,
     description,
     url: json.html_url ?? `https://github.com/${owner}/${repo}`,
-    // GitHub auto-generates a rich social preview here. The first path
-    // segment is a cache key; `1` works as a generic value because the
-    // service redirects to the current hash internally. This is the same
-    // image surfaced via the og:image meta tag on the repo page.
+    // Legacy metadata value; rendering selects the self-hosted file below.
     image: ogRemoteUrl(ownerLogin, name),
     siteName: 'GitHub',
   };

@@ -28,6 +28,7 @@ import { fileURLToPath } from 'node:url';
 import { REPO_URL, ogFilename, ogRemoteUrl } from '../src/plugins/lib/github-og.mjs';
 import { readResponseBuffer } from '../src/plugins/lib/response-body.mjs';
 import { fetchPublicHttp } from '../src/plugins/lib/public-http.mjs';
+import { MAX_META_BYTES, parseMeta } from '../src/plugins/lib/link-meta.mjs';
 import { siteUrl } from '../src/lib/profile-yaml.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
@@ -123,7 +124,7 @@ async function download(url) {
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch(url, {
+      const res = await fetchPublicHttp(url, {
         redirect: 'follow',
         signal: AbortSignal.timeout(30_000),
         headers: { 'user-agent': UA, accept: 'image/*,*/*;q=0.5' },
@@ -146,6 +147,29 @@ async function download(url) {
   throw lastErr;
 }
 
+async function previewUrl(owner, repo) {
+  const url = `https://github.com/${owner}/${repo}`;
+  try {
+    const response = await fetchPublicHttp(url, {
+      signal: AbortSignal.timeout(15_000),
+      headers: { 'user-agent': UA, accept: 'text/html' },
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const html = new TextDecoder().decode(
+      await readResponseBuffer(response, MAX_META_BYTES, { allowTruncated: true }),
+    );
+    const { image } = parseMeta(html, response.url || url);
+    if (!image) throw new Error('No public og:image URL');
+    return image;
+  } catch (err) {
+    console.warn(`[build-github-og] preview metadata unavailable for ${owner}/${repo}: ${err.message}`);
+    return ogRemoteUrl(owner, repo);
+  }
+}
+
 const repos = collectRepos();
 if (repos.size === 0) {
   console.log('[build-github-og] no GitHub repo cards found, skipping');
@@ -165,7 +189,7 @@ for (const [file, { owner, repo }] of repos) {
   }
   try {
     if (rateLimited) throw new Error('GitHub preview requests paused after HTTP 429');
-    const buf = await download(ogRemoteUrl(owner, repo));
+    const buf = await download(await previewUrl(owner, repo));
     writeFileSync(out, buf);
     fetched++;
     console.log(`[build-github-og] wrote ${file} (${(buf.length / 1024).toFixed(0)} KB)`);

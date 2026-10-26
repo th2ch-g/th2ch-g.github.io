@@ -75,7 +75,7 @@ Each page's `getStaticPaths` is evaluated independently by Astro and **must be a
 3. `scripts/build-qr.mjs` — generates `public/qr.png` from the deployment URL (used in the CV PDF footer / share contexts).
 4. `scripts/build-github-og.mjs` — prepares self-hosted GitHub card images under `public/github-og/`.
 
-Icon inputs support PNG, JPEG, GIF, and BMP, up to 4 MiB, 4096 pixels per edge, and 4 million total pixels. Header and PNG expansion checks run before decoding in a separate process with a 15-second deadline. Unsupported or invalid inputs retain the last usable icon. GitHub card images recover from the ordinary cache or the published site before requesting fresh previews; historical CI artifacts are not downloaded or extracted.
+Icon inputs support PNG, JPEG, GIF, and BMP, up to 4 MiB, 4096 pixels per edge, and 4 million total pixels. Header and PNG expansion checks run before decoding in a separate process with a 15-second deadline. Unsupported or invalid inputs retain the last usable icon. GitHub card images recover from the ordinary cache or the published site before requesting fresh previews. Fresh previews use the repository page's published `og:image`; the legacy fixed URL is only a fallback when that metadata is unavailable. HTML and image fetches use the bounded public-URL helpers. Historical CI artifacts are not downloaded or extracted.
 
 ORCID sync dry-runs save `.cache/orcid-cv-sync/plan.json` and print its SHA-256 alongside the diff. Applying requires that approved hash and unchanged source CV files; it writes the saved output without refetching metadata. See the `orcid-cv-sync` skill for the exact commands.
 

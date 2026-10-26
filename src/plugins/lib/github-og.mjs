@@ -19,10 +19,8 @@ export function ogFilename(owner, repo) {
   return `${owner}__${repo}`.replace(/[^A-Za-z0-9._-]/g, '_').toLowerCase() + '.png';
 }
 
-// GitHub's auto-generated social-preview image (the same one Twitter /
-// Slack render). The leading `/1/` path segment is a generic cache key;
-// the service redirects to the current hash internally. Used as the
-// download source; cards only display successfully self-hosted images.
+// Legacy preview URL used only when the repository's published og:image
+// cannot be resolved. Cards display successfully self-hosted images.
 export function ogRemoteUrl(owner, repo) {
   return `https://opengraph.githubassets.com/1/${owner}/${repo}`;
 }
