@@ -2,7 +2,7 @@
 
 ## Local validation
 
-Install Node.js 22.12 or newer and uv, then prepare the dependencies and browsers:
+Install Node.js 22.23.4 or newer and uv, then prepare the dependencies and browsers:
 
 ```bash
 npm ci

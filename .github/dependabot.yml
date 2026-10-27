@@ -1,6 +1,6 @@
 # Weekly dependency update PRs. npm covers the site's runtime/build deps;
-# the github-actions ecosystem keeps the workflow files (deploy, lighthouse,
-# a11y, links) on supported action versions.
+# the github-actions ecosystem keeps the workflow files on supported action
+# versions.
 version: 2
 updates:
   - package-ecosystem: npm
