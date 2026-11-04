@@ -59,5 +59,3 @@ pubDate: 2026-05-13
 [23]: https://www.biorxiv.org/content/10.64898/2026.07.20.739027v1 "De Novo Design of Protein Switches with Diffusion-Based Ensemble Sampling"
 [24]: https://www.nature.com/articles/s41586-026-10842-8 "Miniaturizing and modifying natural proteins with Raygun | Nature"
 
-
-> チャッピーにまとめさせました
