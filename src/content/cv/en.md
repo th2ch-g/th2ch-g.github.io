@@ -42,11 +42,11 @@ Japanese🇯🇵
 
 1. <span class="cv-presenter-marker">◯</span> **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
    "[Structural Sampling via Distance-Restrained Complex Structure Prediction](https://sympo.mol-sim.jp/mssj39/files/presen_program_20251122.pdf)"
-   [The 39th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj39/), Kunibiki Messe (Matsue, Shimane, Japan), November 24-26, 2025.
+   [The 39th Symposium on Molecular Simulation](https://mol-sim.jp/mssj39_info_20250626/), Kunibiki Messe (Matsue, Shimane, Japan), November 24-26, 2025.
 
 1. <span class="cv-presenter-marker">◯</span> **<u>Tatsuki Hori</u>**, **Duy Phuoc Tran**, **Yuma Matsuoka**, **Tomohiro Doura**, **Tsuyoshi Araya**, **Hideki Asada**, **So Iwata**, **Shigeki Kiyonaka**, **Akio Kitao**.
    "[Molecular Dynamics Simulations of Binding and Dissociation between Mutant Adenosine A<sub>2A</sub> Receptor and Ligand Focusing on Aromatic Ring Interactions](https://sympo.mol-sim.jp/mssj38/files/presen_program_20241108.pdf)"
-   [The 38th Symposium on Molecular Simulation](https://sympo.mol-sim.jp/mssj38/), Acrie Himeji (Himeji, Hyogo, Japan), December 2-4, 2024.
+   [The 38th Symposium on Molecular Simulation](https://www.molsci.jp/news/cosponsor/n241101-2/), Acrie Himeji (Himeji, Hyogo, Japan), December 2-4, 2024.
 
 ### Oral
 

@@ -40,11 +40,11 @@
 
 1. <span class="cv-presenter-marker">◯</span> **<u>堀立樹</u>**, **森脇由隆**, **石谷隆一郎**.
    「[拘束条件付き複合体構造予測による構造サンプリング](https://sympo.mol-sim.jp/mssj39/files/presen_program_20251122.pdf)」
-   [第39回分子シミュレーション討論会](https://sympo.mol-sim.jp/mssj39/), くにびきメッセ（島根県松江市）, 2025年11月24–26日.
+   [第39回分子シミュレーション討論会](https://mol-sim.jp/mssj39_info_20250626/), くにびきメッセ（島根県松江市）, 2025年11月24–26日.
 
 1. <span class="cv-presenter-marker">◯</span> **<u>堀立樹</u>**, **Tran Phuoc Duy**, **松岡佑真**, **堂浦智裕**, **荒谷剛史**, **浅田秀基**, **岩田想**, **清中茂樹**, **北尾彰朗**.
    「[芳香族環相互作用に注目した変異型アデノシンA<sub>2A</sub>受容体とリガンドの結合と解離の分子動力学計算](https://sympo.mol-sim.jp/mssj38/files/presen_program_20241108.pdf)」
-   [第38回分子シミュレーション討論会](https://sympo.mol-sim.jp/mssj38/), アクリエひめじ（兵庫県姫路市）, 2024年12月2–4日.
+   [第38回分子シミュレーション討論会](https://www.molsci.jp/news/cosponsor/n241101-2/), アクリエひめじ（兵庫県姫路市）, 2024年12月2–4日.
 
 ### 口頭発表
 
