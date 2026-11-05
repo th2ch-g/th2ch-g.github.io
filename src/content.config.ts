@@ -140,6 +140,7 @@ const posts = defineCollection({
     // breadcrumbs all key off it. An empty <h1> would cascade visually.
     title: z.string(),
     description: nullable(z.string()),
+    externalURL: nullable(httpUrl),
     // pubDate remains required because list ordering and the
     // adjacent-post navigator all depend on it.
     pubDate: z.coerce.date(),

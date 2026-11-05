@@ -1,5 +1,5 @@
 import type { CollectionEntry } from 'astro:content';
-import { getPosts, localeSlug } from './content';
+import { getPosts, getPostUrl, localeSlug } from './content';
 import type { Lang } from '@/i18n/ui';
 
 // Build a slug -> citers map for the shared post collection. A "citer" is
@@ -10,7 +10,7 @@ import type { Lang } from '@/i18n/ui';
 
 type Citer = {
   id: string;
-  slug: string;
+  url: string;
   title: string;
   pubDate: Date;
 };
@@ -47,7 +47,7 @@ async function getBacklinkMap(lang: Lang): Promise<Map<string, Citer[]>> {
       const list = map.get(target) ?? [];
       list.push({
         id: post.id,
-        slug: localeSlug(post.id),
+        url: getPostUrl(post, lang),
         title: post.data.title,
         pubDate: post.data.pubDate,
       });

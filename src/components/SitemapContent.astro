@@ -4,7 +4,7 @@ import {
   formatDate,
   getLegalLinksByLang,
   getPosts,
-  localeSlug,
+  getPostUrl,
   sortByDateDesc,
 } from '@/lib/content';
 import { readProfileShallow } from '@/lib/profile-yaml.mjs';
@@ -60,8 +60,7 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
       </h2>
       <ul class="list">
         {posts.map((post) => {
-          const slug = localeSlug(post.id);
-          const href = getRelativeLocaleUrl(lang, `/posts/${slug}/`);
+          const href = getPostUrl(post, lang);
           return (
             <li>
               <a href={href}>{post.data.title}</a>

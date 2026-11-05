@@ -165,7 +165,7 @@ async function checkBlockedThemeStorage(browser) {
 
 async function checkSearch(browser, path, fallback) {
   const lang = new URL(path, server.url).searchParams.get('lang') === 'ja' ? 'ja' : 'en';
-  const localizedPosts = postItems.filter((item) => item.lang === lang);
+  const localizedPosts = postItems.filter((item) => item.lang === lang && !item.externalURL);
   const target = localizedPosts.find((item) => /[a-z]{4}/i.test(item.title)) ?? localizedPosts[0]
     ?? index.items.find((item) => item.lang === lang && item.url.startsWith('/gallery/'));
   const searchQuery = target.title.match(/[a-z]{4,}/i)?.[0] ?? target.title;
@@ -200,7 +200,9 @@ async function checkSearch(browser, path, fallback) {
         new URL(link.href).pathname + new URL(link.href).search === expectedPath), { selector: resultSelector, expectedPath });
     const destinations = await page.locator(resultSelector).evaluateAll((links) =>
       links.map((link) => new URL(link.href).href));
-    assert.ok(destinations.every((href) => new URL(href).searchParams.get('lang') === lang),
+    assert.ok(destinations.every((href) =>
+      index.items.some((item) => item.lang === lang && item.externalURL === href)
+      || new URL(href).searchParams.get('lang') === lang),
       `Search mixes content from the other locale (${lang}, ${term}): ${destinations.join(', ')}`);
     if (fallback) assert.equal(new Set(destinations).size, destinations.length, 'Search repeats a page');
   }

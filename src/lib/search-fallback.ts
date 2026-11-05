@@ -2,6 +2,7 @@ import type { Lang } from '@/i18n/ui';
 
 export interface SearchIndexItem {
   url: string;
+  externalURL?: string;
   lang: Lang;
   title: string;
   description: string;
@@ -90,7 +91,7 @@ export function createFallback(
 
       const link = document.createElement('a');
       link.className = 'search-fallback__link';
-      link.href = item.url;
+      link.href = item.externalURL ?? item.url;
       link.textContent = item.title;
       listItem.appendChild(link);
 

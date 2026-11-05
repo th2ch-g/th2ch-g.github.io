@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { tUi, type Lang } from '@/i18n/ui';
-import { localeSlug } from '@/lib/content';
+import { getPostUrl } from '@/lib/content';
 import { getRelativeLocaleUrl } from '@/lib/locale-url';
 
 interface Props {
@@ -23,8 +23,7 @@ const { series, posts, currentId, lang } = Astro.props;
     </p>
     <ol class="series-list">
       {posts.map((post, idx) => {
-        const slug = localeSlug(post.id);
-        const href = getRelativeLocaleUrl(lang, `/posts/${slug}`);
+        const href = getPostUrl(post, lang);
         const isCurrent = post.id === currentId;
         return (
           <li class:list={['series-item', { 'is-current': isCurrent }]}>

@@ -1,8 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { tUi, type Lang } from '@/i18n/ui';
-import { localeSlug } from '@/lib/content';
-import { getRelativeLocaleUrl } from '@/lib/locale-url';
+import { getPostUrl } from '@/lib/content';
 
 interface Props {
   prev: CollectionEntry<'posts'> | null;
@@ -11,8 +10,8 @@ interface Props {
 }
 const { prev, next, lang } = Astro.props;
 
-const prevHref = prev ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(prev.id)}`) : null;
-const nextHref = next ? getRelativeLocaleUrl(lang, `/posts/${localeSlug(next.id)}`) : null;
+const prevHref = prev ? getPostUrl(prev, lang) : null;
+const nextHref = next ? getPostUrl(next, lang) : null;
 ---
 {(prev || next) && (
   <nav class="post-nav" aria-label="Post navigation">

@@ -22,14 +22,14 @@ try {
     const year = item.date && item.url.startsWith('/posts/')
       ? `<span data-pagefind-filter="year:${item.date.slice(0, 4)}"></span>` : '';
     check(await index.addHTMLFile({
-      url: item.url,
+      url: item.externalURL ?? item.url,
       content: `<html lang="${item.lang}"><head><title>${escape(item.title)}</title></head>`
         + `<body><main data-pagefind-body><h1>${escape(item.title)}</h1>`
         + `<p>${escape(item.description)}</p>${year}${code}</main></body></html>`,
     }));
   }
   check(await index.writeFiles({ outputPath: resolve(distDir, 'pagefind') }));
-  console.log(`[search] Indexed ${items.length} pages with language query URLs.`);
+  console.log(`[search] Indexed ${items.length} localized pages.`);
 } finally {
   await close();
 }

@@ -2,7 +2,7 @@
 import type { CollectionEntry } from 'astro:content';
 import { getRelativeLocaleUrl } from '@/lib/locale-url';
 import { tUi, type Lang } from '@/i18n/ui';
-import { formatMonthDay, localeSlug } from '@/lib/content';
+import { formatMonthDay, getPostUrl } from '@/lib/content';
 
 interface Props {
   posts: CollectionEntry<'posts'>[];
@@ -68,7 +68,7 @@ posts.forEach((post) => {
             >
               {formatMonthDay(post.data.pubDate)}
             </time>
-            <a href={getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}`)}>
+            <a href={getPostUrl(post, lang)}>
               <span>
                 {post.data.title}
               </span>

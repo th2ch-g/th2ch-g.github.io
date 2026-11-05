@@ -43,6 +43,7 @@ async function localeItems(lang: Lang): Promise<SearchIndexItem[]> {
   })));
   items.push(...posts.map((post) => ({
     url: getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}/`),
+    externalURL: post.data.externalURL,
     lang,
     title: post.data.title,
     description: post.data.description ?? '',

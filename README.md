@@ -1,5 +1,13 @@
 # My portfolio
 
+## External posts
+
+Set `externalURL` in a post's frontmatter to an absolute HTTP or HTTPS URL.
+Post links in the archive, navigation, series, backlinks, sitemap, and search
+open that URL in the same tab, preserving its query parameters and fragment.
+When the field is missing or blank, links open the local article in the selected
+language. The local detail route remains available.
+
 ## Local validation
 
 Install Node.js 22.23.4 or newer and uv, then prepare the dependencies and browsers:

@@ -53,7 +53,7 @@ const backlinks = await getBacklinks(post, lang);
         />
       )}
       <div class="prose"><Content /></div>
-      <Backlinks lang={lang} citers={backlinks} />
+      <Backlinks citers={backlinks} />
       <Giscus lang={lang} />
       <ShareButtons lang={lang} />
       <PostNav prev={prev} next={next} lang={lang} />

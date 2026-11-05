@@ -1,6 +1,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import type { Lang } from '@/i18n/ui';
 import { summarizeMarkdown } from './markdown-summary.mjs';
+import { getRelativeLocaleUrl } from './locale-url';
 
 // Dev-only HMR-resilience cache. Astro 6's content layer rebuilds its
 // data store on every content-file save, and during that brief window
@@ -39,6 +40,11 @@ export async function getPosts(lang?: Lang): Promise<CollectionEntry<'posts'>[]>
   }
   const posts = import.meta.env.DEV && entries.length === 0 ? devPosts ?? entries : entries;
   return lang ? posts.filter((post) => post.data.lang.includes(lang)) : posts;
+}
+
+export function getPostUrl(post: CollectionEntry<'posts'>, lang: Lang): string {
+  return post.data.externalURL
+    ?? getRelativeLocaleUrl(lang, `/posts/${localeSlug(post.id)}/`);
 }
 
 export async function getCv(lang: Lang) {

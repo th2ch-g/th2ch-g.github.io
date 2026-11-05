@@ -26,6 +26,10 @@ try {
     const expected = sourcePosts.filter((post) => post.lang.includes(lang)).map((post) => post.path).sort();
     assert.deepEqual(actual, expected, `Search index does not match declared post languages (${lang})`);
   }
+  for (const item of items.filter((item) => item.date && item.url.startsWith('/posts/'))) {
+    const source = sourcePosts.find((post) => post.path === decodeURI(new URL(item.url, server.url).pathname));
+    assert.equal(item.externalURL, source.externalURL || undefined, 'Search loses the external post URL');
+  }
   const legalPages = items.filter((item) => item.date && !item.url.startsWith('/posts/'));
   const post = items.find((item) => item.date && item.url.startsWith('/posts/') && item.lang === 'ja')
     ?? items.find((item) => item.date && item.url.startsWith('/posts/'));
@@ -102,11 +106,13 @@ try {
         assert.equal(await page.locator('main a[href*="/forms/"]').count(), 0, 'Contact still shows a redundant form link');
 
         const expectedPosts = sourcePosts.filter((post) => post.lang.includes(lang));
+        const expectedUrls = expectedPosts.map((post) =>
+          new URL(post.externalURL || `${post.path}?lang=${lang}`, server.url).href).sort();
         await page.goto(`${server.url}/posts/?lang=${lang}`, { waitUntil: 'networkidle' });
-        const archivePaths = await page.locator('[data-post-row] a').evaluateAll((links) =>
-          links.map((link) => decodeURI(new URL(link.href).pathname).replace(/\/$/, '')).sort());
-        assert.deepEqual(archivePaths, expectedPosts.map((post) => post.path.replace(/\/$/, '')).sort(),
-          `Post archive ignores declared languages (${lang})`);
+        const archiveUrls = await page.locator('[data-post-row] a').evaluateAll((links) =>
+          links.map((link) => link.href).sort());
+        assert.deepEqual(archiveUrls, expectedUrls,
+          `Post archive ignores declared languages or external URLs (${lang})`);
         if (!expectedPosts.length) {
           assert.equal(await page.getByText('Nothing here yet.', { exact: true }).isVisible(), true);
           const otherLang = lang === 'en' ? 'ja' : 'en';
@@ -124,11 +130,10 @@ try {
           assert.equal(await page.locator('[data-post-alternative]').count(), 0);
         }
         await page.goto(`${server.url}/sitemap/?lang=${lang}`, { waitUntil: 'networkidle' });
-        const sitemapPaths = await page.locator('main a[href]').evaluateAll((links) =>
-          links.map((link) => new URL(link.href)).filter((url) => /^\/posts\/[^/]+\/$/.test(url.pathname))
-            .map((url) => decodeURI(url.pathname)).sort());
-        assert.deepEqual(sitemapPaths, expectedPosts.map((post) => post.path).sort(),
-          `Sitemap ignores declared languages (${lang})`);
+        const sitemapUrls = await page.locator('main li:has(time) a').evaluateAll((links) =>
+          links.map((link) => link.href).sort());
+        assert.deepEqual(sitemapUrls, expectedUrls,
+          `Sitemap ignores declared languages or external URLs (${lang})`);
 
         for (const sourcePost of sourcePosts) {
           await page.goto(`${server.url}${sourcePost.path}?lang=${lang}`, { waitUntil: 'networkidle' });
@@ -180,13 +185,53 @@ try {
       assert.deepEqual(errors, []);
       await page.close();
 
+      const touchPage = await browser.newPage({ hasTouch: true, viewport: { width: 393, height: 852 } });
+      try {
+        await touchPage.route('**/*', (route) => {
+          const request = route.request();
+          if (new URL(request.url()).origin === server.url) return route.continue();
+          const expected = sourcePosts.some((post) => post.externalURL
+            && new URL(post.externalURL).href.split('#')[0] === request.url());
+          return expected && request.isNavigationRequest()
+            ? route.fulfill({ contentType: 'text/html', body: '<main>External destination</main>' })
+            : route.abort();
+        });
+        for (const source of sourcePosts.filter((post) => post.externalURL)) {
+          for (const lang of source.lang) {
+            for (const path of ['/posts/', '/sitemap/']) {
+              await touchPage.goto(`${server.url}${path}?lang=${lang}`, { waitUntil: 'networkidle' });
+              const link = touchPage.locator('main').getByRole('link', { name: source.title, exact: true });
+              assert.equal(await link.getAttribute('href'), source.externalURL);
+              await link.tap();
+              await touchPage.waitForURL(new URL(source.externalURL).href);
+            }
+            for (const fallback of [false, true]) {
+              if (fallback) await touchPage.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
+              await touchPage.goto(`${server.url}/?lang=${lang}`, { waitUntil: 'networkidle' });
+              await touchPage.locator('[data-search-open]').tap();
+              await touchPage.locator(fallback ? '.search-fallback__input' : '.pagefind-ui__search-input')
+                .fill(source.title);
+              const result = touchPage.locator(fallback ? '.search-fallback__link' : '.pagefind-ui__result-link')
+                .filter({ hasText: source.title }).first();
+              await result.waitFor();
+              assert.equal(await result.getAttribute('href'), source.externalURL);
+              await result.tap();
+              await touchPage.waitForURL(new URL(source.externalURL).href);
+              if (fallback) await touchPage.unroute('**/pagefind/pagefind-ui.js');
+            }
+          }
+        }
+      } finally {
+        await touchPage.close();
+      }
+
       const noScript = await browser.newPage({ javaScriptEnabled: false });
       await noScript.route('**/*', (route) =>
         new URL(route.request().url()).origin === server.url ? route.continue() : route.abort());
       await noScript.goto(`${server.url}/?lang=ja`, { waitUntil: 'networkidle' });
       assert.equal(await noScript.locator('.cv-prose').getAttribute('data-cv-lang'), 'en');
       await noScript.close();
-      console.log(`[locales] ${engine.name()}: query URLs, content, metadata, redirects, sharing, and fallback passed`);
+      console.log(`[locales] ${engine.name()}: query URLs, content, metadata, redirects, sharing, fallback, and external post taps passed`);
     } finally {
       await browser.close();
     }
