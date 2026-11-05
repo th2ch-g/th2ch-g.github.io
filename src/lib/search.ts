@@ -42,6 +42,23 @@ export function setupSearch(): void {
   if (!trigger || !dialog || !host || dialog.dataset.searchWired === '1') return;
   dialog.dataset.searchWired = '1';
 
+  // Pagefind creates result links dynamically without a link-target option.
+  const resultObserver = new MutationObserver(() => {
+    host.querySelectorAll<HTMLAnchorElement>('.pagefind-ui__result-link[href]').forEach((link) => {
+      const external = /^https?:\/\//i.test(link.getAttribute('href') ?? '');
+      if (external) {
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+      } else {
+        link.removeAttribute('target');
+        link.removeAttribute('rel');
+      }
+    });
+  });
+  resultObserver.observe(host, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ['href'],
+  });
+
   let pagefindReady = false;
   let pagefindLoading: Promise<void> | undefined;
   let fallbackInput: HTMLInputElement | undefined;

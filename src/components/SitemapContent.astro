@@ -63,7 +63,11 @@ const site = (await readProfileShallow()).site?.trim() ?? '';
           const href = getPostUrl(post, lang);
           return (
             <li>
-              <a href={href}>{post.data.title}</a>
+              <a
+                href={href}
+                target={post.data.externalURL ? '_blank' : undefined}
+                rel={post.data.externalURL ? 'noopener noreferrer' : undefined}
+              >{post.data.title}</a>
               <time class="date" datetime={post.data.pubDate.toISOString()}>
                 {formatDate(post.data.pubDate)}
               </time>

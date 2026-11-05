@@ -93,6 +93,10 @@ export function createFallback(
       link.className = 'search-fallback__link';
       link.href = item.externalURL ?? item.url;
       link.textContent = item.title;
+      if (item.externalURL) {
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+      }
       listItem.appendChild(link);
 
       if (item.description) {

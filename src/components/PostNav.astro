@@ -16,7 +16,11 @@ const nextHref = next ? getPostUrl(next, lang) : null;
 {(prev || next) && (
   <nav class="post-nav" aria-label="Post navigation">
     {prev && prevHref ? (
-      <a class="nav-card nav-prev card" href={prevHref}>
+      <a
+        class="nav-card nav-prev card" href={prevHref}
+        target={prev.data.externalURL ? '_blank' : undefined}
+        rel={prev.data.externalURL ? 'noopener noreferrer' : undefined}
+      >
         <span class="nav-direction muted">← {tUi('posts.prev')}</span>
         <span class="nav-title">{prev.data.title}</span>
       </a>
@@ -26,7 +30,11 @@ const nextHref = next ? getPostUrl(next, lang) : null;
       <span class="nav-spacer" aria-hidden="true"></span>
     )}
     {next && nextHref ? (
-      <a class="nav-card nav-next card" href={nextHref}>
+      <a
+        class="nav-card nav-next card" href={nextHref}
+        target={next.data.externalURL ? '_blank' : undefined}
+        rel={next.data.externalURL ? 'noopener noreferrer' : undefined}
+      >
         <span class="nav-direction muted">{tUi('posts.next')} →</span>
         <span class="nav-title">{next.data.title}</span>
       </a>

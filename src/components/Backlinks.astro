@@ -3,6 +3,7 @@ import { tUi } from '@/i18n/ui';
 
 interface Citer {
   url: string;
+  external: boolean;
   title: string;
 }
 
@@ -17,7 +18,11 @@ const { citers } = Astro.props;
     <ul class="bare">
       {citers.map((c) => (
         <li>
-          <a href={c.url}>{c.title}</a>
+          <a
+            href={c.url}
+            target={c.external ? '_blank' : undefined}
+            rel={c.external ? 'noopener noreferrer' : undefined}
+          >{c.title}</a>
         </li>
       ))}
     </ul>

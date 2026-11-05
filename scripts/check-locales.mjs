@@ -185,9 +185,27 @@ try {
       assert.deepEqual(errors, []);
       await page.close();
 
-      const touchPage = await browser.newPage({ hasTouch: true, viewport: { width: 393, height: 852 } });
+      const touchContext = await browser.newContext({ hasTouch: true, viewport: { width: 393, height: 852 } });
+      const touchPage = await touchContext.newPage();
+      const checkExternalTab = async (link, expectedUrl) => {
+        assert.equal(await link.getAttribute('href'), expectedUrl);
+        assert.equal(await link.getAttribute('target'), '_blank');
+        assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
+        const originalUrl = touchPage.url();
+        const opened = touchPage.waitForEvent('popup');
+        await link.tap();
+        const popup = await opened;
+        try {
+          await popup.waitForURL(new URL(expectedUrl).href);
+          await popup.waitForLoadState();
+          assert.equal(touchPage.url(), originalUrl, 'External link navigates the original tab');
+          assert.equal(await popup.evaluate(() => window.opener === null), true);
+        } finally {
+          await popup.close();
+        }
+      };
       try {
-        await touchPage.route('**/*', (route) => {
+        await touchContext.route('**/*', (route) => {
           const request = route.request();
           if (new URL(request.url()).origin === server.url) return route.continue();
           const expected = sourcePosts.some((post) => post.externalURL
@@ -201,9 +219,7 @@ try {
             for (const path of ['/posts/', '/sitemap/']) {
               await touchPage.goto(`${server.url}${path}?lang=${lang}`, { waitUntil: 'networkidle' });
               const link = touchPage.locator('main').getByRole('link', { name: source.title, exact: true });
-              assert.equal(await link.getAttribute('href'), source.externalURL);
-              await link.tap();
-              await touchPage.waitForURL(new URL(source.externalURL).href);
+              await checkExternalTab(link, source.externalURL);
             }
             for (const fallback of [false, true]) {
               if (fallback) await touchPage.route('**/pagefind/pagefind-ui.js', (route) => route.abort());
@@ -214,15 +230,13 @@ try {
               const result = touchPage.locator(fallback ? '.search-fallback__link' : '.pagefind-ui__result-link')
                 .filter({ hasText: source.title }).first();
               await result.waitFor();
-              assert.equal(await result.getAttribute('href'), source.externalURL);
-              await result.tap();
-              await touchPage.waitForURL(new URL(source.externalURL).href);
+              await checkExternalTab(result, source.externalURL);
               if (fallback) await touchPage.unroute('**/pagefind/pagefind-ui.js');
             }
           }
         }
       } finally {
-        await touchPage.close();
+        await touchContext.close();
       }
 
       const noScript = await browser.newPage({ javaScriptEnabled: false });

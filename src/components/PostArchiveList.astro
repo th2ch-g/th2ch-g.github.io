@@ -68,7 +68,11 @@ posts.forEach((post) => {
             >
               {formatMonthDay(post.data.pubDate)}
             </time>
-            <a href={getPostUrl(post, lang)}>
+            <a
+              href={getPostUrl(post, lang)}
+              target={post.data.externalURL ? '_blank' : undefined}
+              rel={post.data.externalURL ? 'noopener noreferrer' : undefined}
+            >
               <span>
                 {post.data.title}
               </span>

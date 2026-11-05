@@ -177,6 +177,7 @@ async function checkSearch(browser, path, fallback) {
   await input.fill(searchQuery);
   const result = page.locator(fallback ? '.search-fallback__link' : '.pagefind-ui__result-link').filter({ hasText: target.title }).first();
   await result.waitFor();
+  assert.equal(await result.getAttribute('target'), null, 'Internal search result opens a new tab');
   if (!fallback) {
     assert.doesNotMatch(await page.locator('.pagefind-ui__results').innerText(), /Search is unavailable/,
       'Search excerpts include hidden page chrome');

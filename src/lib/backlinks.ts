@@ -11,6 +11,7 @@ import type { Lang } from '@/i18n/ui';
 type Citer = {
   id: string;
   url: string;
+  external: boolean;
   title: string;
   pubDate: Date;
 };
@@ -48,6 +49,7 @@ async function getBacklinkMap(lang: Lang): Promise<Map<string, Citer[]>> {
       list.push({
         id: post.id,
         url: getPostUrl(post, lang),
+        external: Boolean(post.data.externalURL),
         title: post.data.title,
         pubDate: post.data.pubDate,
       });
