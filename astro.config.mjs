@@ -21,12 +21,8 @@ import { rehypeScrollableTables } from './src/plugins/rehype-scrollable-tables.m
 import { codeThemes } from './src/lib/code-themes.mjs';
 
 // Resolve the deployment URL from src/content/profile.yaml so a fork only
-// has to edit profile.yaml — never this file. We keep this inline (rather
-// than calling src/lib/profile-yaml.mjs's `siteUrl()`) so the helper
-// module doesn't end up in Vite's SSR chunk graph; its `import.meta.url`-
-// based path resolution would then be wrong when the chunk is emitted
-// under `dist/chunks/` during page generation. The build-time scripts
-// under scripts/ still use the helper.
+// has to edit profile.yaml. This config and src/lib/profile-yaml.mjs both
+// resolve the file from the project-root working directory (process.cwd()).
 // Resolution order:
 //   1. explicit `site: https://...` in profile.yaml (custom domains)
 //   2. `https://<owner>.github.io` from `repo: <owner>/<repo>` (the
