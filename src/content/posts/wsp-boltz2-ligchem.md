@@ -1,6 +1,6 @@
 ---
 lang: [ja]
-title: "Weight-Space Programming法によるBoltz-2のリガンド立体化学の改善"
+title: "Weight-Space Programming法によるBoltz-2の立体化学改善"
 description: 簡単な検証
 pubDate: 2026-11-05
 ---
