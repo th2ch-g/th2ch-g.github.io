@@ -330,7 +330,17 @@ async function checkShortcutComposition(browser) {
 }
 
 async function checkCopyAndTheme(browser) {
-  const { page, errors } = await newPage(browser, postPath, { colorScheme: 'light' });
+  let target;
+  for (const item of postItems) {
+    const candidate = await newPage(browser, item.url, { colorScheme: 'light' });
+    if (await candidate.page.locator('pre:not(.mermaid) code').count()) {
+      target = candidate;
+      break;
+    }
+    await candidate.page.close();
+  }
+  assert.ok(target, 'Code copy checks require a published article with a code block');
+  const { page, errors } = target;
   await mockClipboard(page);
   const code = page.locator('pre:has(.copy-code)').first();
   await code.locator('.copy-code').focus();

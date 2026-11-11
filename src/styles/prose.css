@@ -71,6 +71,10 @@
   text-underline-offset: 0.14em;
 }
 
+.prose [data-footnote-backref] {
+  display: none;
+}
+
 .prose img {
   max-width: 100%;
   height: auto;
