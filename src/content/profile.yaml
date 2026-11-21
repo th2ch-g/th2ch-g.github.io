@@ -16,8 +16,8 @@ analytics:
   googleAnalyticsId: G-2QTGY03ENF
 
 adsense:
-  enabled: true
-  clientId: ca-pub-3059839485466897
+  enabled: false
+  clientId:
 
 searchConsole:
   enabled: true
