@@ -1,7 +1,7 @@
 ---
 title: プライバシーポリシー
 description: 本サイトにおける訪問者情報の取り扱いについて。
-updatedDate: 2026-09-30
+updatedDate: 2026-11-21
 ---
 
 本サイト「{{siteHandle}}」({{site}}、以下「本サイト」) における、訪問者の個人情報の取り扱いについて説明します。
@@ -20,11 +20,7 @@ updatedDate: 2026-09-30
 
 サイトの配信は GitHub Pages により行われ、GitHub 社が IP アドレス、ユーザーエージェント等のアクセス情報を収集する場合があります。詳細は [GitHub Privacy Statement](https://docs.github.com/ja/site-policy/privacy-policies/github-general-privacy-statement) を参照してください。
 
-### 2.2 Giscus (コメント機能)
-
-ブログ記事のコメント欄は [Giscus](https://giscus.app) により提供され、コメントは GitHub Discussions に保存されます。コメント投稿には GitHub アカウントが必要で、GitHub のプライバシーポリシーが適用されます。
-
-### 2.3 アクセス解析
+### 2.2 アクセス解析
 
 本サイトでは [Google Analytics 4](https://marketingplatform.google.com/about/analytics/) (以下「GA4」) を使用してアクセス状況を計測しています。GA4 は Cookie (`_ga`, `_ga_<ID>` 等) を使用し、訪問者の IP アドレス、ユーザーエージェント、流入元、閲覧ページ、滞在時間等を Google のサーバに送信します。データは Google のプライバシーポリシーに基づき処理されます。
 
@@ -33,19 +29,9 @@ updatedDate: 2026-09-30
 
 ブラウザの設定で Cookie をブロック、または DNT (Do Not Track) を有効にすることでも一定の追跡を回避できます。
 
-### 2.4 Google AdSense
-
-本サイトでは [Google AdSense](https://www.google.com/adsense/) により広告を表示しています。AdSense は Cookie を使用し、訪問者の興味関心に基づくパーソナライズ広告を表示する場合があります。訪問履歴は Google および広告配信パートナーが収集します。
-
-広告配信パートナーが Cookie を使用することについて、訪問者は以下の方法でオプトアウトできます。
-
-- [Google 広告設定](https://adssettings.google.com)
-- [aboutads.info](https://www.aboutads.info/choices/) (米国)
-- [youronlinechoices.eu](https://www.youronlinechoices.eu/) (EU)
-
 ## 3. Cookie の使用
 
-本サイト自体は Cookie を発行しません。第三者サービス (Giscus、AdSense 等) が Cookie を発行する場合があります。
+本サイト自体は Cookie を発行しません。第三者サービス (Google Analytics 等) が Cookie を発行する場合があります。
 
 ブラウザの設定で Cookie を無効化することができます。
 
@@ -62,7 +48,7 @@ updatedDate: 2026-09-30
 
 ## 5. 訪問者の権利
 
-第三者サービスに保存されたデータ (Giscus 経由のコメント等) については、各サービスを通じて削除を要求することができます。
+第三者サービスに保存されたデータについては、各サービスを通じて削除を要求することができます。
 
 EU/EEA 在住の訪問者は、GDPR に基づくデータアクセス・削除要求を、[GitHub Issue]({{repoUrl}}/issues) から送付することができます。
 

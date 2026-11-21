@@ -20,5 +20,5 @@ adsense:
   clientId:
 
 searchConsole:
-  enabled: true
-  verification: bxwzCEMK_IUP8oEAAzNpxT0ZUtrZBpZrVhoYjrl68Wc
+  enabled: false
+  verification:

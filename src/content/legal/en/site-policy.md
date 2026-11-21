@@ -1,7 +1,7 @@
 ---
 title: Site Policy
 description: Terms of use, copyright, and disclaimer for this site.
-updatedDate: 2026-05-13
+updatedDate: 2026-11-21
 ---
 
 This page describes the terms of use, content copyright, and disclaimer for "{{siteHandle}}" ({{site}}, hereinafter "this site"). For details on personal information, please refer to the separate [Privacy Policy](/privacy?lang=en).
@@ -34,32 +34,19 @@ Links intended to defame this site or that violate public order and morals are n
 
 External links are provided for informational purposes and do not constitute endorsement of the linked content. The site operator is not responsible for issues arising on linked sites.
 
-## 4. Comments
-
-Comments on posts are provided via [Giscus](https://giscus.app), with comments stored in GitHub Discussions. Posting requires a GitHub account.
-
-The following comments may be removed without notice:
-
-- Defamation, discriminatory speech, or harassment
-- Spam, unrelated advertising, or off-site solicitation
-- Content that violates the law or facilitates such violation
-- Personal information posted without the subject's consent
-
-The site operator is under no obligation to reply to comments.
-
-## 5. Recommended Environment
+## 4. Recommended Environment
 
 This site is best viewed in the following environment:
 
 - Latest version of a modern browser (Chrome / Firefox / Safari / Edge)
-- JavaScript enabled (used for search, Mermaid diagrams, Giscus comments, etc.)
+- JavaScript enabled (used for search, Mermaid diagrams, etc.)
 
 Core content remains accessible with JavaScript disabled, but some features will not work.
 
-## 6. Changes to This Policy
+## 5. Changes to This Policy
 
 This policy may be changed without prior notice. When significant changes occur, the "Last updated" date at the top of this page will be revised.
 
-## 7. Contact
+## 6. Contact
 
 For questions about this policy, please open a [GitHub issue]({{repoUrl}}/issues) or use the [contact form](/contact?lang=en).

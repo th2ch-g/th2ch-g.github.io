@@ -190,7 +190,7 @@ async function checkSearch(browser, path, fallback) {
   const resultSelector = fallback ? '.search-fallback__link' : '.pagefind-ui__result-link';
   for (const [term, expectedPath] of [
     [cvQuery, `/?lang=${lang}`],
-    ['Google AdSense', `/privacy/?lang=${lang}`],
+    ['Google Analytics', `/privacy/?lang=${lang}`],
     ['Gallery', `/gallery/?lang=${lang}`],
     ['Contact', `/contact/?lang=${lang}`],
     ['Sitemap', `/sitemap/?lang=${lang}`],

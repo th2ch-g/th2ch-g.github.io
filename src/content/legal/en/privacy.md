@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How visitor information is handled on this site.
-updatedDate: 2026-09-30
+updatedDate: 2026-11-21
 ---
 
 This document describes how the personal information of visitors to "{{siteHandle}}" ({{site}}, "this site") is handled.
@@ -20,11 +20,7 @@ However, this site uses the following third-party services, which may collect or
 
 The site is hosted on GitHub Pages, and GitHub may collect access information such as IP addresses and user agents. For details, see the [GitHub Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 
-### 2.2 Giscus (Comments)
-
-Post comments are provided by [Giscus](https://giscus.app) and stored in GitHub Discussions. A GitHub account is required to post comments, and GitHub's privacy policy applies.
-
-### 2.3 Analytics
+### 2.2 Analytics
 
 This site uses [Google Analytics 4](https://marketingplatform.google.com/about/analytics/) ("GA4") to measure traffic. GA4 uses cookies (`_ga`, `_ga_<ID>`, etc.) and sends information such as the visitor's IP address, user agent, referrer, page paths, and time-on-page to Google's servers. Data is processed under Google's privacy policy.
 
@@ -33,19 +29,9 @@ This site uses [Google Analytics 4](https://marketingplatform.google.com/about/a
 
 Blocking cookies in your browser settings, or enabling DNT (Do Not Track), can also prevent some tracking.
 
-### 2.4 Google AdSense
-
-This site displays advertisements via [Google AdSense](https://www.google.com/adsense/). AdSense uses cookies and may show personalized ads based on visitor interests. Browsing history is collected by Google and its advertising partners.
-
-You may opt out of cookie-based ad personalization at:
-
-- [Google Ads Settings](https://adssettings.google.com)
-- [aboutads.info](https://www.aboutads.info/choices/) (US)
-- [youronlinechoices.eu](https://www.youronlinechoices.eu/) (EU)
-
 ## 3. Cookies
 
-This site does not issue cookies of its own. Third-party services (Giscus, AdSense, etc.) may issue cookies.
+This site does not issue cookies of its own. Third-party services (Google Analytics, etc.) may issue cookies.
 
 You can disable cookies in your browser settings.
 
@@ -62,7 +48,7 @@ Technical and legal measures against crawlers that ignore these declarations are
 
 ## 5. Visitor Rights
 
-For data stored on third-party services (such as comments via Giscus), deletion requests can be made through each service.
+For data stored on third-party services, deletion requests can be made through each service.
 
 Visitors residing in the EU/EEA may submit data access or deletion requests under GDPR by opening a [GitHub issue]({{repoUrl}}/issues).
 
