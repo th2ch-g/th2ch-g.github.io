@@ -34,6 +34,18 @@
 
 ### ポスター発表
 
+1. <span class="cv-presenter-marker">◯</span> **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
+   "[Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://www.icbbs2026.org/main/filedownload.htm?type=link&uid=41)"
+   [International Conference on Biophysics and Biomedical Sciences (ICBBS 2026)](https://www.icbbs2026.org/)（第64回日本生物物理学会年会）, BEXCO（韓国・釜山）, 2026年11月23–28日.
+
+1. <span class="cv-presenter-marker">◯</span> **Umi Tanaka**, **Aoi Maeda**, **<u>Tatsuki Hori</u>**, **Ryuichiro Ishitani**, **Yongchan Lee**, **Tomohiro Nishizawa**.
+   "[Mechanistic Insights into Inhibitor Recognition in Human MATE2K](https://www.icbbs2026.org/main/filedownload.htm?type=link&uid=43)"
+   [International Conference on Biophysics and Biomedical Sciences (ICBBS 2026)](https://www.icbbs2026.org/)（第64回日本生物物理学会年会）, BEXCO（韓国・釜山）, 2026年11月23–28日.
+
+1. <span class="cv-presenter-marker">◯</span> **Atsushi Nakato**, **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Teppei Soma**, **Hiroshi Nishimasu**, **Ryuichiro Ishitani**.
+   "[Energetic Analysis of Subunit Rotation in the Large Serine Recombinase Bxb1](https://www.icbbs2026.org/main/filedownload.htm?type=link&uid=43)"
+   [International Conference on Biophysics and Biomedical Sciences (ICBBS 2026)](https://www.icbbs2026.org/)（第64回日本生物物理学会年会）, BEXCO（韓国・釜山）, 2026年11月23–28日.
+
 1. <span class="cv-presenter-marker">◯</span> **仲渡敦**, **石谷隆一郎**, **森脇由隆**, **<u>堀立樹</u>**, **西増弘志**, **相馬哲兵**.
    「[Large Serine Recombinase の回転シミュレーション](https://aeplan.jp/pssj2026/pdf/flashtalk_day1.pdf)」
    [第26回日本蛋白質科学会年会](https://aeplan.jp/pssj2026/), とりぎん文化会館（鳥取県鳥取市）, 2026年6月17–19日.

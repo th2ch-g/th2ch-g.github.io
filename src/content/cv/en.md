@@ -36,6 +36,18 @@ Japanese🇯🇵
 
 ### Posters
 
+1. <span class="cv-presenter-marker">◯</span> **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Ryuichiro Ishitani**.
+   "[Distance-Restraint-Guided Diffusion Models for Sampling Protein Conformational Changes and Ligand Dissociation Pathways](https://www.icbbs2026.org/main/filedownload.htm?type=link&uid=41)"
+   [International Conference on Biophysics and Biomedical Sciences (ICBBS 2026): The 64th Annual Meeting of the Biophysical Society of Japan](https://www.icbbs2026.org/), BEXCO (Busan, Korea), November 23-28, 2026.
+
+1. <span class="cv-presenter-marker">◯</span> **Umi Tanaka**, **Aoi Maeda**, **<u>Tatsuki Hori</u>**, **Ryuichiro Ishitani**, **Yongchan Lee**, **Tomohiro Nishizawa**.
+   "[Mechanistic Insights into Inhibitor Recognition in Human MATE2K](https://www.icbbs2026.org/main/filedownload.htm?type=link&uid=43)"
+   [International Conference on Biophysics and Biomedical Sciences (ICBBS 2026): The 64th Annual Meeting of the Biophysical Society of Japan](https://www.icbbs2026.org/), BEXCO (Busan, Korea), November 23-28, 2026.
+
+1. <span class="cv-presenter-marker">◯</span> **Atsushi Nakato**, **<u>Tatsuki Hori</u>**, **Yoshitaka Moriwaki**, **Teppei Soma**, **Hiroshi Nishimasu**, **Ryuichiro Ishitani**.
+   "[Energetic Analysis of Subunit Rotation in the Large Serine Recombinase Bxb1](https://www.icbbs2026.org/main/filedownload.htm?type=link&uid=43)"
+   [International Conference on Biophysics and Biomedical Sciences (ICBBS 2026): The 64th Annual Meeting of the Biophysical Society of Japan](https://www.icbbs2026.org/), BEXCO (Busan, Korea), November 23-28, 2026.
+
 1. <span class="cv-presenter-marker">◯</span> **Atsushi Nakato**, **Ryuichiro Ishitani**, **Yoshitaka Moriwaki**, **<u>Tatsuki Hori</u>**, **Hiroshi Nishimasu**, **Teppei Soma**.
    "[Rotational Simulation of Large Serine Recombinase](https://aeplan.jp/pssj2026/pdf/flashtalk_day1.pdf)"
    [The 26th Annual Meeting of the Protein Science Society of Japan](https://aeplan.jp/pssj2026/), Tottori Ginko Cultural Hall (Tottori, Tottori, Japan), June 17-19, 2026.
